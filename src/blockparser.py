@@ -42,7 +42,7 @@ class BlockParser:
         self.i = len(self.line)  # stop parsing
 
     def _throw(self, msg):
-        err = 'At character {} of "{}":\n\t{}'.format(self.i, self.line, msg)
+        err = 'At character {} of "{}":\n\t{}'.format(self.i+1, self.line, msg)
         self.result['err'] = err
         self._end()
 
