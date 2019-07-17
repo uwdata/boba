@@ -59,8 +59,7 @@ class Parser:
                     self._add_block(bl)
 
                     # parse the metadata
-                    bp = BlockParser(line)
-                    res = bp.parse()
+                    res = BlockParser(line).parse()
                     if not res['success']:
                         self._throw_parse_error(res['err'])
 
