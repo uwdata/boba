@@ -1,0 +1,9 @@
+{
+  "graph": [
+    "A->B->C1",
+    "B->C2"
+  ],
+  "var": [
+    {"id": "a", "type": "discrete", "value": [2, 2.5, 3] }
+  ]
+}
