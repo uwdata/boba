@@ -2,6 +2,7 @@
 
 import json
 from src.blockparser import BlockParser
+import src.util as util
 from dataclasses import dataclass
 
 
@@ -18,6 +19,7 @@ class Parser:
 
     def __init__(self, f1, f2):
         self.fn_script = f1
+        self.fn_spec = f2
         self.blocks = {}
 
         # read spec
@@ -25,8 +27,12 @@ class Parser:
             self.spec = json.load(f)
 
     def _throw(self, msg):
-        print(msg)
-        exit(0)
+        util.print_fail(msg)
+        exit(1)
+
+    def _throw_parse_error(self, msg):
+        prefix = 'In parsing file "{}":\n\t'.format(self.fn_script)
+        self._throw(prefix + msg)
 
     def _add_block(self, block):
         # ignore empty block
@@ -39,7 +45,8 @@ class Parser:
 
         # check if id exists
         if block.id in self.blocks:
-            self._throw('Duplicate code block ID "{}"'.format(block.id))
+            err = 'Duplicated code block ID "{}"'.format(block.id)
+            self._throw_parse_error(err)
         self.blocks[block.id] = block
 
     def _parse_blocks(self):
@@ -54,6 +61,8 @@ class Parser:
                     # parse the metadata
                     bp = BlockParser(line)
                     res = bp.parse()
+                    if not res['success']:
+                        self._throw_parse_error(res['err'])
 
                     # create a new block
                     bl = Block('', res['id'], res['name'])

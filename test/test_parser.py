@@ -6,7 +6,16 @@ import os
 sys.path.insert(0, os.path.abspath('..'))
 
 import unittest
+from unittest.mock import patch
+import io
 from src.parser import Parser
+
+
+def _print_code(ps):
+    for b in ps.blocks:
+        bl = ps.blocks[b]
+        print('-' * 10, '  ({}) {}  '.format(bl.id, bl.name), '-' * 10)
+        print(bl.code)
 
 
 class TestParser(unittest.TestCase):
@@ -15,12 +24,35 @@ class TestParser(unittest.TestCase):
         base = '../example/simple/'
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
-        self.assertEqual(len(ps.blocks), 5)
-        for b in ps.blocks:
-            bl = ps.blocks[b]
-            self.assertNotEqual(bl.code, '')
-            print('-'*10, '  ({}) {}  '.format(bl.id, bl.name), '-'*10)
-            print(bl.code)
+        self.assertListEqual([*ps.blocks], ['_start', 'A', 'B', 'C1', 'C2'])
+
+    def test_script_1(self):
+        base = './specs/'
+        ps = Parser(base+'script1.py', base+'spec-empty.json')
+        ps._parse_blocks()
+        self.assertListEqual([*ps.blocks], ['a', 'b', 'c'])
+
+    def test_script_2(self):
+        base = './specs/'
+        ps = Parser(base+'script2.py', base+'spec-empty.json')
+        ps._parse_blocks()
+        self.assertListEqual([*ps.blocks], ['_start', 'a', 'b', 'c'])
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_script_3(self, stdout):
+        base = './specs/'
+        ps = Parser(base+'script3.py', base+'spec-empty.json')
+        with self.assertRaises(SystemExit):
+            ps._parse_blocks()
+        self.assertRegex(stdout.getvalue(), '(?i)syntax')
+
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_script_4(self, stdout):
+        base = './specs/'
+        ps = Parser(base+'script4.py', base+'spec-empty.json')
+        with self.assertRaises(SystemExit):
+            ps._parse_blocks()
+        self.assertRegex(stdout.getvalue(), '(?i)duplicated')
 
 
 if __name__ == '__main__':
