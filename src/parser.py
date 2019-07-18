@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from typing import List
+
 from src.blockparser import BlockParser
 from src.graphparser import GraphParser
 from src.graphanalyzer import GraphAnalyzer, InvalidGraphError
+from src.decisionparser import DecisionParser, InvalidSyntaxError
 import src.util as util
 
 
@@ -13,6 +16,7 @@ class Block:
     code: str = ''
     id: str = ''
     name: str = ''
+    decisions: List = field(default_factory=lambda: [])
 
 
 class Parser:
@@ -23,6 +27,7 @@ class Parser:
         self.fn_script = f1
         self.fn_spec = f2
         self.blocks = {}
+        self.decisions = {}
         self.paths = []
 
         # read spec
@@ -61,6 +66,11 @@ class Parser:
 
     def _parse_blocks(self):
         bl = Block()
+        dp = DecisionParser(self.spec)
+        try:
+            self.decisions = dp.read_decisions()
+        except InvalidSyntaxError as e:
+            self._throw_spec_error(e.args[0])
 
         with open(self.fn_script, 'r') as f:
             for line in f:
@@ -74,39 +84,52 @@ class Parser:
                         self._throw_parse_error(res['err'])
 
                     # create a new block
-                    bl = Block('', res['id'], res['name'])
+                    bl = Block('', res['id'], res['name'], [])
                 else:
+                    # match any decision variables
+                    try:
+                        bl.decisions.extend(dp.parse_code(line))
+                    except InvalidSyntaxError as e:
+                        msg = 'At line "{}"\n\t{}'.format(line, e.args[0])
+                        self._throw_parse_error(msg)
+
+                    # add to the current block
                     bl.code += line
 
             # add the last block
             self._add_block(bl)
 
-    def _check_nodes(self, nodes):
+    def _match_nodes(self, nodes):
         # nodes in spec and script should match
         for nd in nodes:
             if nd not in self.blocks:
                 self._throw_spec_error('Cannot find matching node "{}" in script'.format(nd))
 
         for nd in self.blocks:
-            if nd not in nodes:
+            # ignore special nodes inserted by us
+            if not nd.startswith('_') and nd not in nodes:
                 util.print_warn('Cannot find matching node "{}" in graph spec'.format(nd))
 
     def _parse_graph(self):
         if 'graph' not in self.spec:
-            self._throw_spec_error('Cannot find a graph specification')
+            self._throw_spec_error('Cannot find "graph" in json')
 
         res = GraphParser(self.spec['graph']).parse()
 
         if not res['success']:
             self._throw_spec_error(res['err'])
 
-        # TODO: how to deal with '_start'??
-        self._check_nodes(res['nodes'])
+        self._match_nodes(res['nodes'])
         try:
             self.paths = GraphAnalyzer(res['nodes'], res['edges']).analyze()
         except InvalidGraphError as e:
             self._throw_spec_error(e.args[0])
 
-    def parse(self):
+    def _code_gen(self):
+        # TODO: remember to prepend _start to every output script!
+        pass
+
+    def _main(self):
         self._parse_blocks()
         self._parse_graph()
+        self._code_gen()

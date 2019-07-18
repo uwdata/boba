@@ -20,28 +20,31 @@ def _print_code(ps):
 
 class TestParser(unittest.TestCase):
 
+    # --- parse blocks ---
     def test_parse_blocks(self):
         base = '../example/simple/'
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
         self.assertListEqual([*ps.blocks], ['_start', 'A', 'B', 'C1', 'C2'])
+        self.assertListEqual([ps.blocks[b].decisions for b in ps.blocks],
+                             [[], [], ['a'], [], []])
 
     def test_script_1(self):
         base = './specs/'
-        ps = Parser(base+'script1.py', base+'spec-empty.json')
+        ps = Parser(base+'script1.py', base+'spec-good.json')
         ps._parse_blocks()
         self.assertListEqual([*ps.blocks], ['a', 'b', 'c'])
 
     def test_script_2(self):
         base = './specs/'
-        ps = Parser(base+'script2.py', base+'spec-empty.json')
+        ps = Parser(base+'script2.py', base+'spec-good.json')
         ps._parse_blocks()
         self.assertListEqual([*ps.blocks], ['_start', 'a', 'b', 'c'])
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_script_3(self, stdout):
         base = './specs/'
-        ps = Parser(base+'script3.py', base+'spec-empty.json')
+        ps = Parser(base+'script3.py', base+'spec-good.json')
         with self.assertRaises(SystemExit):
             ps._parse_blocks()
         self.assertRegex(stdout.getvalue(), '(?i)syntax')
@@ -49,15 +52,17 @@ class TestParser(unittest.TestCase):
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_script_4(self, stdout):
         base = './specs/'
-        ps = Parser(base+'script4.py', base+'spec-empty.json')
+        ps = Parser(base+'script4.py', base+'spec-good.json')
         with self.assertRaises(SystemExit):
             ps._parse_blocks()
         self.assertRegex(stdout.getvalue(), '(?i)duplicated')
 
+    # --- parse graph ---
     def test_spec_good(self):
         base = '../example/simple/'
         ps = Parser(base+'script_annotated.py', base+'spec.json')
-        ps.parse()
+        ps._parse_blocks()
+        ps._parse_graph()
 
     def test_spec_empty(self):
         base = './specs/'
@@ -75,7 +80,8 @@ class TestParser(unittest.TestCase):
         base = './specs/'
         ps = Parser(base + 'script1.py', base + 'spec-cyclic-graph.json')
         with self.assertRaises(SystemExit):
-            ps.parse()
+            ps._parse_blocks()
+            ps._parse_graph()
 
 
 if __name__ == '__main__':
