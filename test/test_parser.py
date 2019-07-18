@@ -57,7 +57,7 @@ class TestParser(unittest.TestCase):
     def test_spec_good(self):
         base = '../example/simple/'
         ps = Parser(base+'script_annotated.py', base+'spec.json')
-        ps._parse_graph()
+        ps.parse()
 
     def test_spec_empty(self):
         base = './specs/'
@@ -70,6 +70,12 @@ class TestParser(unittest.TestCase):
         ps = Parser(base+'script1.py', base+'spec-bad-graph.json')
         with self.assertRaises(SystemExit):
             ps._parse_graph()
+
+    def test_spec_cyclic_graph(self):
+        base = './specs/'
+        ps = Parser(base + 'script1.py', base + 'spec-cyclic-graph.json')
+        with self.assertRaises(SystemExit):
+            ps.parse()
 
 
 if __name__ == '__main__':

@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from src.blockparser import BlockParser
 from src.graphparser import GraphParser
+from src.graphanalyzer import GraphAnalyzer, InvalidGraphError
 import src.util as util
 
 
@@ -32,13 +33,16 @@ class Parser:
         util.print_fail(msg)
         exit(1)
 
+    def _indent(self, msg):
+        return '\n'.join(['\t' + l for l in msg.split('\n')])
+
     def _throw_parse_error(self, msg):
-        prefix = 'In parsing file "{}":\n\t'.format(self.fn_script)
-        self._throw(prefix + msg)
+        prefix = 'In parsing file "{}":\n'.format(self.fn_script)
+        self._throw(prefix + self._indent(msg))
 
     def _throw_spec_error(self, msg):
-        prefix = 'In parsing file "{}":\n\t'.format(self.fn_spec)
-        self._throw(prefix + msg)
+        prefix = 'In parsing file "{}":\n'.format(self.fn_spec)
+        self._throw(prefix + self._indent(msg))
 
     def _add_block(self, block):
         # ignore empty block
@@ -81,11 +85,11 @@ class Parser:
         # nodes in spec and script should match
         for nd in nodes:
             if nd not in self.blocks:
-                self._throw_spec_error('Cannot find a matching node {} in script'.format(nd))
+                self._throw_spec_error('Cannot find matching node "{}" in script'.format(nd))
 
         for nd in self.blocks:
             if nd not in nodes:
-                util.print_warn('Cannot find a matching node {} in spec'.format(nd))
+                util.print_warn('Cannot find matching node "{}" in graph spec'.format(nd))
 
     def _parse_graph(self):
         if 'graph' not in self.spec:
@@ -96,8 +100,12 @@ class Parser:
         if not res['success']:
             self._throw_spec_error(res['err'])
 
+        # TODO: how to deal with '_start'??
         self._check_nodes(res['nodes'])
-        # TODO
+        try:
+            self.paths = GraphAnalyzer(res['nodes'], res['edges']).analyze()
+        except InvalidGraphError as e:
+            self._throw_spec_error(e.args[0])
 
     def parse(self):
         self._parse_blocks()
