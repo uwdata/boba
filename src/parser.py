@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
 import json
-from src.blockparser import BlockParser
-import src.util as util
 from dataclasses import dataclass
+from src.blockparser import BlockParser
+from src.graphparser import GraphParser
+import src.util as util
 
 
 @dataclass
@@ -21,6 +22,7 @@ class Parser:
         self.fn_script = f1
         self.fn_spec = f2
         self.blocks = {}
+        self.paths = []
 
         # read spec
         with open(f2, 'rb') as f:
@@ -32,6 +34,10 @@ class Parser:
 
     def _throw_parse_error(self, msg):
         prefix = 'In parsing file "{}":\n\t'.format(self.fn_script)
+        self._throw(prefix + msg)
+
+    def _throw_spec_error(self, msg):
+        prefix = 'In parsing file "{}":\n\t'.format(self.fn_spec)
         self._throw(prefix + msg)
 
     def _add_block(self, block):
@@ -70,3 +76,29 @@ class Parser:
 
             # add the last block
             self._add_block(bl)
+
+    def _check_nodes(self, nodes):
+        # nodes in spec and script should match
+        for nd in nodes:
+            if nd not in self.blocks:
+                self._throw_spec_error('Cannot find a matching node {} in script'.format(nd))
+
+        for nd in self.blocks:
+            if nd not in nodes:
+                util.print_warn('Cannot find a matching node {} in spec'.format(nd))
+
+    def _parse_graph(self):
+        if 'graph' not in self.spec:
+            self._throw_spec_error('Cannot find a graph specification')
+
+        res = GraphParser(self.spec['graph']).parse()
+
+        if not res['success']:
+            self._throw_spec_error(res['err'])
+
+        self._check_nodes(res['nodes'])
+        # TODO
+
+    def parse(self):
+        self._parse_blocks()
+        self._parse_graph()

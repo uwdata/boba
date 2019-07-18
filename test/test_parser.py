@@ -54,6 +54,23 @@ class TestParser(unittest.TestCase):
             ps._parse_blocks()
         self.assertRegex(stdout.getvalue(), '(?i)duplicated')
 
+    def test_spec_good(self):
+        base = '../example/simple/'
+        ps = Parser(base+'script_annotated.py', base+'spec.json')
+        ps._parse_graph()
+
+    def test_spec_empty(self):
+        base = './specs/'
+        ps = Parser(base+'script1.py', base+'spec-empty.json')
+        with self.assertRaises(SystemExit):
+            ps._parse_graph()
+
+    def test_spec_bad_graph(self):
+        base = './specs/'
+        ps = Parser(base+'script1.py', base+'spec-bad-graph.json')
+        with self.assertRaises(SystemExit):
+            ps._parse_graph()
+
 
 if __name__ == '__main__':
     unittest.main()

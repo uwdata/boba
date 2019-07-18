@@ -11,3 +11,6 @@ class Colors:
 
 def print_fail(msg):
     print(Colors.FAIL + msg + Colors.ENDC)
+
+def print_warn(msg):
+    print(Colors.WARNING + msg + Colors.ENDC)
