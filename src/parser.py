@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 import json
+import os
+import shutil
 from dataclasses import dataclass, field
 from typing import List
 
@@ -16,23 +18,27 @@ class Block:
     code: str = ''
     id: str = ''
     name: str = ''
-    decisions: List = field(default_factory=lambda: [])
+    chunks: List = field(default_factory=lambda: [])
 
 
 class Parser:
 
     """ Parse everything """
 
-    def __init__(self, f1, f2):
+    def __init__(self, f1, f2, out='.'):
         self.fn_script = f1
         self.fn_spec = f2
+        self.out = os.path.join(out, 'multiverse/')
+
         self.blocks = {}
-        self.decisions = {}
         self.paths = []
 
         # read spec
         with open(f2, 'rb') as f:
             self.spec = json.load(f)
+
+        # initialize helper class
+        self.dec_parser = DecisionParser(self.spec)
 
     def _throw(self, msg):
         util.print_fail(msg)
@@ -40,6 +46,10 @@ class Parser:
 
     def _indent(self, msg):
         return '\n'.join(['\t' + l for l in msg.split('\n')])
+
+    @staticmethod
+    def _rename_dec(dec):
+        return '_' + dec
 
     def _throw_parse_error(self, msg):
         prefix = 'In parsing file "{}":\n'.format(self.fn_script)
@@ -65,17 +75,20 @@ class Parser:
         self.blocks[block.id] = block
 
     def _parse_blocks(self):
-        bl = Block()
-        dp = DecisionParser(self.spec)
         try:
-            self.decisions = dp.read_decisions()
+            self.dec_parser.read_decisions()
         except InvalidSyntaxError as e:
             self._throw_spec_error(e.args[0])
 
         with open(self.fn_script, 'r') as f:
+            code = ''
+            bl = Block()
+
             for line in f:
                 if BlockParser.can_parse(line):
                     # end of the last block
+                    bl.chunks.append(('', code))
+                    code = ''
                     self._add_block(bl)
 
                     # parse the metadata
@@ -86,17 +99,29 @@ class Parser:
                     # create a new block
                     bl = Block('', res['id'], res['name'], [])
                 else:
-                    # match any decision variables
+                    # match decision variables
                     try:
-                        bl.decisions.extend(dp.parse_code(line))
+                        vs, codes = self.dec_parser.parse_code(line)
+                        if len(vs):
+                            # chop into more chunks
+                            # combine first chunk with previous code
+                            bl.chunks.append((vs[0], code + codes[0]))
+                            for i in range(1, len(vs)):
+                                bl.chunks.append((vs[i], codes[i]))
+
+                            # remaining code after the last matched variable
+                            code = codes[-1]
+                        else:
+                            code += line
                     except InvalidSyntaxError as e:
                         msg = 'At line "{}"\n\t{}'.format(line, e.args[0])
                         self._throw_parse_error(msg)
 
-                    # add to the current block
+                    # TODO: fix legacy
                     bl.code += line
 
             # add the last block
+            bl.chunks.append(('', code))
             self._add_block(bl)
 
     def _match_nodes(self, nodes):
@@ -125,9 +150,56 @@ class Parser:
         except InvalidGraphError as e:
             self._throw_spec_error(e.args[0])
 
+    def _get_code_paths(self):
+        res = []
+
+        for path in self.paths:
+            pt = []
+            for nd in path:
+                pt.extend(self.blocks[nd].chunks)
+            res.append(pt)
+
+        return res
+
+    def _code_gen_recur(self, path, i, code):
+        if i >= len(path):
+            self.counter += 1
+
+            # prepend _start to every file
+            if '_start' in self.blocks:
+                code = self.blocks['_start'].code + code
+
+            # write file
+            fn = os.path.join(self.out, 'codes/',
+                              'universe_{}.py'.format(self.counter))
+            with open(fn, 'w') as f:
+                f.write(code)
+                f.flush()
+        else:
+            val, template = path[i]
+
+            if val != '':
+                # expand the decision
+                num_alt = self.dec_parser.get_num_alt(val)
+                for k in range(num_alt):
+                    snippet = self.dec_parser.gen_code(template, val, k)
+                    self._code_gen_recur(path, i+1, code + snippet)
+            else:
+                code += template
+                self._code_gen_recur(path, i+1, code)
+
     def _code_gen(self):
-        # TODO: remember to prepend _start to every output script!
-        pass
+        if os.path.exists(self.out):
+            shutil.rmtree(self.out)
+        os.makedirs(self.out)
+        os.makedirs(os.path.join(self.out, 'codes/'))
+
+        paths = self._get_code_paths()
+
+        self.counter = 0    # keep track of file name
+        for p in paths:
+            self._code_gen_recur(p, 0, '')
+        # TODO: output a script to execute all universes
 
     def _main(self):
         self._parse_blocks()

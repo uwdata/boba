@@ -20,14 +20,22 @@ def _print_code(ps):
 
 class TestParser(unittest.TestCase):
 
+    # --- code gen ---
+    # TODO: more tests
+    def test_code_gen(self):
+        base = '../example/simple/'
+        ps = Parser(base+'script_annotated.py', base+'spec.json', base)
+        ps._parse_blocks()
+        ps._parse_graph()
+        ps._code_gen()
+        self.assertEqual(ps.counter, 6)
+
     # --- parse blocks ---
     def test_parse_blocks(self):
         base = '../example/simple/'
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
         self.assertListEqual([*ps.blocks], ['_start', 'A', 'B', 'C1', 'C2'])
-        self.assertListEqual([ps.blocks[b].decisions for b in ps.blocks],
-                             [[], [], ['a'], [], []])
 
     def test_script_1(self):
         base = './specs/'

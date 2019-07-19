@@ -5,6 +5,7 @@ import re
 
 # valid id pattern
 pattern = '^[a-zA-Z][a-zA-Z0-9_]*'
+pattern_full = '\'{{' + pattern[1:] + '}}\''
 
 
 @dataclass
@@ -22,7 +23,7 @@ class InvalidSyntaxError(SyntaxError):
 class DecisionParser:
     def __init__(self, spec):
         self.spec = spec
-        self.ids = set()
+        self.decisions = {}
 
     @staticmethod
     def _is_id(s):
@@ -65,20 +66,34 @@ class DecisionParser:
             decision = Decision(var, tp, value, desc)
             res[var] = decision
 
-        self.ids = set(res.keys())
+        self.decisions = res
         return res
+
+    def get_num_alt(self, dec):
+        """
+        Return the number of possible alternatives.
+        For discrete type, it's the number of values.
+        """
+        return len(self.decisions[dec].value)
+
+    def gen_code(self, template, dec_id, i_alt):
+        dec = self.decisions[dec_id]
+        v = dec.value[i_alt]
+        return re.sub(pattern_full, str(v), template)
 
     def parse_code(self, line):
+        code = []
         res = []
+        i = 0
 
-        pt = '{{' + pattern[1:] + '}}'
-        matches = re.findall(pt, line)
-
-        for m in matches:
-            m = m.strip('{}')
-            if m not in self.ids:
-                msg = 'Cannot find the matching variable "{}" in spec'.format(m)
+        for m in re.finditer(pattern_full, line):
+            val = m.group().strip('{}\'')
+            if val not in set(self.decisions.keys()):
+                msg = 'Cannot find the matching variable "{}" in spec'.format(val)
                 raise InvalidSyntaxError(msg)
-            res.append(m)
+            code.append(line[i:m.end()])
+            res.append(val)
+            i = m.end()
 
-        return res
+        code.append(line[i:])
+        return res, code
