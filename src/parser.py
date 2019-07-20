@@ -201,7 +201,7 @@ class Parser:
             self._code_gen_recur(p, 0, '')
         # TODO: output a script to execute all universes
 
-    def _main(self):
+    def main(self):
         self._parse_blocks()
         self._parse_graph()
         self._code_gen()

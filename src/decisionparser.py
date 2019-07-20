@@ -52,6 +52,10 @@ class DecisionParser:
         return var
 
     def read_decisions(self):
+        """
+        Read decisions from the JSON spec.
+        :return: a dict of decisions
+        """
         res = {}
 
         for d in self._read_json_safe(self.spec, 'decisions'):
@@ -73,15 +77,33 @@ class DecisionParser:
         """
         Return the number of possible alternatives.
         For discrete type, it's the number of values.
+        :param dec: variable ID of a decision
+        :return: number
         """
         return len(self.decisions[dec].value)
 
     def gen_code(self, template, dec_id, i_alt):
+        """
+        Replace the placeholder variable in a template chunk.
+        :param template: a chunk of code with only one placeholder
+        :param dec_id: variable ID of the decision
+        :param i_alt: which alternative
+        :return: string - replaced code
+        """
         dec = self.decisions[dec_id]
         v = dec.value[i_alt]
-        return re.sub(pattern_full, str(v), template)
+
+        # assuming the placeholder var is always at the end
+        # which is true given how we chop up the chunks
+        return re.sub(pattern_full + '$', str(v), template)
 
     def parse_code(self, line):
+        """
+        Find placeholder variables in a line of code.
+        :param line: a line of code
+        :return: (variables, chunks) a list of found variables and a list of
+                 code chunks, each containing one variable
+        """
         code = []
         res = []
         i = 0
