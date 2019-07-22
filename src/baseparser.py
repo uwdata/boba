@@ -1,6 +1,17 @@
 #!/usr/bin/env python3
 
 import re
+from dataclasses import dataclass
+
+
+@dataclass
+class Token:
+    type: str
+    value: str
+
+
+class ParseError(SyntaxError):
+    pass
 
 
 class BaseParser:
@@ -22,7 +33,7 @@ class BaseParser:
 
     @staticmethod
     def _is_id(ch):
-        return bool(re.match('[a-zA-Z0-9]', ch))
+        return bool(re.match('[_a-zA-Z0-9]', ch))
 
     def _next_char(self):
         ch = self.line[self.i]

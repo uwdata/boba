@@ -13,8 +13,8 @@ from src.graphanalyzer import GraphAnalyzer, InvalidGraphError
 class TestGraphAnalyzer(unittest.TestCase):
 
     def cp_helper(self, spec, expected):
-        res = GraphParser(spec).parse()
-        ga = GraphAnalyzer(res['nodes'], res['edges'])
+        nodes, edges = GraphParser(spec).parse()
+        ga = GraphAnalyzer(nodes, edges)
         ga._construct_paths()
         expected = set([','.join(p) for p in expected])
         actual = set([','.join(p) for p in ga.paths])
@@ -44,14 +44,14 @@ class TestGraphAnalyzer(unittest.TestCase):
 
         # cyclic
         spec = ['a->b->c->a']
-        res = GraphParser(spec).parse()
-        ga = GraphAnalyzer(res['nodes'], res['edges'])
+        nodes, edges = GraphParser(spec).parse()
+        ga = GraphAnalyzer(nodes, edges)
         with self.assertRaises(InvalidGraphError):
             ga._construct_paths()
 
     def source_helper(self, spec, exp_source, exp_target):
-        res = GraphParser(spec).parse()
-        ga = GraphAnalyzer(res['nodes'], res['edges'])
+        nodes, edges = GraphParser(spec).parse()
+        ga = GraphAnalyzer(nodes, edges)
         self.assertSetEqual(ga._get_source(), exp_source)
         self.assertSetEqual(ga._get_target(), exp_target)
 
@@ -87,8 +87,8 @@ class TestGraphAnalyzer(unittest.TestCase):
         self.source_helper(spec, source, target)
 
     def path_helper(self, spec, s, t, expected):
-        res = GraphParser(spec).parse()
-        ga = GraphAnalyzer(res['nodes'], res['edges'])
+        nodes, edges = GraphParser(spec).parse()
+        ga = GraphAnalyzer(nodes, edges)
         ga._all_paths(s, t)
         expected = set([','.join(p) for p in expected])
         actual = set([','.join(p) for p in ga.paths])

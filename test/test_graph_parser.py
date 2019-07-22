@@ -6,60 +6,58 @@ import os
 sys.path.insert(0, os.path.abspath('..'))
 
 import unittest
-from src.graphparser import GraphParser, Edge
+from src.graphparser import GraphParser, Edge, ParseError
 
 
 class TestParser(unittest.TestCase):
     def test_good_specs(self):
         spec = ['A -> B -> C1', 'B->C2']
-        res = GraphParser(spec).parse()
-        self.assertTrue(res['success'])
-        self.assertSetEqual(res['nodes'], {'A', 'B', 'C1', 'C2'})
-        edges = {Edge('A', 'B'), Edge('B', 'C1'), Edge('B', 'C2')}
-        self.assertSetEqual(res['edges'], edges)
+        nodes, edges = GraphParser(spec).parse()
+        self.assertSetEqual(nodes, {'A', 'B', 'C1', 'C2'})
+        exp_edges = {Edge('A', 'B'), Edge('B', 'C1'), Edge('B', 'C2')}
+        self.assertSetEqual(edges, exp_edges)
 
     def test_weird_specs(self):
         spec = ['a->a->a->a  b ']
-        res = GraphParser(spec).parse()
-        self.assertTrue(res['success'])
-        self.assertSetEqual(res['nodes'], {'a', 'b'})
-        self.assertSetEqual(res['edges'], {Edge('a', 'a')})
+        nds, eds = GraphParser(spec).parse()
+        self.assertSetEqual(nds, {'a', 'b'})
+        self.assertSetEqual(eds, {Edge('a', 'a')})
 
         spec = ['a  b', 'c']
-        res = GraphParser(spec).parse()
-        self.assertTrue(res['success'])
-        self.assertSetEqual(res['nodes'], {'a', 'b', 'c'})
-        self.assertSetEqual(res['edges'], set())
+        nds, eds = GraphParser(spec).parse()
+        self.assertSetEqual(nds, {'a', 'b', 'c'})
+        self.assertSetEqual(eds, set())
 
         spec = ['a->b c->b']
-        res = GraphParser(spec).parse()
-        self.assertTrue(res['success'])
-        self.assertSetEqual(res['nodes'], {'a', 'b', 'c'})
-        self.assertSetEqual(res['edges'], {Edge('a', 'b'), Edge('c', 'b')})
+        nds, eds = GraphParser(spec).parse()
+        self.assertSetEqual(nds, {'a', 'b', 'c'})
+        self.assertSetEqual(eds, {Edge('a', 'b'), Edge('c', 'b')})
 
     def test_syntax_error(self):
         spec = ['my_first_node -> my_second_node']
-        res = GraphParser(spec).parse()
-        self.assertFalse(res['success'])
-        self.assertRegex(res['err'], '(?i)cannot handle character')
+        nds, eds = GraphParser(spec).parse()
+        self.assertSetEqual(nds, {'my_first_node', 'my_second_node'})
+        self.assertSetEqual(eds, {Edge('my_first_node', 'my_second_node')})
+
+        spec = ['_start -> _end']
+        with self.assertRaisesRegex(ParseError, '(?i)cannot handle character'):
+            GraphParser(spec).parse()
 
         spec = ['-> B']
-        res = GraphParser(spec).parse()
-        self.assertFalse(res['success'])
-        self.assertRegex(res['err'], '(?i)source node')
+        with self.assertRaisesRegex(ParseError, '(?i)source node'):
+            GraphParser(spec).parse()
 
         spec = ['A -> B ->']
-        res = GraphParser(spec).parse()
-        self.assertFalse(res['success'])
-        self.assertRegex(res['err'], '(?i)target node')
+        with self.assertRaisesRegex(ParseError, '(?i)target node'):
+            GraphParser(spec).parse()
 
         spec = ['A - B']
-        res = GraphParser(spec).parse()
-        self.assertFalse(res['success'])
+        with self.assertRaises(ParseError):
+            GraphParser(spec).parse()
 
         spec = ['A->B->C, B->D']
-        res = GraphParser(spec).parse()
-        self.assertFalse(res['success'])
+        with self.assertRaises(ParseError):
+            GraphParser(spec).parse()
 
 
 if __name__ == '__main__':

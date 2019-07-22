@@ -55,7 +55,7 @@ class TestParser(unittest.TestCase):
         ps = Parser(base+'script3.py', base+'spec-good.json')
         with self.assertRaises(SystemExit):
             ps._parse_blocks()
-        self.assertRegex(stdout.getvalue(), '(?i)syntax')
+        self.assertRegex(stdout.getvalue(), r'Cannot find "\("')
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_script_4(self, stdout):
@@ -72,24 +72,30 @@ class TestParser(unittest.TestCase):
         ps._parse_blocks()
         ps._parse_graph()
 
-    def test_spec_empty(self):
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_spec_empty(self, stdout):
         base = './specs/'
         ps = Parser(base+'script1.py', base+'spec-empty.json')
         with self.assertRaises(SystemExit):
             ps._parse_graph()
+        self.assertRegex(stdout.getvalue(), 'Cannot find "graph" in json')
 
-    def test_spec_bad_graph(self):
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_spec_bad_graph(self, stdout):
         base = './specs/'
         ps = Parser(base+'script1.py', base+'spec-bad-graph.json')
         with self.assertRaises(SystemExit):
             ps._parse_graph()
+        self.assertRegex(stdout.getvalue(), 'Cannot find a target node')
 
-    def test_spec_cyclic_graph(self):
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_spec_cyclic_graph(self, stdout):
         base = './specs/'
         ps = Parser(base + 'script1.py', base + 'spec-cyclic-graph.json')
         with self.assertRaises(SystemExit):
             ps._parse_blocks()
             ps._parse_graph()
+        self.assertRegex(stdout.getvalue(), 'Cannot find any starting node')
 
 
 if __name__ == '__main__':

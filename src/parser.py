@@ -6,10 +6,10 @@ import shutil
 from dataclasses import dataclass, field
 from typing import List
 
-from src.blockparser import BlockParser
+from src.blockparser import BlockParser, ParseError
 from src.graphparser import GraphParser
 from src.graphanalyzer import GraphAnalyzer, InvalidGraphError
-from src.decisionparser import DecisionParser, InvalidSyntaxError
+from src.decisionparser import DecisionParser
 import src.util as util
 
 
@@ -77,7 +77,7 @@ class Parser:
     def _parse_blocks(self):
         try:
             self.dec_parser.read_decisions()
-        except InvalidSyntaxError as e:
+        except ParseError as e:
             self._throw_spec_error(e.args[0])
 
         with open(self.fn_script, 'r') as f:
@@ -91,13 +91,12 @@ class Parser:
                     code = ''
                     self._add_block(bl)
 
-                    # parse the metadata
-                    res = BlockParser(line).parse()
-                    if not res['success']:
-                        self._throw_parse_error(res['err'])
-
-                    # create a new block
-                    bl = Block('', res['id'], res['name'], [])
+                    # parse the metadata and create a new block
+                    try:
+                        bp_id, bp_name = BlockParser(line).parse()
+                        bl = Block('', bp_id, bp_name, [])
+                    except ParseError as e:
+                        self._throw_parse_error(e.args[0])
                 else:
                     # match decision variables
                     try:
@@ -113,7 +112,7 @@ class Parser:
                             code = codes[-1]
                         else:
                             code += line
-                    except InvalidSyntaxError as e:
+                    except ParseError as e:
                         msg = 'At line "{}"\n\t{}'.format(line, e.args[0])
                         self._throw_parse_error(msg)
 
@@ -139,14 +138,12 @@ class Parser:
         if 'graph' not in self.spec:
             self._throw_spec_error('Cannot find "graph" in json')
 
-        res = GraphParser(self.spec['graph']).parse()
-
-        if not res['success']:
-            self._throw_spec_error(res['err'])
-
-        self._match_nodes(res['nodes'])
         try:
-            self.paths = GraphAnalyzer(res['nodes'], res['edges']).analyze()
+            nodes, edges = GraphParser(self.spec['graph']).parse()
+            self._match_nodes(nodes)
+            self.paths = GraphAnalyzer(nodes, edges).analyze()
+        except ParseError as e:
+            self._throw_spec_error(e.args[0])
         except InvalidGraphError as e:
             self._throw_spec_error(e.args[0])
 

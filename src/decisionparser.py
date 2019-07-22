@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 import re
+from src.baseparser import ParseError
 
 # valid id pattern
 pattern = '^[a-zA-Z][a-zA-Z0-9_]*'
@@ -14,10 +15,6 @@ class Decision:
     type: str
     value: list
     desc: str = ''
-
-
-class InvalidSyntaxError(SyntaxError):
-    pass
 
 
 class DecisionParser:
@@ -38,17 +35,17 @@ class DecisionParser:
         try:
             res = list(s)
         except ValueError:
-            raise InvalidSyntaxError('Cannot handle value "{}"'.format(s))
+            raise ParseError('Cannot handle value "{}"'.format(s))
         return res
 
     def _read_json_safe(self, obj, field):
         if field not in obj:
-            raise InvalidSyntaxError('Cannot find "{}" in json'.format(field))
+            raise ParseError('Cannot find "{}" in json'.format(field))
         return obj[field]
 
     def _check_type(self, var, fun, msg):
         if not fun(var):
-            raise InvalidSyntaxError('Cannot handle {} "{}"'.format(msg, var))
+            raise ParseError('Cannot handle {} "{}"'.format(msg, var))
         return var
 
     def read_decisions(self):
@@ -112,7 +109,7 @@ class DecisionParser:
             val = m.group().strip('{}\'')
             if val not in set(self.decisions.keys()):
                 msg = 'Cannot find the matching variable "{}" in spec'.format(val)
-                raise InvalidSyntaxError(msg)
+                raise ParseError(msg)
             code.append(line[i:m.end()])
             res.append(val)
             i = m.end()

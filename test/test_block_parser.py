@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.abspath('..'))
 
 import unittest
-from src.blockparser import BlockParser
+from src.blockparser import BlockParser, ParseError
 
 
 class TestBlockParser(unittest.TestCase):
@@ -34,60 +34,56 @@ class TestBlockParser(unittest.TestCase):
     def test_syntax(self):
         line = '# --- (A) remove outlier'
         self.assertTrue(BlockParser.can_parse(line))
-        res = BlockParser(line).parse()
-        self.assertTrue(res['success'])
-        self.assertEqual(res['id'], 'A')
-        self.assertEqual(res['name'], 'remove outlier')
+        bid, bname = BlockParser(line).parse()
+        self.assertEqual(bid, 'A')
+        self.assertEqual(bname, 'remove outlier')
 
         line = '# --- ((A)) name'
-        res = BlockParser(line).parse()
-        self.assertFalse(res['success'])
+        with self.assertRaises(ParseError):
+            BlockParser(line).parse()
 
         line = '# --- (A)'
-        res = BlockParser(line).parse()
-        self.assertTrue(res['success'])
-        self.assertEqual(res['id'], 'A')
-        self.assertEqual(res['name'], '')
+        bid, bname = BlockParser(line).parse()
+        self.assertEqual(bid, 'A')
+        self.assertEqual(bname, '')
 
     def test_whitespace(self):
         line = '\t\t# --- (A) name'
-        res = BlockParser(line).parse()
-        self.assertTrue(res['success'])
-        self.assertEqual(res['id'], 'A')
-        self.assertEqual(res['name'], 'name')
+        bid, bname = BlockParser(line).parse()
+        self.assertEqual(bid, 'A')
+        self.assertEqual(bname, 'name')
 
         line = '    # --- (A) name    \t'
-        res = BlockParser(line).parse()
-        self.assertTrue(res['success'])
-        self.assertEqual(res['id'], 'A')
-        self.assertEqual(res['name'], 'name')
+        bid, bname = BlockParser(line).parse()
+        self.assertEqual(bid, 'A')
+        self.assertEqual(bname, 'name')
 
         line = '# ---(A)socrowded'
-        res = BlockParser(line).parse()
-        self.assertTrue(res['success'])
-        self.assertEqual(res['id'], 'A')
-        self.assertEqual(res['name'], 'socrowded')
+        bid, bname = BlockParser(line).parse()
+        self.assertEqual(bid, 'A')
+        self.assertEqual(bname, 'socrowded')
 
     def test_id_syntax(self):
         line = '# --- (C1) name'
-        res = BlockParser(line).parse()
-        self.assertTrue(res['success'])
-        self.assertEqual(res['id'], 'C1')
+        bid, bname = BlockParser(line).parse()
+        self.assertEqual(bid, 'C1')
 
         line = '# --- (aXa) name'
-        res = BlockParser(line).parse()
-        self.assertTrue(res['success'])
-        self.assertEqual(res['id'], 'aXa')
+        bid, bname = BlockParser(line).parse()
+        self.assertEqual(bid, 'aXa')
 
-        # underscore is not allowed
         line = '# --- (my_variable) name'
-        res = BlockParser(line).parse()
-        self.assertFalse(res['success'])
+        bid, bname = BlockParser(line).parse()
+        self.assertEqual(bid, 'my_variable')
 
         # ID must start with a letter
         line = '# --- (12) name'
-        res = BlockParser(line).parse()
-        self.assertFalse(res['success'])
+        with self.assertRaisesRegex(ParseError, '(?i)invalid identifier'):
+            BlockParser(line).parse()
+
+        line = '# --- (_start) name'
+        with self.assertRaisesRegex(ParseError, '(?i)invalid identifier'):
+            BlockParser(line).parse()
 
 
 if __name__ == '__main__':
