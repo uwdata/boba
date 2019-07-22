@@ -1,12 +1,7 @@
 #!/usr/bin/env python3
 
 from dataclasses import dataclass
-import re
-from src.baseparser import ParseError
-
-# valid id pattern
-pattern = '^[a-zA-Z][a-zA-Z0-9_]*'
-pattern_full = '\'{{' + pattern[1:] + '}}\''
+from src.baseparser import ParseError, BaseParser
 
 
 @dataclass
@@ -17,14 +12,26 @@ class Decision:
     desc: str = ''
 
 
-class DecisionParser:
+class DecisionParser(BaseParser):
     def __init__(self, spec):
+        super(DecisionParser, self).__init__('')
         self.spec = spec
         self.decisions = {}
 
     @staticmethod
-    def _is_id(s):
-        return re.match(pattern, s)
+    def _is_syntax_start(ch):
+        return any(c == ch for c in '\'"')
+
+    @staticmethod
+    def _is_id_token(s):
+        if not BaseParser._is_id_start(s[0]):
+            return False
+
+        for ch in s:
+            if not BaseParser._is_id(ch):
+                return False
+
+        return True
 
     @staticmethod
     def _is_type(s):
@@ -59,7 +66,7 @@ class DecisionParser:
             desc = d['desc'] if 'desc' in d else 'Decision {}'.format(d['var'])
 
             var = self._check_type(self._read_json_safe(d, 'var'),
-                                   DecisionParser._is_id, 'id')
+                                   DecisionParser._is_id_token, 'id')
             tp = self._check_type(self._read_json_safe(d, 'type'),
                                   DecisionParser._is_type, 'type')
             value = self._read_value(self._read_json_safe(d, 'value'))
@@ -92,7 +99,8 @@ class DecisionParser:
 
         # assuming the placeholder var is always at the end
         # which is true given how we chop up the chunks
-        return re.sub(pattern_full + '$', str(v), template)
+        length = 6 + len(dec_id)
+        return template[:-length] + str(v)
 
     def parse_code(self, line):
         """
@@ -103,16 +111,37 @@ class DecisionParser:
         """
         code = []
         res = []
-        i = 0
+        j = 0
+        self.i = 0
+        self.line = line
 
-        for m in re.finditer(pattern_full, line):
-            val = m.group().strip('{}\'')
-            if val not in set(self.decisions.keys()):
-                msg = 'Cannot find the matching variable "{}" in spec'.format(val)
-                raise ParseError(msg)
-            code.append(line[i:m.end()])
-            res.append(val)
-            i = m.end()
+        while not self._is_end():
+            if self._is_syntax_start(self._peek_char()):
+                self._next_char()
+                token = self._read_while(lambda ch: ch == '{')
+                if token != '{{':
+                    continue
+                val = self._read_while(self._is_id)
+                if len(val) == 0:
+                    continue
+                token = self._read_while(lambda ch: ch == '}')
+                if token != '}}':
+                    continue
+                if self._is_end() or not self._is_syntax_start(self._peek_char()):
+                    continue
+                else:
+                    self._next_char()
 
-        code.append(line[i:])
+                # read succeeds
+                if val not in set(self.decisions.keys()):
+                    msg = 'Cannot find the matching variable "{}" in spec'.format(val)
+                    raise ParseError(msg)
+
+                code.append(line[j:self.i])
+                res.append(val)
+                j = self.i
+            else:
+                self._next_char()
+
+        code.append(line[j:])
         return res, code

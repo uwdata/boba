@@ -14,14 +14,14 @@ class TestDecisionParser(unittest.TestCase):
 
     def test_id_syntax(self):
         # valid identifiers
-        self.assertTrue(DecisionParser._is_id('my_var'))
-        self.assertTrue(DecisionParser._is_id('A1'))
-        self.assertTrue(DecisionParser._is_id('a1b'))
+        self.assertTrue(DecisionParser._is_id_token('my_var'))
+        self.assertTrue(DecisionParser._is_id_token('A1'))
+        self.assertTrue(DecisionParser._is_id_token('a1b'))
 
         # invalid identifiers
-        self.assertFalse(DecisionParser._is_id('_start'))
-        self.assertFalse(DecisionParser._is_id('1b'))
-        self.assertFalse(DecisionParser._is_id(' A'))
+        self.assertFalse(DecisionParser._is_id_token('_start'))
+        self.assertFalse(DecisionParser._is_id_token('1b'))
+        self.assertFalse(DecisionParser._is_id_token(' A'))
 
     def test_read_json(self):
         with open('./specs/spec-good.json', 'rb') as f:
@@ -43,15 +43,77 @@ class TestDecisionParser(unittest.TestCase):
         self.assertListEqual(vs, [])
         self.assertListEqual(codes, [line])
 
-        line = '    my fav'
+        # valid pattern, no variable
+        line = '"{{}}"'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, [])
         self.assertListEqual(codes, [line])
 
+        # valid pattern '{{a}}'
         line = "\t this is '{{a}}' v'{{a}}'riable"
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a', 'a'])
         self.assertListEqual(codes, ["\t this is '{{a}}'", " v'{{a}}'", 'riable'])
+
+        # valid pattern "{{a}}"
+        line = '\t this is "{{a}}" v"{{a}}"riable'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, ['a', 'a'])
+        self.assertListEqual(codes, ['\t this is "{{a}}"', ' v"{{a}}"', 'riable'])
+
+        # valid pattern, back to back
+        line = '"{{a}}""{{b}}"'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, ['a', 'b'])
+        self.assertListEqual(codes, ['"{{a}}"', '"{{b}}"', ''])
+
+        # back to back, too few separators
+        line = '"{{a}}"{{a}}"'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, ['a'])
+        self.assertListEqual(codes, ['"{{a}}"', '{{a}}"'])
+
+        # back to back, extra separators
+        line = '"{{a}}"""{{b}}"'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, ['a', 'b'])
+        self.assertListEqual(codes, ['"{{a}}"', '""{{b}}"', ''])
+
+        # broken + valid
+        line = '"{{a}"{{a}}"'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, ['a'])
+        self.assertListEqual(codes, [line, ''])
+
+        # broken + valid
+        line = '"{{"{{a}}"'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, ['a'])
+        self.assertListEqual(codes, [line, ''])
+
+        # no pattern
+        line = "'In parsing file \"{}\":\n'.format(self.fn_script)"
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, [])
+        self.assertListEqual(codes, [line])
+
+        # missing closing syntax
+        line = '"{{a}'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, [])
+        self.assertListEqual(codes, [line])
+
+        # missing closing syntax
+        line = '"{{a}}'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, [])
+        self.assertListEqual(codes, [line])
+
+        # known issue: open/close quotes mismatch
+        line = '"{{a}}\''
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, ['a'])
+        self.assertListEqual(codes, [line, ''])
 
 
 if __name__ == '__main__':
