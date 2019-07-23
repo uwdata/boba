@@ -1,5 +1,7 @@
-In this tutorial, we will walk you through how to generate multiverse for a
-simple analysis scenario.
+# Getting started
+
+In this tutorial, we will walk you through a simple analysis scenario to
+demonstrate how you might write and execute multiverse using our tool.
 
 ### A simple analysis script
 
@@ -31,7 +33,7 @@ justify removing data points outside 2, 2.5 or 3 standard deviations of the
 mean. Would the linear model change if you adopt a different threshold? To test
 this, you might insert a decision point and ask the tool to output a
 separate script for each possible threshold configuration. To insert a decision,
-first insert a placeholder variable `{{var_name}}` in the above code:
+first insert a placeholder variable `'{{var_name}}'` in the above code:
 
 ```python
 df = df[np.abs(df.y - df.y.mean()) <= ('{{a}}' * df.y.std())]
@@ -51,7 +53,7 @@ variable can take up:
 Now, calling the tool with the file path to your script and JSON will output 3
 python scripts. Each script is a universe where you choose a different cutoff
 value for removing outliers; for example, one of the universes is exactly the
-same as the simple analysis script we started with. 
+same as the analysis script we started with. 
 
 If you specify multiple decisions, we will output **all combinations** of
 possible alternatives (i.e. the number of output scripts will be the
@@ -73,9 +75,10 @@ lm = linear_model.LinearRegression().fit(X, df.y)
 (This is not a good example because you can put both models in the same file ...
 but let's say you want the output file to contain either one of the two models.)
 You can do it by specifying code branches. Instead of a linear flow from start
-to end, your code can be consisting of blocks that have non-linear relationship
-between blocks. To indicate blocks, simply insert a comment line that looks like
-`# --- (block_name) description`:
+to end, your code can consist of blocks that have non-linear relationship
+between blocks. To specify a code block, simply insert a comment line that
+looks like `# --- (block_name) description` immediately before the starting
+line of the block. We will insert four such comments into our script:
 
 ```python
 # --- (A)
@@ -109,6 +112,9 @@ if __name__ == '__main__':
     print('R squared: {:.2f}'.format(lm.score(X, df.y)))
 ```
 
+All the lines between `# --- (A)` and `# -- (B) remove outliers` belong to the
+first block "A".
+
 We want the final output to be either `A->B->C1` or `A->B->C2`.
 Let's specify the relationship of the blocks as a directed graph in the
 JSON file:
@@ -133,36 +139,15 @@ universes where the following value and code path is chosen:
  - a = 2.5, A->B->C2
  - a = 3, A->B->C2
 
-For example, `universe_1.py` will look like:
-```python
-#!/usr/bin/env python3
-
-import pandas as pd
-import numpy as np
-import statsmodels.api as sm
-from sklearn import linear_model
-
-if __name__ == '__main__':
-    # read data file
-    df = pd.read_csv('data.csv')
-
-    # discard rows outside multiples of std
-    df = df[np.abs(df.y - df.y.mean()) <= (2 * df.y.std())]
-
-    x = sm.add_constant(df.x)
-    lm = sm.OLS(df.y, x).fit()
-
-    # display results
-    print('Fitted using statsmodels')
-    print('y = {:.2f} + {:.2f} * x'.format(lm.params.const, lm.params.x))
-    print('R squared: {:.2f}'.format(lm.rsquared))
-```
+Take a look at the generated python scripts
+[here](https://github.com/uwdata/multiverse-spec/tree/master/example/simple/output/codes).
 
 ### Try it yourself!
 
 The code and data of this example is available [here](https://github.com/uwdata/multiverse-spec/tree/master/example/simple).
-I haven't written installation / execution script yet, but if you really
-want to run the parser, you'll have to write something like:
+Currently, there is no simple way to call the parser yet (I run it through
+`test_parser.py`), but if you really
+want to parse your own script, you'll have to write something like:
 
 ```python
 # python version 3.7.4
@@ -170,5 +155,3 @@ from src.parser import Parser
 base = '../example/simple/'
 Parser(base+'script_annotated.py', base+'spec.json', base).main()
 ```
-(This snippet is taken from `test_parser.py` which is how I currently run
-the parser.)
