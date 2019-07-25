@@ -28,6 +28,7 @@ class TestParser(unittest.TestCase):
         ps._parse_blocks()
         ps._parse_graph()
         ps._code_gen()
+        ps._write_csv()
         self.assertEqual(ps.counter, 6)
 
     # --- parse blocks ---

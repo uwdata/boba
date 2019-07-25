@@ -3,6 +3,7 @@
 import json
 import os
 import shutil
+import csv
 from dataclasses import dataclass, field
 from typing import List
 
@@ -21,6 +22,13 @@ class Block:
     chunks: List = field(default_factory=lambda: [])
 
 
+@dataclass
+class History:
+    path: int
+    filename: str = ''
+    decisions: List = field(default_factory=lambda: [])
+
+
 class Parser:
 
     """ Parse everything """
@@ -32,6 +40,7 @@ class Parser:
 
         self.blocks = {}
         self.paths = []
+        self.history = []
 
         # read spec
         with open(f2, 'rb') as f:
@@ -158,17 +167,21 @@ class Parser:
 
         return res
 
-    def _code_gen_recur(self, path, i, code):
+    def _code_gen_recur(self, path, i, code, history):
         if i >= len(path):
             self.counter += 1
+            fn = 'universe_{}.py'.format(self.counter)
+
+            # record history
+            tks = history.split('\n')
+            self.history.append(History(int(tks[0]), fn, tks[1:]))
 
             # prepend _start to every file
             if '_start' in self.blocks:
                 code = self.blocks['_start'].code + code
 
             # write file
-            fn = os.path.join(self.out, 'codes/',
-                              'universe_{}.py'.format(self.counter))
+            fn = os.path.join(self.out, 'codes/', fn)
             with open(fn, 'w') as f:
                 f.write(code)
                 f.flush()
@@ -179,11 +192,12 @@ class Parser:
                 # expand the decision
                 num_alt = self.dec_parser.get_num_alt(val)
                 for k in range(num_alt):
-                    snippet = self.dec_parser.gen_code(template, val, k)
-                    self._code_gen_recur(path, i+1, code + snippet)
+                    snippet, opt = self.dec_parser.gen_code(template, val, k)
+                    self._code_gen_recur(path, i+1, code + snippet,
+                                         '{}\n{}={}'.format(history, val, opt))
             else:
                 code += template
-                self._code_gen_recur(path, i+1, code)
+                self._code_gen_recur(path, i+1, code, history)
 
     def _code_gen(self):
         if os.path.exists(self.out):
@@ -194,11 +208,42 @@ class Parser:
         paths = self._get_code_paths()
 
         self.counter = 0    # keep track of file name
-        for p in paths:
-            self._code_gen_recur(p, 0, '')
+        self.history = []   # keep track of choices made for each file
+        for idx, p in enumerate(paths):
+            self._code_gen_recur(p, 0, '', str(idx))
+
         # TODO: output a script to execute all universes
+
+    def _write_csv(self):
+        with open(os.path.join(self.out, 'summary.csv'), 'w', newline='') as f:
+            wrt = csv.writer(f)
+            decs = [i for i in self.dec_parser.decisions.keys()]
+            wrt.writerow(['Filename', 'Code Path'] + decs)
+            for h in self.history:
+                row = [h.filename, '->'.join(self.paths[h.path])]
+                mp = {}
+                for d in h.decisions:
+                    tks = d.split('=')
+                    mp[tks[0]] = tks[1]
+                for d in decs:
+                    row.append(mp[d])
+                wrt.writerow(row)
+
+    def _print_summary(self):
+        w = 80
+
+        print('-' * w)
+        print('{:<20}{:<20}{:<40}'.format('Filename', 'Code Path', 'Decisions'))
+        print('-' * w)
+        for h in self.history:
+            print('{:<20}'.format(h.filename), end='')
+            print('{:<20}'.format('->'.join(self.paths[h.path])), end='')
+            print('{:<40}'.format(', '.join(h.decisions)))
+        print('-' * w)
 
     def main(self):
         self._parse_blocks()
         self._parse_graph()
         self._code_gen()
+        self._write_csv()
+        self._print_summary()

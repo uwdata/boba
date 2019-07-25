@@ -92,7 +92,7 @@ class DecisionParser(BaseParser):
         :param template: a chunk of code with only one placeholder
         :param dec_id: variable ID of the decision
         :param i_alt: which alternative
-        :return: string - replaced code
+        :return: {string, string} replaced code and the value at this parameter
         """
         dec = self.decisions[dec_id]
         v = dec.value[i_alt]
@@ -100,7 +100,7 @@ class DecisionParser(BaseParser):
         # assuming the placeholder var is always at the end
         # which is true given how we chop up the chunks
         length = 6 + len(dec_id)
-        return template[:-length] + str(v)
+        return template[:-length] + str(v), str(v)
 
     def parse_code(self, line):
         """
