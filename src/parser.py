@@ -29,6 +29,22 @@ class History:
     decisions: List = field(default_factory=lambda: [])
 
 
+exec_template = """#!/bin/sh
+
+prefix={}
+suffix={}
+num={}
+i=1
+
+while [ $i -le $num ]
+do
+  echo "python $prefix$i$suffix"
+  python $prefix$i$suffix
+  i=$(( i+1 ))
+done
+"""
+
+
 class Parser:
 
     """ Parse everything """
@@ -200,10 +216,12 @@ class Parser:
                 self._code_gen_recur(path, i+1, code, history)
 
     def _code_gen(self):
+        dir_script = 'codes/'
+
         if os.path.exists(self.out):
             shutil.rmtree(self.out)
         os.makedirs(self.out)
-        os.makedirs(os.path.join(self.out, 'codes/'))
+        os.makedirs(os.path.join(self.out, dir_script))
 
         paths = self._get_code_paths()
 
@@ -212,7 +230,14 @@ class Parser:
         for idx, p in enumerate(paths):
             self._code_gen_recur(p, 0, '', str(idx))
 
-        # TODO: output a script to execute all universes
+        # output a script to execute all universes
+        sh = exec_template.format('./{}universe_'.format(dir_script), '.py',
+                                  self.counter)
+        fn_exec = os.path.join(self.out, 'execute.sh')
+        with open(fn_exec, 'w') as f:
+            f.write(sh)
+        st = os.stat(fn_exec)
+        os.chmod(fn_exec, st.st_mode | 0o0111)
 
     def _write_csv(self):
         with open(os.path.join(self.out, 'summary.csv'), 'w', newline='') as f:

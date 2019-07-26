@@ -8,7 +8,7 @@ from sklearn import linear_model
 
 if __name__ == '__main__':
     # read data file
-    df = pd.read_csv('data.csv')
+    df = pd.read_csv('../data.csv')
 
     # --- (B) remove outliers
     # discard rows outside multiples of std
