@@ -44,49 +44,49 @@ class TestDecisionParser(unittest.TestCase):
         self.assertListEqual(codes, [line])
 
         # valid pattern, no variable
-        line = '"{{}}"'
+        line = '{{}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, [])
         self.assertListEqual(codes, [line])
 
-        # valid pattern '{{a}}'
-        line = "\t this is '{{a}}' v'{{a}}'riable"
+        # valid pattern {{a}}
+        line = "\t this is {{a}} v{{a}}riable"
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a', 'a'])
-        self.assertListEqual(codes, ["\t this is '{{a}}'", " v'{{a}}'", 'riable'])
-
-        # valid pattern "{{a}}"
-        line = '\t this is "{{a}}" v"{{a}}"riable'
-        vs, codes = dp.parse_code(line)
-        self.assertListEqual(vs, ['a', 'a'])
-        self.assertListEqual(codes, ['\t this is "{{a}}"', ' v"{{a}}"', 'riable'])
+        self.assertListEqual(codes, ["\t this is {{a}}", " v{{a}}", 'riable'])
 
         # valid pattern, back to back
-        line = '"{{a}}""{{b}}"'
+        line = '{{a}}{{b}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a', 'b'])
-        self.assertListEqual(codes, ['"{{a}}"', '"{{b}}"', ''])
+        self.assertListEqual(codes, ['{{a}}', '{{b}}', ''])
 
         # back to back, too few separators
-        line = '"{{a}}"{{a}}"'
+        line = '{{a}}{a}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a'])
-        self.assertListEqual(codes, ['"{{a}}"', '{{a}}"'])
+        self.assertListEqual(codes, ['{{a}}', '{a}}'])
 
         # back to back, extra separators
-        line = '"{{a}}"""{{b}}"'
+        line = '{{a}}{{{b}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a', 'b'])
-        self.assertListEqual(codes, ['"{{a}}"', '""{{b}}"', ''])
+        self.assertListEqual(codes, ['{{a}}', '{{{b}}', ''])
+
+        # back to back, extra separators
+        line = '{{a}}}{{b}}'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, ['a', 'b'])
+        self.assertListEqual(codes, ['{{a}}', '}{{b}}', ''])
 
         # broken + valid
-        line = '"{{a}"{{a}}"'
+        line = '{{a}{{a}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a'])
         self.assertListEqual(codes, [line, ''])
 
         # broken + valid
-        line = '"{{"{{a}}"'
+        line = '{{{{a}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a'])
         self.assertListEqual(codes, [line, ''])
@@ -98,22 +98,16 @@ class TestDecisionParser(unittest.TestCase):
         self.assertListEqual(codes, [line])
 
         # missing closing syntax
-        line = '"{{a}'
+        line = '{{a}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, [])
         self.assertListEqual(codes, [line])
 
         # missing closing syntax
-        line = '"{{a}}'
+        line = '{{a'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, [])
         self.assertListEqual(codes, [line])
-
-        # known issue: open/close quotes mismatch
-        line = '"{{a}}\''
-        vs, codes = dp.parse_code(line)
-        self.assertListEqual(vs, ['a'])
-        self.assertListEqual(codes, [line, ''])
 
 
 if __name__ == '__main__':

@@ -12,7 +12,7 @@ if __name__ == '__main__':
 
     # --- (B) remove outliers
     # discard rows outside multiples of std
-    df = df[np.abs(df.y - df.y.mean()) <= ('{{a}}' * df.y.std())]
+    df = df[np.abs(df.y - df.y.mean()) <= ({{a}} * df.y.std())]
 
     # --- (C1) fit a simple ordinary least squares model
     x = sm.add_constant(df.x)

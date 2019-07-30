@@ -20,7 +20,7 @@ class DecisionParser(BaseParser):
 
     @staticmethod
     def _is_syntax_start(ch):
-        return any(c == ch for c in '\'"')
+        return ch == '{'
 
     @staticmethod
     def _is_id_token(s):
@@ -99,7 +99,7 @@ class DecisionParser(BaseParser):
 
         # assuming the placeholder var is always at the end
         # which is true given how we chop up the chunks
-        length = 6 + len(dec_id)
+        length = 4 + len(dec_id)
         return template[:-length] + str(v), str(v)
 
     def parse_code(self, line):
@@ -117,20 +117,15 @@ class DecisionParser(BaseParser):
 
         while not self._is_end():
             if self._is_syntax_start(self._peek_char()):
-                self._next_char()
                 token = self._read_while(lambda ch: ch == '{')
-                if token != '{{':
+                if len(token) < 2:
                     continue
                 val = self._read_while(self._is_id)
                 if len(val) == 0:
                     continue
-                token = self._read_while(lambda ch: ch == '}')
-                if token != '}}':
+                token = self._read_while(lambda ch: ch == '}', max_len=2)
+                if len(token) < 2:
                     continue
-                if self._is_end() or not self._is_syntax_start(self._peek_char()):
-                    continue
-                else:
-                    self._next_char()
 
                 # read succeeds
                 if val not in set(self.decisions.keys()):

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import re
+import sys
 from dataclasses import dataclass
 
 
@@ -51,9 +52,9 @@ class BaseParser:
     def _is_end(self):
         return self.i >= len(self.line)
 
-    def _read_while(self, fun):
+    def _read_while(self, fun, max_len=sys.maxsize):
         s = ''
-        while not self._is_end() and fun(self._peek_char()):
+        while not self._is_end() and fun(self._peek_char()) and len(s) < max_len:
             s += self._next_char()
         return s
 

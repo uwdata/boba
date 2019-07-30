@@ -33,10 +33,10 @@ justify removing data points outside 2, 2.5 or 3 standard deviations of the
 mean. Would the linear model change if you adopt a different threshold? To test
 this, you might insert a decision point and ask the tool to output a
 separate script for each possible threshold configuration. To insert a decision,
-first insert a placeholder variable `'{{var_name}}'` in the above code:
+first insert a placeholder variable `{{var_name}}` in the above code:
 
 ```python
-df = df[np.abs(df.y - df.y.mean()) <= ('{{a}}' * df.y.std())]
+df = df[np.abs(df.y - df.y.mean()) <= ({{a}} * df.y.std())]
 ```
 
 Then, in a separate JSON file, you could list the possible values this decision
@@ -93,7 +93,7 @@ if __name__ == '__main__':
 
     # --- (B) remove outliers
     # discard rows outside multiples of std
-    df = df[np.abs(df.y - df.y.mean()) <= ('{{a}}' * df.y.std())]
+    df = df[np.abs(df.y - df.y.mean()) <= ({{a}} * df.y.std())]
 
     # --- (C1) fit a simple ordinary least squares model
     x = sm.add_constant(df.x)
