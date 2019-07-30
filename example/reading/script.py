@@ -2,14 +2,14 @@
 
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import statsmodels.formula.api as smf
 
 if __name__ == '__main__':
     # read data
     df = pd.read_csv('data.csv')
 
     # calculate reading speed in WPM
-    df.speed = df.apply(lambda row: row.num_words / row.adjust_rt * 60000,
+    df['speed'] = df.apply(lambda row: row.num_words / row.adjust_rt * 60000,
                            axis=1)
 
     # remove retake participants
@@ -25,13 +25,19 @@ if __name__ == '__main__':
     df = df[df.device != 'smartphone']
 
     # remove trials based on comprehension < 2/3
-    df = df[df.correct_rate < 0.6]
+    df = df[df.correct_rate > 0.6]
 
-    # check runtime distribution
-    plt.hist(df.speed)
-    plt.show()
+    # drop NA rows
+    df = df.dropna()
 
     # log-normalize speed
-    df.speed = np.log(df.speed)
+    df['log_speed'] = np.log(df.speed)
 
-    # TODO: linear mixed effects model
+    # make dyslexia a categorical variable
+    df.dyslexia = df.dyslexia.astype('category')
+
+    # fit a linear mixed effects model
+    fml = 'log_speed ~ img_width + num_words + page_condition*dyslexia' \
+          '+ age + english_native'
+    model = smf.mixedlm(fml, df, groups=df.uuid).fit()
+    print(model.summary())
