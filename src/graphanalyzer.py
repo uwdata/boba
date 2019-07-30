@@ -77,5 +77,8 @@ class GraphAnalyzer:
                 self._all_paths(s, t)
 
     def analyze(self):
+        if len(self.nodes) == 0:
+            return []
+
         self._construct_paths()
         return self.paths

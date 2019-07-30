@@ -21,7 +21,6 @@ def _print_code(ps):
 class TestParser(unittest.TestCase):
 
     # --- code gen ---
-    # TODO: more tests
     def test_code_gen(self):
         base = '../example/simple/'
         ps = Parser(base+'script_annotated.py', base+'spec.json', base)
@@ -30,6 +29,10 @@ class TestParser(unittest.TestCase):
         ps._code_gen()
         ps._write_csv()
         self.assertEqual(ps.counter, 6)
+
+    def test_code_gen_reading(self):
+        base = '../example/reading/'
+        Parser(base+'script_annotated.py', base+'spec.json', base).main()
 
     # --- parse blocks ---
     def test_parse_blocks(self):
@@ -72,14 +75,15 @@ class TestParser(unittest.TestCase):
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
         ps._parse_graph()
+        expected = [['_start', 'A', 'B', 'C1'], ['_start', 'A', 'B', 'C2']]
+        expected = set([','.join(p) for p in expected])
+        self.assertSetEqual(set([','.join(p) for p in ps.paths]), expected)
 
-    @patch('sys.stdout', new_callable=io.StringIO)
-    def test_spec_empty(self, stdout):
+    def test_spec_empty(self):
         base = './specs/'
         ps = Parser(base+'script1.py', base+'spec-empty.json')
-        with self.assertRaises(SystemExit):
-            ps._parse_graph()
-        self.assertRegex(stdout.getvalue(), 'Cannot find "graph" in json')
+        ps._parse_graph()
+        self.assertListEqual(ps.paths, [])
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_spec_bad_graph(self, stdout):

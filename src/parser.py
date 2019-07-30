@@ -160,13 +160,19 @@ class Parser:
                 util.print_warn('Cannot find matching node "{}" in graph spec'.format(nd))
 
     def _parse_graph(self):
-        if 'graph' not in self.spec:
-            self._throw_spec_error('Cannot find "graph" in json')
+        graph_spec = self.spec['graph'] if 'graph' in self.spec else []
 
         try:
-            nodes, edges = GraphParser(self.spec['graph']).parse()
+            nodes, edges = GraphParser(graph_spec).parse()
             self._match_nodes(nodes)
             self.paths = GraphAnalyzer(nodes, edges).analyze()
+
+            # an ugly way to handle the artificial _start node
+            if '_start' in self.blocks:
+                for p in self.paths:
+                    p.insert(0, '_start')
+                if len(self.paths) == 0:
+                    self.paths = [['_start']]
         except ParseError as e:
             self._throw_spec_error(e.args[0])
         except InvalidGraphError as e:
@@ -191,10 +197,6 @@ class Parser:
             # record history
             tks = history.split('\n')
             self.history.append(History(int(tks[0]), fn, tks[1:]))
-
-            # prepend _start to every file
-            if '_start' in self.blocks:
-                code = self.blocks['_start'].code + code
 
             # write file
             fn = os.path.join(self.out, 'codes/', fn)
