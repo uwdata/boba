@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import csv
+from textwrap import wrap
 from dataclasses import dataclass, field
 from typing import List
 
@@ -29,7 +30,8 @@ class History:
     decisions: List = field(default_factory=lambda: [])
 
 
-exec_template = """#!/bin/sh
+exec_template = """\
+#!/bin/sh
 
 prefix={}
 suffix={}
@@ -258,15 +260,29 @@ class Parser:
 
     def _print_summary(self):
         w = 80
+        max_rows = 10
 
-        print('-' * w)
-        print('{:<20}{:<20}{:<40}'.format('Filename', 'Code Path', 'Decisions'))
-        print('-' * w)
-        for h in self.history:
-            print('{:<20}'.format(h.filename), end='')
-            print('{:<20}'.format('->'.join(self.paths[h.path])), end='')
-            print('{:<40}'.format(', '.join(h.decisions)))
-        print('-' * w)
+        print('=' * w)
+        print('{:<20}{:<30}{:<30}'.format('Filename', 'Code Path', 'Decisions'))
+        print('=' * w)
+        for idx, h in enumerate(self.history):
+            path = wrap('->'.join(self.paths[h.path]), width=27)
+            decs = wrap(', '.join(h.decisions), width=30)
+            max_len = max(len(decs), len(path))
+
+            for r in range(max_len):
+                c1 = h.filename if r == 0 else ''
+                c2 = path[r] if r < len(path) else ''
+                c3 = decs[r] if r < len(decs) else ''
+
+                print('{:<20}'.format(c1), end='')
+                print('{:<30}'.format(c2), end='')
+                print('{:<30}'.format(c3))
+            print('-' * w)
+
+            if idx > max_rows:
+                print('... {} more rows'.format(len(self.history) - max_rows))
+                break
 
     def main(self):
         self._parse_blocks()
