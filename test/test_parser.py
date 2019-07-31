@@ -3,12 +3,15 @@
 # Ugly hack to allow import from the root folder
 import sys
 import os
+import shutil
 sys.path.insert(0, os.path.abspath('..'))
 
 import unittest
 from unittest.mock import patch
 import io
 from src.parser import Parser
+
+FIRST_SCRIPT = 'multiverse/codes/universe_1.py'
 
 
 def _print_code(ps):
@@ -21,18 +24,66 @@ def _print_code(ps):
 class TestParser(unittest.TestCase):
 
     # --- code gen ---
+    # a simple synthetic example
     def test_code_gen(self):
         base = '../example/simple/'
         ps = Parser(base+'script_annotated.py', base+'spec.json', base)
-        ps._parse_blocks()
-        ps._parse_graph()
-        ps._code_gen()
-        ps._write_csv()
+        ps.main(verbose=False)
         self.assertEqual(ps.counter, 6)
 
-    def test_code_gen_reading(self):
+    # a complex example
+    def test_codegen_reading(self):
         base = '../example/reading/'
         Parser(base+'script_annotated.py', base+'spec.json', base).main()
+
+    # the spec has one decision and no graphs; should work
+    def test_codegen_decision_only(self):
+        base = './specs/'
+        sc = 'script_no_graph.py'
+        ps = Parser(base+sc, base+'spec-no-graph.json', base)
+        ps.main(verbose=False)
+
+        # compare file content
+        with open(base+FIRST_SCRIPT, 'r') as f:
+            actual = f.read()
+        with open(base+sc, 'r') as f:
+            expected = f.read().replace('{{a}}', '1')
+        self.assertEqual(actual, expected)
+
+        # clean up
+        shutil.rmtree(base+'multiverse/')
+
+    # the spec has a graph and no decisions; should work
+    def test_codegen_graph_only(self):
+        base = './specs/'
+        sc = 'script1.py'
+        pout = './output_no_dec'
+        ps = Parser(base+sc, base+'spec-good.json', pout)
+        ps.main(verbose=False)
+
+        # compare file content
+        with open(os.path.join(pout, FIRST_SCRIPT), 'r') as f:
+            actual = f.read()
+        with open(base+sc, 'r') as f:
+            lines = f.read().split('\n')
+            expected = ''
+            for l in lines:
+                if not l.strip().startswith('# --- '):
+                    expected += l + '\n'
+        self.assertEqual(actual.strip(), expected.strip())
+
+        # clean up
+        shutil.rmtree(pout)
+
+    # the template contains decisions, but spec does not have corresponding def
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_codegen_missing_decision(self, stdout):
+        base = './specs/'
+        sc = 'script_no_graph.py'
+        ps = Parser(base+sc, base+'spec-empty.json', base)
+        with self.assertRaises(SystemExit):
+            ps.main(verbose=False)
+        self.assertRegex(stdout.getvalue(), 'Cannot find the matching variable')
 
     # --- parse blocks ---
     def test_parse_blocks(self):

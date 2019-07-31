@@ -285,9 +285,10 @@ class Parser:
                 print('... {} more rows'.format(len(self.history) - max_rows))
                 break
 
-    def main(self):
+    def main(self, verbose=True):
         self._parse_blocks()
         self._parse_graph()
         self._code_gen()
         self._write_csv()
-        self._print_summary()
+        if verbose:
+            self._print_summary()

@@ -43,6 +43,9 @@ class DecisionParser(BaseParser):
             res = list(s)
         except ValueError:
             raise ParseError('Cannot handle value "{}"'.format(s))
+
+        if len(s) == 0:
+            raise ParseError('Cannot handle decision value "[]"')
         return res
 
     def _read_json_safe(self, obj, field):
@@ -62,7 +65,8 @@ class DecisionParser(BaseParser):
         """
         res = {}
 
-        for d in self._read_json_safe(self.spec, 'decisions'):
+        dec_spec = self.spec['decisions'] if 'decisions' in self.spec else []
+        for d in dec_spec:
             desc = d['desc'] if 'desc' in d else 'Decision {}'.format(d['var'])
 
             var = self._check_type(self._read_json_safe(d, 'var'),
