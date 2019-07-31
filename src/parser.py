@@ -201,7 +201,7 @@ class Parser:
             self.history.append(History(int(tks[0]), fn, tks[1:]))
 
             # write file
-            fn = os.path.join(self.out, 'codes/', fn)
+            fn = os.path.join(self.out, 'code/', fn)
             with open(fn, 'w') as f:
                 f.write(code)
                 f.flush()
@@ -220,7 +220,7 @@ class Parser:
                 self._code_gen_recur(path, i+1, code, history)
 
     def _code_gen(self):
-        dir_script = 'codes/'
+        dir_script = 'code/'
 
         if os.path.exists(self.out):
             shutil.rmtree(self.out)

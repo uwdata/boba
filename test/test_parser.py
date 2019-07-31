@@ -11,7 +11,7 @@ from unittest.mock import patch
 import io
 from src.parser import Parser
 
-FIRST_SCRIPT = 'multiverse/codes/universe_1.py'
+FIRST_SCRIPT = 'multiverse/code/universe_1.py'
 
 
 def _print_code(ps):
@@ -29,7 +29,6 @@ class TestParser(unittest.TestCase):
         base = '../example/simple/'
         ps = Parser(base+'script_annotated.py', base+'spec.json', base)
         ps.main(verbose=False)
-        self.assertEqual(ps.counter, 6)
 
     # a complex example
     def test_codegen_reading(self):
@@ -90,7 +89,7 @@ class TestParser(unittest.TestCase):
         base = '../example/simple/'
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
-        self.assertListEqual([*ps.blocks], ['_start', 'A', 'B', 'C1', 'C2'])
+        self.assertListEqual([*ps.blocks], ['_start', 'A1', 'A2', 'B'])
 
     def test_script_1(self):
         base = './specs/'
@@ -126,7 +125,7 @@ class TestParser(unittest.TestCase):
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
         ps._parse_graph()
-        expected = [['_start', 'A', 'B', 'C1'], ['_start', 'A', 'B', 'C2']]
+        expected = [['_start', 'A1', 'B'], ['_start', 'A2', 'B']]
         expected = set([','.join(p) for p in expected])
         self.assertSetEqual(set([','.join(p) for p in ps.paths]), expected)
 

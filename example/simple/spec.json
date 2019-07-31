@@ -1,9 +1,9 @@
 {
   "graph": [
-    "A->B->C1",
-    "B->C2"
+    "A1->B",
+    "A2->B"
   ],
   "decisions": [
-    {"var": "a", "type": "discrete", "value": [2, 2.5, 3] }
+    {"var": "std_cutoff", "type": "discrete", "value": [2, 2.5, 3] }
   ]
 }

@@ -8,15 +8,10 @@ if __name__ == '__main__':
     # read data file
     df = pd.read_csv('../data.csv')
 
-    # --- (A1) remove outliers based on std
-    df = df[np.abs(df.y - df.y.mean()) <= ({{std_cutoff}} * df.y.std())]
-
-    # --- (A2) remove outliers based on iqr
     iqr = np.subtract(*np.percentile(df.y, [75, 25]))
     median = np.median(df.y)
-    df = df[abs(df.y - median) <= {{std_cutoff}} * iqr]
+    df = df[abs(df.y - median) <= 2 * iqr]
 
-    # --- (B)
     # fit a simple ordinary least squares model
     x = sm.add_constant(df.x)
     lm = sm.OLS(df.y, x).fit()
