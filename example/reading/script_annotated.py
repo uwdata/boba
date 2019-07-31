@@ -8,6 +8,9 @@ if __name__ == '__main__':
     # read data
     df = pd.read_csv('../data.csv')
 
+    # take the first N participants to simulate stopping condition
+    df = df[:{{sample_size}}]
+
     # calculate reading speed in WPM
     df['speed'] = df.apply(lambda row: row.num_words / row['{{rt}}'] * 60000,
                            axis=1)
@@ -22,7 +25,7 @@ if __name__ == '__main__':
     df = df[df.retake != 1]
 
     # remove smart phone users
-    df = df[df.device != 'smartphone']
+    df = df[~df.device.isin({{bad_device}})]
 
     # remove outliers based on reading speed
     # --- (B1) remove reading speed outside median + 3 x iqr
@@ -37,18 +40,6 @@ if __name__ == '__main__':
     df = df[df.speed <= cutoff_high]
     df = df[df.speed >= cutoff_low]
 
-    # remove trials based on comprehension < 2/3
-    # --- (D1) just remove trials
-    df = df[df.correct_rate > 0.6]
-
-    # --- (D2) drop entire participants
-    bad_uuid = set()
-    for i, row in df.iterrows():
-        if row.correct_rate < 0.6:
-            bad_uuid.add(str(row.uuid))
-    df = df[~df.uuid.isin(bad_uuid)]
-
-    # --- (E)
     # drop NA rows
     df = df.dropna()
 
@@ -61,7 +52,24 @@ if __name__ == '__main__':
     # make dyslexia a categorical variable
     df.dyslexia = df.dyslexia.astype('category')
 
-    # fit a linear mixed effects model
+    # remove trials based on comprehension < 2/3
+    # --- (D1) just remove trials
+    df = df[df.correct_rate > 0.6]
+
+    # --- (D2) drop entire participants
+    bad_uuid = set()
+    for i, row in df.iterrows():
+        if row.correct_rate < 0.6:
+            bad_uuid.add(str(row.uuid))
+    df = df[~df.uuid.isin(bad_uuid)]
+
+    # --- (F1) fit a linear mixed effects model
     fml = '{{formula}}'
     model = smf.mixedlm(fml, df, groups=df.uuid).fit()
+    print(model.summary())
+
+    # --- (F2) fit a multinomial logit model to accuracy
+    df['acc'] = 3 - pd.Categorical(df.correct_rate).codes
+    fml = 'acc ~ page_condition*dyslexia_bin'
+    model = smf.mnlogit(fml, df).fit()
     print(model.summary())

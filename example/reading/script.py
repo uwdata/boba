@@ -22,10 +22,7 @@ if __name__ == '__main__':
     df = df[df.speed >= 10]
 
     # remove smart phone users
-    df = df[df.device != 'smartphone']
-
-    # remove trials based on comprehension < 2/3
-    df = df[df.correct_rate > 0.6]
+    df = df[~df.device.isin(['smartphone'])]
 
     # drop NA rows
     df = df.dropna()
@@ -35,6 +32,28 @@ if __name__ == '__main__':
 
     # make dyslexia a categorical variable
     df.dyslexia = df.dyslexia.astype('category')
+
+    # wrangle education level
+    edu_order = ['pre-high school', 'high school', 'professional school',
+                 'college', 'graduate school', 'PhD', 'postdoctoral']
+    tp = pd.CategoricalDtype(categories=edu_order, ordered=True)
+    df['edu_level'] = df.education.astype(tp).cat.codes
+
+    # check correlation between IVs
+    ivs = df[['img_width', 'num_words', 'page_condition', 'age']]
+    print(ivs.corr(), '\n')
+    print(pd.crosstab(df.english_native, df.dyslexia, normalize='columns'), '\n')
+    print(pd.crosstab(df.device, df.dyslexia, normalize='columns'), '\n')
+
+    # fit a multinomial logit model to accuracy
+    df['acc'] = 3 - pd.Categorical(df.correct_rate).codes
+    print(df.groupby('acc').size(), '\n')
+    fml = 'acc ~ page_condition*dyslexia_bin'
+    model = smf.mnlogit(fml, df, groups=df.uuid).fit()
+    print(model.summary(), '\n')
+
+    # remove trials based on comprehension < 2/3
+    df = df[df.correct_rate > 0.6]
 
     # fit a linear mixed effects model
     fml = 'log_speed ~ img_width + num_words + page_condition*dyslexia' \
