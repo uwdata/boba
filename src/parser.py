@@ -255,7 +255,8 @@ class Parser:
                     tks = d.split('=')
                     mp[tks[0]] = tks[1]
                 for d in decs:
-                    row.append(mp[d])
+                    value = mp[d] if d in mp else ''
+                    row.append(value)
                 wrt.writerow(row)
 
     def _print_summary(self):
