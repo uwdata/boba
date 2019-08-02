@@ -295,7 +295,7 @@ class Parser:
                 print('{:<30}'.format(c3))
             print('-' * w)
 
-            if idx > max_rows:
+            if idx >= max_rows - 1:
                 print('... {} more rows'.format(len(self.history) - max_rows))
                 break
 
