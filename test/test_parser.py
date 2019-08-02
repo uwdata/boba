@@ -29,11 +29,19 @@ class TestParser(unittest.TestCase):
         base = '../example/simple/'
         ps = Parser(base+'script_annotated.py', base+'spec.json', base)
         ps.main(verbose=False)
+        self.assertEqual(ps.counter, 6)
 
     # a complex example
     def test_codegen_reading(self):
         base = '../example/reading/'
         Parser(base+'script_annotated.py', base+'spec.json', base).main()
+
+    # another complex example
+    def test_codegen_fertility(self):
+        base = '../example/fertility/'
+        ps = Parser(base+'script_annotated.py', base+'spec.json', base)
+        ps.main()
+        self.assertEqual(ps.counter, 120)
 
     # the spec has one decision and no graphs; should work
     def test_codegen_decision_only(self):
