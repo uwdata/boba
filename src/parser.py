@@ -4,6 +4,7 @@ import json
 import os
 import shutil
 import csv
+import re
 from textwrap import wrap
 from dataclasses import dataclass, field
 from typing import List
@@ -197,8 +198,8 @@ class Parser:
             fn = 'universe_{}.py'.format(self.counter)
 
             # record history
-            tks = history.split('\n')
-            self.history.append(History(int(tks[0]), fn, tks[1:]))
+            history.filename = fn
+            self.history.append(history)
 
             # write file
             fn = os.path.join(self.out, 'code/', fn)
@@ -209,12 +210,25 @@ class Parser:
             val, template = path[i]
 
             if val != '':
-                # expand the decision
-                num_alt = self.dec_parser.get_num_alt(val)
-                for k in range(num_alt):
-                    snippet, opt = self.dec_parser.gen_code(template, val, k)
-                    self._code_gen_recur(path, i+1, code + snippet,
-                                         '{}\n{}={}'.format(history, val, opt))
+                # check if we have already encountered the decision
+                prev_idx = None
+                for d in history.decisions:
+                    if d[0] == val:
+                        prev_idx = d[2]
+
+                if prev_idx is not None:
+                    # use the previous value
+                    snippet, opt = self.dec_parser.gen_code(template, val, prev_idx)
+                    self._code_gen_recur(path, i+1, code+snippet, history)
+                else:
+                    # expand the decision
+                    num_alt = self.dec_parser.get_num_alt(val)
+                    for k in range(num_alt):
+                        snippet, opt = self.dec_parser.gen_code(template, val, k)
+                        decs = [a for a in history.decisions]
+                        decs.append((val, opt, k))
+                        self._code_gen_recur(path, i+1, code + snippet,
+                                             History(history.path, '', decs))
             else:
                 code += template
                 self._code_gen_recur(path, i+1, code, history)
@@ -232,7 +246,7 @@ class Parser:
         self.counter = 0    # keep track of file name
         self.history = []   # keep track of choices made for each file
         for idx, p in enumerate(paths):
-            self._code_gen_recur(p, 0, '', str(idx))
+            self._code_gen_recur(p, 0, '', History(idx))
 
         # output a script to execute all universes
         sh = exec_template.format('./{}universe_'.format(dir_script), '.py',
@@ -252,8 +266,7 @@ class Parser:
                 row = [h.filename, '->'.join(self.paths[h.path])]
                 mp = {}
                 for d in h.decisions:
-                    tks = d.split('=')
-                    mp[tks[0]] = tks[1]
+                    mp[d[0]] = d[1]
                 for d in decs:
                     value = mp[d] if d in mp else ''
                     row.append(value)
@@ -268,7 +281,8 @@ class Parser:
         print('=' * w)
         for idx, h in enumerate(self.history):
             path = wrap('->'.join(self.paths[h.path]), width=27)
-            decs = wrap(', '.join(h.decisions), width=30)
+            decs = ['{}={}'.format(d[0], d[1]) for d in h.decisions]
+            decs = wrap(', '.join(decs), width=30)
             max_len = max(len(decs), len(path))
 
             for r in range(max_len):
