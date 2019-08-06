@@ -1,8 +1,9 @@
 # A Real-World Multiverse Example
 
 In this tutorial, we will implement the multiverse analysis of Steegen et al.
-using our tool. In their pioneering [paper]((https://journals.sagepub.com/doi/full/10.1177/1745691616658637))
-, Steegen et al. reanalyzed the [datasets](https://osf.io/zj68b/)
+using our tool. In their pioneering [paper](
+https://journals.sagepub.com/doi/full/10.1177/1745691616658637
+) , Steegen et al. reanalyzed the [datasets](https://osf.io/zj68b/)
 collected by Durante et al. to study the effect of fertility on religiosity
 and political attitudes. For data collection, Durante's original analysis
 procedure and results, decision points, and multiverse analysis
@@ -56,9 +57,7 @@ two ways to specify a decision point: via a template variable `{{var_name}}`
 which chooses from one of the available options, or via nodes in
 a directed acyclic graph (DAG) which dictates non-linear flow of code blocks.
 The first approach is simpler, but the second approach is far more flexible 
-and powerful. In our specification, we turned two of the five decision points
-into template variable and used DAG for the rest. Now, we will illustrate how
-we used DAG to meet our needs.
+and powerful. Now, we will illustrate how we used DAG to meet our needs.
 
 One of the decision point, ECL, has the following options:
 
@@ -70,9 +69,9 @@ length greater than 25 or less than 35 days
 length greater than 25 or less than 35 days
 
 The decision point is essentially a filtering operation that removes nothing
-or removes rows outside certain bounds depending on one of the two candidate
-variables. We could specify all three options using a template variable by
-placing filtering condition into variable value:
+or removes rows outside certain range of either `reported_cycle_length` or
+`computed_cycle_length` . We could specify all three options using a template
+variable by placing filtering condition into variable value:
 
 ``` python
 # template script
@@ -93,16 +92,16 @@ Alternatively, we can create a code block for the filtering code and make it
 an optional node in the graph. We still use a template variable to indicate
 which column to filter, but the value will be much simpler:
 
-```
+```python
 # template script
 # --- (A)
-... some stuff
+# ... some stuff
 
 # --- (ECL)
 df = df[(df.{{cycle_length}} >= 25) & (df.{{cycle_length}} <= 35)]
 
 # --- (B)
-... some other stuff
+# ... some other stuff
 
 # JSON
 {
@@ -116,10 +115,10 @@ df = df[(df.{{cycle_length}} >= 25) & (df.{{cycle_length}} <= 35)]
 Yet another way is to create two nodes, one for each filtering condition. It
 will look like this:
 
-```
+```python
 # template script
 # --- (A)
-... some stuff
+# ... some stuff
 
 # --- (ECL2)
 # exclusion based on computed cycle length
@@ -130,7 +129,7 @@ df = df[(df.computed_cycle_length >= 25) & (df.computed_cycle_length <= 35)]
 df = df[(df.reported_cycle_length >= 25) & (df.reported_cycle_length <= 35)]
 
 # --- (B)
-... some other stuff
+# ... some other stuff
 
 # JSON
 {
@@ -152,7 +151,7 @@ is present only if NMO1 is present and ECL3 is present only if NMO2 is present.
 Note that our third specification above naturally supports such branching
 condition and we might extend it to include the NMO code blocks:
 
-```
+```python
 # template
 # --- (NMO1)
 # first nmo option: based on computed cycle length
@@ -175,7 +174,7 @@ df = df[(df.computed_cycle_length >= 25) & (df.computed_cycle_length <= 35)]
 df = df[(df.reported_cycle_length >= 25) & (df.reported_cycle_length <= 35)]
 
 # --- (A)
-... some other stuff
+# ... some other stuff
 
 # JSON
 {
@@ -183,13 +182,13 @@ df = df[(df.reported_cycle_length >= 25) & (df.reported_cycle_length <= 35)]
 }
 ```
 
-With the specification, we will not generate inconsistent analyses and thus
-avoid wasted computation.
+With the complete specification, we will only generate 120 universes, which is 
+the number after excluding inconsistent analyses.
 
 # Try it yourself!
 
-The complete code and data is
-[here](https://github.com/uwdata/multiverse-spec/tree/master/example/fertility).
+The complete code and data are [here](
+https://github.com/uwdata/multiverse-spec/tree/master/example/fertility).
 We do not include the output scripts because there will be 120 of them. But
 you are welcome to invoke the parser, take a look at the generated scripts, 
 and execute the multiverse to inspect the results.
