@@ -21,31 +21,35 @@ def _print_code(ps):
         print(bl.code)
 
 
+def abs_path(rel_path):
+    return os.path.join(os.path.dirname(__file__), rel_path)
+
+
 class TestParser(unittest.TestCase):
 
     # --- code gen ---
     # a simple synthetic example
     def test_code_gen(self):
-        base = '../example/simple/'
+        base = abs_path('../example/simple/')
         ps = Parser(base+'script_annotated.py', base+'spec.json', base)
         ps.main(verbose=False)
         self.assertEqual(ps.counter, 6)
 
     # a complex example
     def test_codegen_reading(self):
-        base = '../example/reading/'
+        base = abs_path('../example/reading/')
         Parser(base+'script_annotated.py', base+'spec.json', base).main()
 
     # another complex example
     def test_codegen_fertility(self):
-        base = '../example/fertility/'
+        base = abs_path('../example/fertility/')
         ps = Parser(base+'script_annotated.py', base+'spec.json', base)
         ps.main()
         self.assertEqual(ps.counter, 120)
 
     # the spec has one decision and no graphs; should work
     def test_codegen_decision_only(self):
-        base = './specs/'
+        base = abs_path('./specs/')
         sc = 'script_no_graph.py'
         ps = Parser(base+sc, base+'spec-no-graph.json', base)
         ps.main(verbose=False)
@@ -62,9 +66,9 @@ class TestParser(unittest.TestCase):
 
     # the spec has a graph and no decisions; should work
     def test_codegen_graph_only(self):
-        base = './specs/'
+        base = abs_path('./specs/')
         sc = 'script1.py'
-        pout = './output_no_dec'
+        pout = abs_path('./output_no_dec')
         ps = Parser(base+sc, base+'spec-good.json', pout)
         ps.main(verbose=False)
 
@@ -85,7 +89,7 @@ class TestParser(unittest.TestCase):
     # the template contains decisions, but spec does not have corresponding def
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_codegen_missing_decision(self, stdout):
-        base = './specs/'
+        base = abs_path('./specs/')
         sc = 'script_no_graph.py'
         ps = Parser(base+sc, base+'spec-empty.json', base)
         with self.assertRaises(SystemExit):
@@ -94,26 +98,26 @@ class TestParser(unittest.TestCase):
 
     # --- parse blocks ---
     def test_parse_blocks(self):
-        base = '../example/simple/'
+        base = abs_path('../example/simple/')
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
         self.assertListEqual([*ps.blocks], ['_start', 'A1', 'A2', 'B'])
 
     def test_script_1(self):
-        base = './specs/'
+        base = abs_path('./specs/')
         ps = Parser(base+'script1.py', base+'spec-good.json')
         ps._parse_blocks()
         self.assertListEqual([*ps.blocks], ['a', 'b', 'c'])
 
     def test_script_2(self):
-        base = './specs/'
+        base = abs_path('./specs/')
         ps = Parser(base+'script2.py', base+'spec-good.json')
         ps._parse_blocks()
         self.assertListEqual([*ps.blocks], ['_start', 'a', 'b', 'c'])
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_script_3(self, stdout):
-        base = './specs/'
+        base = abs_path('./specs/')
         ps = Parser(base+'script3.py', base+'spec-good.json')
         with self.assertRaises(SystemExit):
             ps._parse_blocks()
@@ -121,7 +125,7 @@ class TestParser(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_script_4(self, stdout):
-        base = './specs/'
+        base = abs_path('./specs/')
         ps = Parser(base+'script4.py', base+'spec-good.json')
         with self.assertRaises(SystemExit):
             ps._parse_blocks()
@@ -129,7 +133,7 @@ class TestParser(unittest.TestCase):
 
     # --- parse graph ---
     def test_spec_good(self):
-        base = '../example/simple/'
+        base = abs_path('../example/simple/')
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
         ps._parse_graph()
@@ -138,14 +142,14 @@ class TestParser(unittest.TestCase):
         self.assertSetEqual(set([','.join(p) for p in ps.paths]), expected)
 
     def test_spec_empty(self):
-        base = './specs/'
+        base = abs_path('./specs/')
         ps = Parser(base+'script1.py', base+'spec-empty.json')
         ps._parse_graph()
         self.assertListEqual(ps.paths, [])
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_spec_bad_graph(self, stdout):
-        base = './specs/'
+        base = abs_path('./specs/')
         ps = Parser(base+'script1.py', base+'spec-bad-graph.json')
         with self.assertRaises(SystemExit):
             ps._parse_graph()
@@ -153,7 +157,7 @@ class TestParser(unittest.TestCase):
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_spec_cyclic_graph(self, stdout):
-        base = './specs/'
+        base = abs_path('./specs/')
         ps = Parser(base + 'script1.py', base + 'spec-cyclic-graph.json')
         with self.assertRaises(SystemExit):
             ps._parse_blocks()

@@ -10,6 +10,10 @@ import json
 from src.decisionparser import DecisionParser
 
 
+def abs_path(rel_path):
+    return os.path.join(os.path.dirname(__file__), rel_path)
+
+
 class TestDecisionParser(unittest.TestCase):
 
     def test_id_syntax(self):
@@ -24,7 +28,7 @@ class TestDecisionParser(unittest.TestCase):
         self.assertFalse(DecisionParser._is_id_token(' A'))
 
     def test_read_json(self):
-        with open('./specs/spec-good.json', 'rb') as f:
+        with open(abs_path('./specs/spec-good.json'), 'rb') as f:
             spec = json.load(f)
         dp = DecisionParser(spec)
         ds = dp.read_decisions()
@@ -33,7 +37,7 @@ class TestDecisionParser(unittest.TestCase):
         self.assertEqual(ds['b'].desc, 'Decision b')
 
     def test_parse_code(self):
-        with open('./specs/spec-good.json', 'rb') as f:
+        with open(abs_path('./specs/spec-good.json'), 'rb') as f:
             spec = json.load(f)
         dp = DecisionParser(spec)
         dp.read_decisions()
