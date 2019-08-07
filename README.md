@@ -1,5 +1,8 @@
 # Multiverse Specification
 
+[![Python 3.7](https://img.shields.io/badge/python-3.7-blue.svg)](https://www.python.org/downloads/release/python-370/)
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+
 * [A simple multiverse example](
 https://github.com/uwdata/multiverse-spec/blob/master/tutorial/simple.md
 )
