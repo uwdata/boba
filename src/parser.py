@@ -33,6 +33,7 @@ class History:
 exec_template = """\
 #!/bin/sh
 
+DIR="$( cd "$( dirname "${{BASH_SOURCE[0]}}" )" >/dev/null 2>&1 && pwd )"
 prefix={}
 suffix={}
 num={}
@@ -40,8 +41,9 @@ i=1
 
 while [ $i -le $num ]
 do
-  echo "python $prefix$i$suffix"
-  python $prefix$i$suffix
+  f="$DIR/$prefix$i$suffix"
+  echo "python $f"
+  python $f
   i=$(( i+1 ))
 done
 """
