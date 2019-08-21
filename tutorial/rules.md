@@ -56,7 +56,7 @@ values of decision points.
 
 ### Graph
 
-Graph is a top-level array in the JSON. It can be optional. The graph array
+Graph is a top-level array in the JSON. It is optional. The graph array
 contains any amounts of string and each string contains nodes and edges in
 the following format. An edge is represented by the syntax `->` and it is
 directed, pointing from the left node to the right node. A node is a block
@@ -89,8 +89,8 @@ and it still represents the same graph.
 ### Decision Point Values
 
 Another top-level array, `decisions`, contains possible values of template
-variables. It is also optional, as long as you do not use template variable
-in your script template. The syntax is:
+variables. It is also optional, as long as you do not use any template
+variables in your script template. The syntax is:
 
 ```json
 {

@@ -174,7 +174,7 @@ We will get 6 universes:
 |universe_6.py|_start->A1->B|3         |
 
 Take a look at the generated python scripts
-[here](https://github.com/uwdata/multiverse-spec/tree/master/example/simple/output/codes).
+[here](https://github.com/uwdata/multiverse-spec/tree/master/example/simple/output/code).
 
 ### Executing the multiverse
 After you are happy with the generated scripts, you might want to execute them
