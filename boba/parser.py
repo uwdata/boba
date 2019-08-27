@@ -12,6 +12,7 @@ from .blockparser import BlockParser, ParseError
 from .graphparser import GraphParser
 from .graphanalyzer import GraphAnalyzer, InvalidGraphError
 from .decisionparser import DecisionParser
+from .lang import LangError, Lang
 import boba.util as util
 
 
@@ -42,8 +43,8 @@ i=1
 while [ $i -le $num ]
 do
   f="$DIR/$prefix$i$suffix"
-  echo "python $f"
-  python $f
+  echo "{} $f"
+  {} $f
   i=$(( i+1 ))
 done
 """
@@ -53,10 +54,14 @@ class Parser:
 
     """ Parse everything """
 
-    def __init__(self, f1, f2, out='.'):
+    def __init__(self, f1, f2, out='.', lang=''):
         self.fn_script = f1
         self.fn_spec = f2
         self.out = os.path.join(out, 'multiverse/')
+        try:
+            self.lang = Lang(lang, f1)
+        except LangError as e:
+            self._throw(e.args[0])
 
         self.blocks = {}
         self.paths = []
@@ -196,7 +201,7 @@ class Parser:
     def _code_gen_recur(self, path, i, code, history):
         if i >= len(path):
             self.counter += 1
-            fn = 'universe_{}.py'.format(self.counter)
+            fn = 'universe_{}{}'.format(self.counter, self.lang.get_ext())
 
             # record history
             history.filename = fn
@@ -250,8 +255,9 @@ class Parser:
             self._code_gen_recur(p, 0, '', History(idx))
 
         # output a script to execute all universes
-        sh = exec_template.format('./{}universe_'.format(dir_script), '.py',
-                                  self.counter)
+        cmd = self.lang.get_cmd()
+        sh = exec_template.format('./{}universe_'.format(dir_script),
+                                  self.lang.get_ext(), self.counter, cmd, cmd)
         fn_exec = os.path.join(self.out, 'execute.sh')
         with open(fn_exec, 'w') as f:
             f.write(sh)

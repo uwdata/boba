@@ -53,20 +53,26 @@ You might invoke the command line tool via::
 
 It has a few simple options:
 
-``--script``
+``--script, -s``
   **default: ./script_annotated.py** (optional)
 
   The path to your template script.
 
-``--json``
+``--json, -j``
   **default: ./spec.json** (optional)
 
   The path to your JSON specification.
 
-``--out``
+``--out, -o``
   **default: .** (optional)
 
   The output directory to hold generated universe scripts, summary table, etc.
+
+``--lang, -l``
+  (optional)
+
+  Language of your analysis script; we support python and R at the moment.
+  If not specified, we will infer it from the file extension.
 
 ``--help``
   Show help message and exit.
@@ -75,9 +81,10 @@ Examples
 ========
 
 - A `simple example`_ to walk you through the basics
-- A `more complex example`_ using `Steegen's`_ multiverse analysis and Durante's fertility dataset.
+- A `more complex example`_ using `Steegen's_ multiverse analysis`_ and `Durante's fertility dataset`_.
 - Another multiverse analysis_ applied to a `reading speed dataset`_ collected by Qisheng Li et al.
 
 .. _reading speed dataset: https://github.com/QishengLi/CHI2019_Reader_View
 .. _analysis: https://github.com/uwdata/multiverse-spec/tree/master/example/reading
-.. _Steegen's: https://journals.sagepub.com/doi/pdf/10.1177/1745691616658637
+.. _Steegen's_ multiverse analysis: https://journals.sagepub.com/doi/pdf/10.1177/1745691616658637
+.. _Durante's fertility dataset: https://osf.io/zj68b/

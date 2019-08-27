@@ -13,13 +13,15 @@ from .parser import Parser
               default='./spec.json', show_default=True)
 @click.option('--out', '-o', help='Output directory',
               default='.', show_default=True)
-def main(script, json, out):
+@click.option('--lang', '-l', help='Language, can be python/R.',
+              default='')
+def main(script, json, out, lang):
     """Generate multiverse analysis from specifications."""
     check_path(script)
     check_path(json)
 
     click.echo('Creating multiverse from {} and {}'.format(script, json))
-    ps = Parser(script, json, out)
+    ps = Parser(script, json, out, lang)
     ps.main()
 
     ex = """To execute the multiverse, run the following commands:
