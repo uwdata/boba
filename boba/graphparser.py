@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from dataclasses import dataclass
-from src.baseparser import BaseParser, Token, ParseError
+from .baseparser import BaseParser, Token, ParseError
 
 
 @dataclass(frozen=True)

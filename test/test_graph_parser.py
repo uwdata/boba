@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.abspath('..'))
 
 import unittest
-from src.graphparser import GraphParser, Edge, ParseError
+from boba.graphparser import GraphParser, Edge, ParseError
 
 
 class TestParser(unittest.TestCase):

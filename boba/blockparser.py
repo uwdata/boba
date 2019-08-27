@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from src.baseparser import BaseParser, ParseError
+from .baseparser import BaseParser, ParseError
 
 kw = '# ---'
 

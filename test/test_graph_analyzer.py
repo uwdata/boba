@@ -6,8 +6,8 @@ import os
 sys.path.insert(0, os.path.abspath('..'))
 
 import unittest
-from src.graphparser import GraphParser
-from src.graphanalyzer import GraphAnalyzer, InvalidGraphError
+from boba.graphparser import GraphParser
+from boba.graphanalyzer import GraphAnalyzer, InvalidGraphError
 
 
 class TestGraphAnalyzer(unittest.TestCase):

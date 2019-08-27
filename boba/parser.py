@@ -8,11 +8,11 @@ from textwrap import wrap
 from dataclasses import dataclass, field
 from typing import List
 
-from src.blockparser import BlockParser, ParseError
-from src.graphparser import GraphParser
-from src.graphanalyzer import GraphAnalyzer, InvalidGraphError
-from src.decisionparser import DecisionParser
-import src.util as util
+from .blockparser import BlockParser, ParseError
+from .graphparser import GraphParser
+from .graphanalyzer import GraphAnalyzer, InvalidGraphError
+from .decisionparser import DecisionParser
+import boba.util as util
 
 
 @dataclass

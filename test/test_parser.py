@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.abspath('..'))
 import unittest
 from unittest.mock import patch
 import io
-from src.parser import Parser
+from boba.parser import Parser
 
 FIRST_SCRIPT = 'multiverse/code/universe_1.py'
 

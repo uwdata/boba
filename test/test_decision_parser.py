@@ -7,7 +7,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 import unittest
 import json
-from src.decisionparser import DecisionParser
+from boba.decisionparser import DecisionParser
 
 
 def abs_path(rel_path):

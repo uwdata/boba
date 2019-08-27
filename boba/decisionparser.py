@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from dataclasses import dataclass
-from src.baseparser import ParseError, BaseParser
+from .baseparser import ParseError, BaseParser
 
 
 @dataclass

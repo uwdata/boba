@@ -6,7 +6,7 @@ import os
 sys.path.insert(0, os.path.abspath('..'))
 
 import unittest
-from src.blockparser import BlockParser, ParseError
+from boba.blockparser import BlockParser, ParseError
 
 
 class TestBlockParser(unittest.TestCase):

@@ -192,13 +192,10 @@ the generated code does not have syntax errors, etc.
 ### Try it yourself!
 
 The code and data of this example is available [here](https://github.com/uwdata/multiverse-spec/tree/master/example/simple).
-Currently, there is no simple way to call the parser yet (I run it through
-`test_parser.py`), but if you really
-want to parse your own script, you'll have to write something like:
+To run the example, clone this repository and run the following commands:
 
-```python
-# python version 3.7.4
-from src.parser import Parser
-base = '../example/simple/'
-Parser(base+'script_annotated.py', base+'spec.json', base).main()
+```bash
+pip install -e .
+cd example/simple
+boba
 ```
