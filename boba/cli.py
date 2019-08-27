@@ -11,7 +11,7 @@ from .parser import Parser
 @click.option('--json', help='Path to your JSON spec.')
 @click.option('--out', default='.', help='Output directory.')
 def main(script, json, out):
-    """Generating multiverse analysis from specifications."""
+    """Generate multiverse analysis from specifications."""
     script = check_path(script, 'script_annotated.py')
     json = check_path(json, 'spec.json')
 

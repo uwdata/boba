@@ -6,3 +6,5 @@ multiverse_analysis.R
 
 # packaging
 *.egg-info/
+build/
+dist/

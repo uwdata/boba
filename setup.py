@@ -3,7 +3,7 @@
 
 from setuptools import setup, find_packages
 
-with open("README.md", "r") as fh:
+with open("README.rst", "r") as fh:
     readme = fh.read()
 
 with open('HISTORY.rst') as history_file:
@@ -29,7 +29,7 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
     ],
-    description="A tool for specifying and executing multiverse analysis.",
+    description="Author and execute multiverse analysis",
     entry_points={
         'console_scripts': [
             'boba=boba.cli:main',

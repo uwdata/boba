@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-"""A tool for specifying and executing multiverse analysis."""
+"""Author and execute multiverse analysis"""
 
 __author__ = """Yang Liu"""
 __email__ = 'yliu0@uw.edu'
