@@ -192,3 +192,11 @@ https://github.com/uwdata/multiverse-spec/tree/master/example/fertility).
 We do not include the output scripts because there will be 120 of them. But
 you are welcome to invoke the parser, take a look at the generated scripts, 
 and execute the multiverse to inspect the results.
+
+To run the example, clone this repository and run the following commands:
+
+```bash
+pip install -e .
+cd example/fertility
+boba
+```

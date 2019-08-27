@@ -7,13 +7,16 @@ from .parser import Parser
 
 
 @click.command()
-@click.option('--script', help='Path to your template script.')
-@click.option('--json', help='Path to your JSON spec.')
-@click.option('--out', default='.', help='Output directory.')
+@click.option('--script', '-s', help='Path to template script',
+              default='./script_annotated.py', show_default=True)
+@click.option('--json', '-j', help='Path to JSON spec',
+              default='./spec.json', show_default=True)
+@click.option('--out', '-o', help='Output directory',
+              default='.', show_default=True)
 def main(script, json, out):
     """Generate multiverse analysis from specifications."""
-    script = check_path(script, 'script_annotated.py')
-    json = check_path(json, 'spec.json')
+    check_path(script)
+    check_path(json)
 
     click.echo('Creating multiverse from {} and {}'.format(script, json))
     ps = Parser(script, json, out)
@@ -23,25 +26,24 @@ def main(script, json, out):
     cd {}
     sh execute.sh
     """.format(os.path.join(out, 'multiverse'))
-    click.echo('Success!')
-    click.echo(ex)
+    click.secho('Success!', fg='green')
+    click.secho(ex, fg='green')
 
 
-def check_path(p, default):
-    """If path is not provided and default exists, use default"""
-    if not p:
-        if os.path.exists(default):
-            return default
-        else:
-            print_help()
-    elif not os.path.exists(p):
-        click.echo('Error: Path "" does not exist.'.format(p))
+def check_path(p):
+    """Check if the path exists"""
+    if not os.path.exists(p):
+        msg = 'Error: Path "{}" does not exist.'.format(p)
+        print_help(msg)
 
 
-def print_help():
+def print_help(err=''):
     """Show help message and exit."""
     ctx = click.get_current_context()
     click.echo(ctx.get_help())
+
+    if err:
+        click.echo('\n' + err)
     ctx.exit()
 
 
