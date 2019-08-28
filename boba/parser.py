@@ -309,6 +309,15 @@ class Parser:
     def main(self, verbose=True):
         self._parse_blocks()
         self._parse_graph()
+
+        cap = self.dec_parser.get_cross_prod() * len(self.paths)
+        if cap > 1024:
+            rs = input('\nBoba may create as many as {} scripts. '
+                       'Proceed (y/n)?\n'.format(cap))
+            if not rs.strip().lower().startswith('y'):
+                print('Aborted.')
+                exit(0)
+
         self._code_gen()
         self._write_csv()
         if verbose:

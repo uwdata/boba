@@ -90,6 +90,17 @@ class DecisionParser(BaseParser):
         """
         return len(self.decisions[dec].value)
 
+    def get_cross_prod(self):
+        """
+        Get the maximum possible cardinality of options, computed as a cross
+        product of all decisions.
+        :return: number
+        """
+        ret = 1
+        for dec in self.decisions:
+            ret *= self.get_num_alt(dec)
+        return ret
+
     def gen_code(self, template, dec_id, i_alt):
         """
         Replace the placeholder variable in a template chunk.
