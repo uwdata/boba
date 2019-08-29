@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 import json
 import os
@@ -58,10 +58,6 @@ class Parser:
         self.fn_script = f1
         self.fn_spec = f2
         self.out = os.path.join(out, 'multiverse/')
-        try:
-            self.lang = Lang(lang, f1)
-        except LangError as e:
-            self._throw(e.args[0])
 
         self.blocks = {}
         self.paths = []
@@ -73,6 +69,10 @@ class Parser:
 
         # initialize helper class
         self.dec_parser = DecisionParser(self.spec)
+        try:
+            self.lang = Lang(lang, f1)
+        except LangError as e:
+            self._throw(e.args[0])
 
     def _throw(self, msg):
         util.print_fail(msg)

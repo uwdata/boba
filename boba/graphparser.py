@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 from dataclasses import dataclass
 from .baseparser import BaseParser, Token, ParseError
