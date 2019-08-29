@@ -18,5 +18,8 @@
     {"var": "relationship_bounds", "type":  "discrete", "value": [
       "c(2, 3)", "c(1, 2)", "c(1, 3)"
     ]}
+  ],
+  "outputs": [
+    {"name": "p-value", "value": "summar$coefficients[4, 4]"}
   ]
 }

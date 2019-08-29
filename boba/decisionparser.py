@@ -101,6 +101,10 @@ class DecisionParser(BaseParser):
             ret *= self.get_num_alt(dec)
         return ret
 
+    def get_decs(self):
+        """Get a list of decision names."""
+        return [i for i in self.decisions.keys()]
+
     def gen_code(self, template, dec_id, i_alt):
         """
         Replace the placeholder variable in a template chunk.

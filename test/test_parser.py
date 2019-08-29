@@ -33,7 +33,7 @@ class TestParser(unittest.TestCase):
         base = abs_path('../example/simple/')
         ps = Parser(base+'script_annotated.py', base+'spec.json', base)
         ps.main(verbose=False)
-        self.assertEqual(ps.counter, 6)
+        self.assertEqual(ps.wrangler.counter, 6)
 
     # a complex example
     def test_codegen_reading(self):
@@ -45,12 +45,14 @@ class TestParser(unittest.TestCase):
         base = abs_path('../example/fertility/')
         ps = Parser(base+'script_annotated.py', base+'spec.json', base)
         ps.main(verbose=False)
-        self.assertEqual(ps.counter, 120)
+        self.assertEqual(ps.wrangler.counter, 120)
 
+    # an example written in R
     def test_r(self):
         base = abs_path('../example/fertility_r/')
         ps = Parser(base+'template.R', base+'spec.json', base)
         ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 120)
 
     # the spec has one decision and no graphs; should work
     def test_codegen_decision_only(self):

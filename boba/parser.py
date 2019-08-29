@@ -2,8 +2,6 @@
 
 import json
 import os
-import shutil
-import csv
 from textwrap import wrap
 from dataclasses import dataclass, field
 from typing import List
@@ -13,6 +11,7 @@ from .graphparser import GraphParser
 from .graphanalyzer import GraphAnalyzer, InvalidGraphError
 from .decisionparser import DecisionParser
 from .lang import LangError, Lang
+from .wrangler import Wrangler
 import boba.util as util
 
 
@@ -29,25 +28,6 @@ class History:
     path: int
     filename: str = ''
     decisions: List = field(default_factory=lambda: [])
-
-
-exec_template = """\
-#!/bin/sh
-
-DIR="$( cd "$( dirname "${{BASH_SOURCE[0]}}" )" >/dev/null 2>&1 && pwd )"
-prefix={}
-suffix={}
-num={}
-i=1
-
-while [ $i -le $num ]
-do
-  f="$DIR/$prefix$i$suffix"
-  echo "{} $f"
-  {} $f
-  i=$(( i+1 ))
-done
-"""
 
 
 class Parser:
@@ -71,8 +51,11 @@ class Parser:
         self.dec_parser = DecisionParser(self.spec)
         try:
             self.lang = Lang(lang, f1)
+            self.wrangler = Wrangler(self.spec, self.lang, self.out)
         except LangError as e:
             self._throw(e.args[0])
+        except ParseError as e:
+            self._throw_spec_error(e.args[0])
 
     def _throw(self, msg):
         util.print_fail(msg)
@@ -200,18 +183,12 @@ class Parser:
 
     def _code_gen_recur(self, path, i, code, history):
         if i >= len(path):
-            self.counter += 1
-            fn = 'universe_{}{}'.format(self.counter, self.lang.get_ext())
+            # write file
+            fn = self.wrangler.write_universe(code)
 
             # record history
             history.filename = fn
             self.history.append(history)
-
-            # write file
-            fn = os.path.join(self.out, 'code/', fn)
-            with open(fn, 'w') as f:
-                f.write(code)
-                f.flush()
         else:
             val, template = path[i]
 
@@ -240,44 +217,34 @@ class Parser:
                 self._code_gen_recur(path, i+1, code, history)
 
     def _code_gen(self):
-        dir_script = 'code/'
-
-        if os.path.exists(self.out):
-            shutil.rmtree(self.out)
-        os.makedirs(self.out)
-        os.makedirs(os.path.join(self.out, dir_script))
-
         paths = self._get_code_paths()
 
-        self.counter = 0    # keep track of file name
-        self.history = []   # keep track of choices made for each file
+        self.wrangler.counter = 0  # keep track of file name
+        self.history = []          # keep track of choices made for each file
+        self.wrangler.col = len(self.dec_parser.get_decs()) + 2
+
+        self.wrangler.create_dir()
         for idx, p in enumerate(paths):
             self._code_gen_recur(p, 0, '', History(idx))
 
         # output a script to execute all universes
-        cmd = self.lang.get_cmd()
-        sh = exec_template.format('./{}universe_'.format(dir_script),
-                                  self.lang.get_ext(), self.counter, cmd, cmd)
-        fn_exec = os.path.join(self.out, 'execute.sh')
-        with open(fn_exec, 'w') as f:
-            f.write(sh)
-        st = os.stat(fn_exec)
-        os.chmod(fn_exec, st.st_mode | 0o0111)
+        self.wrangler.write_sh()
 
     def _write_csv(self):
-        with open(os.path.join(self.out, 'summary.csv'), 'w', newline='') as f:
-            wrt = csv.writer(f)
-            decs = [i for i in self.dec_parser.decisions.keys()]
-            wrt.writerow(['Filename', 'Code Path'] + decs)
-            for h in self.history:
-                row = [h.filename, '->'.join(self.paths[h.path])]
-                mp = {}
-                for d in h.decisions:
-                    mp[d[0]] = d[1]
-                for d in decs:
-                    value = mp[d] if d in mp else ''
-                    row.append(value)
-                wrt.writerow(row)
+        rows = []
+        decs = self.dec_parser.get_decs()
+        ops = self.wrangler.get_outputs()
+        rows.append(['Filename', 'Code Path'] + decs + ops)
+        for h in self.history:
+            row = [h.filename, '->'.join(self.paths[h.path])]
+            mp = {}
+            for d in h.decisions:
+                mp[d[0]] = d[1]
+            for d in decs:
+                value = mp[d] if d in mp else ''
+                row.append(value)
+            rows.append(row)
+        self.wrangler.write_csv(rows)
 
     def _print_summary(self):
         w = 80

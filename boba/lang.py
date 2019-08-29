@@ -52,3 +52,9 @@ class Lang:
             return 'Rscript'
         if self.lang == PY:
             return 'python'
+
+    def is_r(self):
+        return self.lang == R
+
+    def is_python(self):
+        return self.lang == PY
