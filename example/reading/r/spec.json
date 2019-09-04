@@ -2,5 +2,6 @@
   "graph": [
     "M1",
     "M2"
-  ]
+  ],
+  "before_execute": "cp ../../data.csv ./ && mkdir results"
 }

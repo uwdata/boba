@@ -46,6 +46,6 @@ summary(model)
 model <- brm(speed ~ img_width + num_words + page_condition*dyslexia + age + english_native + (1 | uuid),
              data = result_analysis, family = shifted_lognormal(), chains = 4, cores = 4, iter = 1000)
 summary(model)
-pdf(file="out.pdf")
+pdf(file="./results/out_{{_n}}.pdf")
 plot(model, pars = c("page_condition", "dyslexia", "img_width", "num_words", "age", "english_native"))
 marginal_effects(model)

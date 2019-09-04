@@ -16,6 +16,8 @@ class Output:
 exec_template = """\
 #!/bin/sh
 
+{}
+
 DIR="$( cd "$( dirname "${{BASH_SOURCE[0]}}" )" >/dev/null 2>&1 && pwd )"
 prefix={}
 suffix={}
@@ -29,6 +31,8 @@ do
   {} $f
   i=$(( i+1 ))
 done
+
+{}
 """
 
 DIR_SCRIPT = 'code/'
@@ -46,6 +50,9 @@ class Wrangler:
         self.col = 0
         self.counter = 0
 
+        self.pre_exe = ''
+        self.post_exe = ''
+
         self._read_spec()
 
     @staticmethod
@@ -54,14 +61,21 @@ class Wrangler:
             raise ParseError('Cannot find "{}" in json'.format(field))
         return obj[field]
 
+    @staticmethod
+    def _read_optional(obj, field, df):
+        return obj[field] if field in obj else df
+
     def _read_spec(self):
-        """Read outputs from the JSON spec."""
-        sp = self.spec['outputs'] if 'outputs' in self.spec else []
+        """Read misc fields from the JSON spec."""
+        sp = self._read_optional(self.spec, 'outputs', [])
         for d in sp:
             name = str(self._read_json_safe(d, 'name'))
             value = str(self._read_json_safe(d, 'value'))
             o = Output(name, value)
             self.outputs[name] = o
+
+        self.pre_exe = self._read_optional(self.spec, 'before_execute', '')
+        self.post_exe = self._read_optional(self.spec, 'after_execute', '')
 
     def _codegen_r(self):
         """Generate output code for R scripts."""
@@ -103,8 +117,10 @@ class Wrangler:
     def write_sh(self):
         """Write a shell script for executing all universes."""
         cmd = self.lang.get_cmd()
-        sh = exec_template.format('./{}universe_'.format(DIR_SCRIPT),
-                                  self.lang.get_ext(), self.counter, cmd, cmd)
+        sh = exec_template.format(self.pre_exe,
+                                  './{}universe_'.format(DIR_SCRIPT),
+                                  self.lang.get_ext(), self.counter, cmd, cmd,
+                                  self.post_exe)
         fn_exec = os.path.join(self.out, 'execute.sh')
         with open(fn_exec, 'w') as f:
             f.write(sh)
