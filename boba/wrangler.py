@@ -117,6 +117,9 @@ class Wrangler:
         self.counter += 1
         fn = 'universe_{}{}'.format(self.counter, self.lang.get_ext())
 
+        # replace the reserved keyword _n
+        code = code.replace('{{_n}}', str(self.counter))
+
         # append output code
         code += self._gen_code()
 

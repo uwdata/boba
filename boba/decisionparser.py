@@ -139,7 +139,11 @@ class DecisionParser(BaseParser):
                 token = self._read_while(lambda ch: ch == '{')
                 if len(token) < 2:
                     continue
+
+                if not self._is_id_start(self._peek_char()):
+                    continue
                 val = self._read_while(self._is_id)
+
                 if len(val) == 0:
                     continue
                 token = self._read_while(lambda ch: ch == '}', max_len=2)

@@ -59,6 +59,11 @@ class TestDecisionParser(unittest.TestCase):
         self.assertListEqual(vs, ['a', 'a'])
         self.assertListEqual(codes, ["\t this is {{a}}", " v{{a}}", 'riable'])
 
+        # invalid id start {{_a}}
+        line = '{{_a}}'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, [])
+
         # valid pattern, back to back
         line = '{{a}}{{b}}'
         vs, codes = dp.parse_code(line)
