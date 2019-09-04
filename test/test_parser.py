@@ -37,7 +37,7 @@ class TestParser(unittest.TestCase):
 
     # a complex example
     def test_codegen_reading(self):
-        base = abs_path('../example/reading/')
+        base = abs_path('../example/reading/python/')
         Parser(base+'script_annotated.py', base+'spec.json', base).main(verbose=False)
 
     # another complex example
