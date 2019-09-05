@@ -24,3 +24,8 @@ marginal_effects(fit_zinb1)
 # These shell commands worked for me:
 # xcode-select --install
 # open /Library/Developer/CommandLineTools/Packages/macOS_SDK_headers_for_macOS_10.14.pkg
+
+# read fitted model
+path = 'some_file.rds'
+fit <- suppressWarnings(try(readRDS(path), silent = TRUE))
+summary(fit)
