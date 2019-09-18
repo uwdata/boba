@@ -196,6 +196,7 @@ To run the example, clone this repository and run the following commands:
 
 ```bash
 pip install -e .
+pip install -r requirements.txt
 cd example/simple
 boba
 ```
