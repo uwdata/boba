@@ -17,5 +17,6 @@
       "log_speed ~ page_condition*dyslexia + img_width + num_words + age + english_native",
       "log_speed ~ page_condition*dyslexia + img_width + num_words + age + english_native + device + edu_level"
     ]}
-  ]
+  ],
+  "before_execute": "cp ../../data.csv ./"
 }

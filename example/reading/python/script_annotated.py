@@ -6,7 +6,7 @@ import statsmodels.formula.api as smf
 
 if __name__ == '__main__':
     # read data
-    df = pd.read_csv('../data.csv')
+    df = pd.read_csv('./data.csv')
 
     # take the first N participants to simulate stopping condition
     df = df[:{{sample_size}}]
