@@ -12,12 +12,13 @@ wrangles outputs into a single table.
 - works with both python and R
 - handles simple parameter substitution as well as complex code flow dependency
 
-.. image:: https://travis-ci.com/uwdata/multiverse-spec.svg?token=rJbb9JzhKMhFGcT7Fb6D&branch=master
-  :target: https://travis-ci.com/uwdata/multiverse-spec
-.. image:: https://img.shields.io/badge/python-3.7-blue.svg
-  :target: https://www.python.org/downloads/release/python-370/)
+.. image:: https://badge.fury.io/py/boba.svg
+  :target: https://badge.fury.io/py/boba
+.. image:: https://travis-ci.org/uwdata/multiverse-spec.svg?branch=master
+  :target: https://travis-ci.org/uwdata/multiverse-spec
 .. image:: https://img.shields.io/badge/License-BSD%203--Clause-blue.svg
   :target: https://opensource.org/licenses/BSD-3-Clause)
+.. image:: https://img.shields.io/pypi/pyversions/boba
 
 Installation
 ============
