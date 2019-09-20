@@ -8,3 +8,5 @@ multiverse_analysis.R
 *.egg-info/
 build/
 dist/
+
+.tox/
