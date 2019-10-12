@@ -30,6 +30,10 @@ suffix={}
 num={}
 i=1
 
+# if specified, change the range of universes to execute
+if [ "$1" != "" ]; then i=$1; num=$1; fi
+if [ "$2" != "" ]; then num=$2; fi
+
 cd $DIR/code
 
 trap cleanup SIGINT SIGTERM
