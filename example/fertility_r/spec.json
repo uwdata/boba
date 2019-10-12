@@ -22,5 +22,5 @@
   "outputs": [
     {"name": "p-value", "value": "summar$coefficients[4, 4]"}
   ],
-  "before_execute": "cp ../durante_etal_2013_study1.txt ./"
+  "before_execute": "cp ../durante_etal_2013_study1.txt ./code/"
 }

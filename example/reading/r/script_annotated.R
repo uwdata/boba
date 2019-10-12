@@ -55,20 +55,20 @@ print.odds = TRUE
 # --- (LM2)
 # fit bayesian model
 model <- brm(speed ~ page_condition*dyslexia + img_width + num_words + age + english_native + (1 | uuid),
-             data = result_analysis, family = {{brmsfamily}}(), file = './results/brmsfit_{{_n}}',
+             data = result_analysis, family = {{brmsfamily}}(), file = '../results/brmsfit_{{_n}}',
              save_all_pars = TRUE, silent = TRUE, refresh = 0, seed = 0,
              chains = 4, cores = 4, iter = 1000)
 
 # --- (OLR2)
 # fit bayesian model to accuracy
 model <- brm(acc ~ page_condition*dyslexia + num_words + age + english_native + (1 | uuid),
-             data = result_analysis, family = cumulative(), file = './results/brmsfit_{{_n}}',
+             data = result_analysis, family = cumulative(), file = '../results/brmsfit_{{_n}}',
              save_all_pars = TRUE, silent = TRUE, refresh = 0, seed = 0,
              chains = 4, cores = 4, iter = 1000)
 
 # --- (O1)
 aic = AIC(model)
-sink('./results/summary_{{_n}}.txt')
+sink('../results/summary_{{_n}}.txt')
 summary(model)
 
 if(print.odds){
@@ -80,10 +80,10 @@ if(print.odds){
 # evaluate fit
 aic = waic(model)$waic
 
-# output results
-sink('./results/summary_{{_n}}.txt')
+# output resultsf
+sink('../results/summary_{{_n}}.txt')
 summary(model)
 sink()
-pdf(file="./results/plots_{{_n}}.pdf")
+pdf(file="../results/plots_{{_n}}.pdf")
 plot(model)
 marginal_effects(model)

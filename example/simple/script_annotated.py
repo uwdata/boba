@@ -6,7 +6,7 @@ import statsmodels.api as sm
 
 if __name__ == '__main__':
     # read data file
-    df = pd.read_csv('../data.csv')
+    df = pd.read_csv('data.csv')
 
     # --- (A1) remove outliers based on std
     df = df[np.abs(df.y - df.y.mean()) <= ({{std_cutoff}} * df.y.std())]

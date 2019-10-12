@@ -19,14 +19,14 @@ exec_template = """\
 {}
 
 DIR="$( cd "$( dirname "${{BASH_SOURCE[0]}}" )" >/dev/null 2>&1 && pwd )"
-prefix={}
 suffix={}
 num={}
 i=1
 
+cd $DIR/code
 while [ $i -le $num ]
 do
-  f="$DIR/$prefix$i$suffix"
+  f="universe_$i$suffix"
   echo "{} $f"
   {} $f
   i=$(( i+1 ))
@@ -118,7 +118,6 @@ class Wrangler:
         """Write a shell script for executing all universes."""
         cmd = self.lang.get_cmd()
         sh = exec_template.format(self.pre_exe,
-                                  './{}universe_'.format(DIR_SCRIPT),
                                   self.lang.get_ext(), self.counter, cmd, cmd,
                                   self.post_exe)
         fn_exec = os.path.join(self.out, 'execute.sh')

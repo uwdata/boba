@@ -11,5 +11,5 @@
   "outputs": [
     {"name": "aic/waic", "value": "aic"}
   ],
-  "before_execute": "cp ../../data.csv ./ && mkdir results"
+  "before_execute": "cp ../../data.csv ./code/ && mkdir results"
 }
