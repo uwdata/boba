@@ -16,6 +16,13 @@ class Output:
 exec_template = """\
 #!/bin/sh
 
+cleanup ()
+{{
+echo "kill -s TERM $!"
+kill -s TERM $!
+exit 0
+}}
+
 {}
 
 DIR="$( cd "$( dirname "${{BASH_SOURCE[0]}}" )" >/dev/null 2>&1 && pwd )"
@@ -24,12 +31,16 @@ num={}
 i=1
 
 cd $DIR/code
+
+trap cleanup SIGINT SIGTERM
+
 while [ $i -le $num ]
 do
   f="universe_$i$suffix"
   echo "{} $f"
-  {} $f
+  {} $f &
   i=$(( i+1 ))
+  wait $!
 done
 
 {}
