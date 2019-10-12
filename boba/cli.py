@@ -4,6 +4,7 @@
 import click
 import os
 from .parser import Parser
+from .__init__ import __version__
 
 
 @click.command()
@@ -13,9 +14,15 @@ from .parser import Parser
               default='./spec.json', show_default=True)
 @click.option('--out', '-o', help='Output directory',
               default='.', show_default=True)
-@click.option('--lang', '-l', help='Language, can be python/R.',
+@click.option('--lang', '-l', help='Language, can be python/R [default: inferred from file extension]',
               default='')
-def main(script, json, out, lang):
+@click.option('--version', help='Show version and exit.', is_flag=True)
+def main(script, json, out, lang, version):
+    if version:
+        click.echo('boba ' + __version__)
+        ctx = click.get_current_context()
+        ctx.exit()
+
     """Generate multiverse analysis from specifications."""
     check_path(script)
     check_path(json)
