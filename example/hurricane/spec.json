@@ -1,0 +1,29 @@
+{
+    "graph": [
+        "LM->O",
+        "NB->O"
+      ],
+      "decisions": [
+        {"var": "outliers", "type": "discrete", "value": [
+            "c('Sandy')",
+            "c('Sandy', 'Andrew')",
+            "c('Sandy', 'Andrew', 'Donna')"
+        ]},
+        {"var": "feminity", "type": "discrete", "value": ["female", "masfem"]},
+        {"var": "damage", "type": "discrete", "value": ["dam", "log_dam"]},
+        {"var": "predictions", "type": "discrete", "value": [
+            "feminity * damage",
+            "feminity + damage + pressure + feminity:damage + feminity:pressure",
+            "feminity + damage + zwin + feminity:damage + feminity:zwin",
+            "feminity + damage + zcat + feminity:damage + feminity:zcat",
+            "feminity + damage + z3 + feminity:damage + feminity:z3",
+            "feminity + damage + z3"
+        ]},
+        {"var": "covariates", "type": "discrete", "value": [
+            "",
+            "+ year:damage",
+            "+ post:damage"
+        ]}
+      ],
+      "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
+}
