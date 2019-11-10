@@ -5,7 +5,13 @@ library(MASS)
 library(tidyverse)
 library(broom.mixed)
 
-df <- read_csv('../data.csv') %>%
+df <- read_csv('../data.csv',
+    col_types = cols(
+        Year = col_integer(),
+        Category = col_integer(),
+        Gender_MF = col_integer(),
+        alldeaths = col_integer()
+    )) %>%
     # rename some variables
     select(
         year = Year,
@@ -15,18 +21,18 @@ df <- read_csv('../data.csv') %>%
         female = Gender_MF,
         masfem = MasFem,
         category = Category,
-        zdam = ZNDAM,
-        pressure = MinPressure_before,
-        zmin = ZMinPressure_A
+        pressure = Minpressure_Updated_2014,
+        wind = HighestWindSpeed
     ) %>%
     # create new variables
     mutate(
         log_death = log(death + 1),
         log_dam = log(dam),
         post = ifelse(year>1979, 1, 0),
+        zdam = scale(dam),
         zcat = scale(category),
-        zmin = -zmin,
-        zwin = scale(dam), # fixme: need data of maximum wind of hurricane
+        zmin = -scale(pressure),
+        zwin = scale(wind),
         z3 = (zmin + zcat + zwin) / 3
     ) %>%
     # remove outliers

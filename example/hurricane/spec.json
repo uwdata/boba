@@ -5,9 +5,12 @@
       ],
       "decisions": [
         {"var": "outliers", "type": "discrete", "value": [
-            "c('Sandy')",
-            "c('Sandy', 'Andrew')",
-            "c('Sandy', 'Andrew', 'Donna')"
+            "c()",
+            "c('Katrina')",
+            "c('Katrina', 'Audrey')",
+            "c('Katrina', 'Audrey', 'Sandy')",
+            "c('Katrina', 'Audrey', 'Sandy', 'Andrew')",
+            "c('Katrina', 'Audrey', 'Sandy', 'Andrew', 'Donna')"
         ]},
         {"var": "feminity", "type": "discrete", "value": ["female", "masfem"]},
         {"var": "damage", "type": "discrete", "value": ["dam", "log_dam"]},
