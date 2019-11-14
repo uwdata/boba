@@ -8,7 +8,7 @@ kw = '# ---'
 class BlockParser(BaseParser):
     """
     Parse the metadata of a code block, which must have the structure:
-        # --- (ID) name of the block
+        # --- (ID) description
     """
 
     def __init__(self, line):
@@ -16,7 +16,9 @@ class BlockParser(BaseParser):
 
         self.state = 0
         self.parsed_id = ''
-        self.parsed_name = ''
+        self.parsed_parameter = ''
+        self.parsed_option = ''
+        self.parsed_desc = ''
 
     @staticmethod
     def can_parse(line):
@@ -25,7 +27,8 @@ class BlockParser(BaseParser):
     def parse(self):
         while not self._is_end():
             self._read_next()
-        return self.parsed_id, self.parsed_name
+        return self.parsed_id, self.parsed_parameter, self.parsed_option,\
+            self.parsed_desc
 
     def _read_next(self):
         self._read_while(BlockParser._is_whitespace)
@@ -37,7 +40,7 @@ class BlockParser(BaseParser):
         elif self.state == 1:
             self._read_id()
         else:
-            self._read_name()
+            self._read_desc()
 
     def _end(self):
         self.i = len(self.line)  # stop parsing
@@ -61,6 +64,7 @@ class BlockParser(BaseParser):
         if self._peek_char() != '(':
             self._throw('Cannot find "("')
         self._next_char()
+        self._read_while(self._is_whitespace)
 
         # read the actual identifier
         ch = self._peek_char()
@@ -68,6 +72,18 @@ class BlockParser(BaseParser):
             self._throw('Invalid identifier start character {}'.format(ch))
 
         self.parsed_id = self._read_while(self._is_id)
+        self._read_while(self._is_whitespace)
+
+        # read the optional ":"
+        if self._peek_char() == ':':
+            self._next_char()
+            self._read_while(self._is_whitespace)
+
+            # read the identifier following :
+            self.parsed_parameter = self.parsed_id
+            self.parsed_option = self._read_while(self._is_id)
+            self.parsed_id += ':' + self.parsed_option
+            self._read_while(self._is_whitespace)
 
         # close paren
         if self._peek_char() != ')':
@@ -75,6 +91,6 @@ class BlockParser(BaseParser):
         self._next_char()
         self.state += 1
 
-    def _read_name(self):
-        self.parsed_name = self._remaining().strip()
+    def _read_desc(self):
+        self.parsed_desc = self._remaining().strip()
         self._end()

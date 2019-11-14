@@ -17,17 +17,54 @@ import boba.util as util
 
 @dataclass
 class Block:
-    code: str = ''
+    """
+    A class for code blocks.
+
+    id: unique identifier.
+    parameter: parameter name, if the block is a decision.
+    option: option name, if the block is a decision.
+    chunks: code broken up at the boundaries of placeholder variables.
+    children: all options of a dummy parameter block.
+    """
+
     id: str = ''
-    name: str = ''
+    parameter: str = ''
+    option: str = ''
     chunks: List = field(default_factory=lambda: [])
 
 
 @dataclass
+class Chunk:
+    """A class for code chunks.
+    A code chunk only contains one placeholder variable.
+
+    variable: the corresponding placeholder variable.
+    code: the code template.
+    """
+    variable: str = ''
+    code: str = ''
+
+
+@dataclass
 class History:
+    """
+    A class for keeping track of the choices made in each universe.
+
+    path: index of the code path.
+    filename: file name of the universe.
+    decisions: placeholder variables and the options they took.
+    """
     path: int
     filename: str = ''
     decisions: List = field(default_factory=lambda: [])
+
+
+@dataclass
+class DecRecord:
+    """ A class for what options a placeholder variable took. """
+    variable: str = ''
+    option: str = ''
+    idx: int = -1
 
 
 class Parser:
@@ -78,7 +115,7 @@ class Parser:
 
     def _add_block(self, block):
         # ignore empty block
-        if block.id == '' and block.code == '':
+        if block.id == '' and block.chunks[0].code == '':
             return
 
         # handle unnamed block
@@ -104,14 +141,14 @@ class Parser:
             for line in f:
                 if BlockParser.can_parse(line):
                     # end of the last block
-                    bl.chunks.append(('', code))
+                    bl.chunks.append(Chunk('', code))
                     code = ''
                     self._add_block(bl)
 
                     # parse the metadata and create a new block
                     try:
-                        bp_id, bp_name = BlockParser(line).parse()
-                        bl = Block('', bp_id, bp_name, [])
+                        bp_id, par, opt, _ = BlockParser(line).parse()
+                        bl = Block(bp_id, par, opt, [])
                     except ParseError as e:
                         self._throw_parse_error(e.args[0])
                 else:
@@ -121,9 +158,9 @@ class Parser:
                         if len(vs):
                             # chop into more chunks
                             # combine first chunk with previous code
-                            bl.chunks.append((vs[0], code + codes[0]))
+                            bl.chunks.append(Chunk(vs[0], code + codes[0]))
                             for i in range(1, len(vs)):
-                                bl.chunks.append((vs[i], codes[i]))
+                                bl.chunks.append(Chunk(vs[i], codes[i]))
 
                             # remaining code after the last matched variable
                             code = codes[-1]
@@ -133,11 +170,8 @@ class Parser:
                         msg = 'At line "{}"\n\t{}'.format(line, e.args[0])
                         self._throw_parse_error(msg)
 
-                    # TODO: fix legacy
-                    bl.code += line
-
             # add the last block
-            bl.chunks.append(('', code))
+            bl.chunks.append(Chunk('', code))
             self._add_block(bl)
 
     def _match_nodes(self, nodes):
@@ -171,6 +205,8 @@ class Parser:
             self._throw_spec_error(e.args[0])
 
     def _get_code_paths(self):
+        """ Convert paths of block to paths of code chunk """
+
         res = []
 
         for path in self.paths:
@@ -182,6 +218,15 @@ class Parser:
         return res
 
     def _code_gen_recur(self, path, i, code, history):
+        """
+        Generate code recursively.
+
+        :param path: the code path we're on.
+        :param i: the index of the current node in the code path.
+        :param code: the generated code so far.
+        :param history: record the choices made.
+        """
+
         if i >= len(path):
             # write file
             fn = self.wrangler.write_universe(code)
@@ -190,30 +235,30 @@ class Parser:
             history.filename = fn
             self.history.append(history)
         else:
-            val, template = path[i]
+            chunk = path[i]
 
-            if val != '':
+            if chunk.variable != '':
                 # check if we have already encountered the decision
                 prev_idx = None
                 for d in history.decisions:
-                    if d[0] == val:
-                        prev_idx = d[2]
+                    if d.variable == chunk.variable:
+                        prev_idx = d.idx
 
                 if prev_idx is not None:
                     # use the previous value
-                    snippet, opt = self.dec_parser.gen_code(template, val, prev_idx)
+                    snippet, opt = self.dec_parser.gen_code(chunk.code, chunk.variable, prev_idx)
                     self._code_gen_recur(path, i+1, code+snippet, history)
                 else:
                     # expand the decision
-                    num_alt = self.dec_parser.get_num_alt(val)
+                    num_alt = self.dec_parser.get_num_alt(chunk.variable)
                     for k in range(num_alt):
-                        snippet, opt = self.dec_parser.gen_code(template, val, k)
+                        snippet, opt = self.dec_parser.gen_code(chunk.code, chunk.variable, k)
                         decs = [a for a in history.decisions]
-                        decs.append((val, opt, k))
+                        decs.append(DecRecord(chunk.variable, opt, k))
                         self._code_gen_recur(path, i+1, code + snippet,
                                              History(history.path, '', decs))
             else:
-                code += template
+                code += chunk.code
                 self._code_gen_recur(path, i+1, code, history)
 
     def _code_gen(self):
@@ -239,7 +284,7 @@ class Parser:
             row = [h.filename, '->'.join(self.paths[h.path])]
             mp = {}
             for d in h.decisions:
-                mp[d[0]] = d[1]
+                mp[d.variable] = d.option
             for d in decs:
                 value = mp[d] if d in mp else ''
                 row.append(value)
@@ -255,7 +300,7 @@ class Parser:
         print('=' * w)
         for idx, h in enumerate(self.history):
             path = wrap('->'.join(self.paths[h.path]), width=27)
-            decs = ['{}={}'.format(d[0], d[1]) for d in h.decisions]
+            decs = ['{}={}'.format(d.variable, d.option) for d in h.decisions]
             decs = wrap(', '.join(decs), width=30)
             max_len = max(len(decs), len(path))
 

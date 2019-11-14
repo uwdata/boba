@@ -18,7 +18,8 @@ def _print_code(ps):
     for b in ps.blocks:
         bl = ps.blocks[b]
         print('-' * 10, '  ({}) {}  '.format(bl.id, bl.name), '-' * 10)
-        print(bl.code)
+        for c in bl.chunks:
+            print(c[1], end='')
 
 
 def abs_path(rel_path):

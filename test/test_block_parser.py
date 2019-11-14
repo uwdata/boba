@@ -34,7 +34,7 @@ class TestBlockParser(unittest.TestCase):
     def test_syntax(self):
         line = '# --- (A) remove outlier'
         self.assertTrue(BlockParser.can_parse(line))
-        bid, bname = BlockParser(line).parse()
+        bid, _, _, bname = BlockParser(line).parse()
         self.assertEqual(bid, 'A')
         self.assertEqual(bname, 'remove outlier')
 
@@ -42,38 +42,46 @@ class TestBlockParser(unittest.TestCase):
         with self.assertRaises(ParseError):
             BlockParser(line).parse()
 
-        line = '# --- (A)'
-        bid, bname = BlockParser(line).parse()
+        line = '# --- ( A)'
+        bid, _, _, bname = BlockParser(line).parse()
         self.assertEqual(bid, 'A')
         self.assertEqual(bname, '')
 
+    def test_parameter(self):
+        line = '# --- (P_1 : option_1)'
+        self.assertTrue(BlockParser.can_parse(line))
+        bid, par, opt, desc = BlockParser(line).parse()
+        self.assertEqual(bid, 'P_1:option_1')
+        self.assertEqual(par, 'P_1')
+        self.assertEqual(opt, 'option_1')
+
     def test_whitespace(self):
         line = '\t\t# --- (A) name'
-        bid, bname = BlockParser(line).parse()
+        bid, _, _, bname = BlockParser(line).parse()
         self.assertEqual(bid, 'A')
         self.assertEqual(bname, 'name')
 
         line = '    # --- (A) name    \t'
-        bid, bname = BlockParser(line).parse()
+        bid, _, _, bname = BlockParser(line).parse()
         self.assertEqual(bid, 'A')
         self.assertEqual(bname, 'name')
 
         line = '# ---(A)socrowded'
-        bid, bname = BlockParser(line).parse()
+        bid, _, _, bname = BlockParser(line).parse()
         self.assertEqual(bid, 'A')
         self.assertEqual(bname, 'socrowded')
 
     def test_id_syntax(self):
         line = '# --- (C1) name'
-        bid, bname = BlockParser(line).parse()
+        bid, _, _, bname = BlockParser(line).parse()
         self.assertEqual(bid, 'C1')
 
         line = '# --- (aXa) name'
-        bid, bname = BlockParser(line).parse()
+        bid, _, _, bname = BlockParser(line).parse()
         self.assertEqual(bid, 'aXa')
 
         line = '# --- (my_variable) name'
-        bid, bname = BlockParser(line).parse()
+        bid, _, _, bname = BlockParser(line).parse()
         self.assertEqual(bid, 'my_variable')
 
         # ID must start with a letter
