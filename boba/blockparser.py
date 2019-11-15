@@ -8,7 +8,8 @@ kw = '# ---'
 class BlockParser(BaseParser):
     """
     Parse the metadata of a code block, which must have the structure:
-        # --- (ID) description
+        # --- (ID) option
+    option is optional, but including it will mark the block as a parameter.
     """
 
     def __init__(self, line):
@@ -18,7 +19,6 @@ class BlockParser(BaseParser):
         self.parsed_id = ''
         self.parsed_parameter = ''
         self.parsed_option = ''
-        self.parsed_desc = ''
 
     @staticmethod
     def can_parse(line):
@@ -27,8 +27,7 @@ class BlockParser(BaseParser):
     def parse(self):
         while not self._is_end():
             self._read_next()
-        return self.parsed_id, self.parsed_parameter, self.parsed_option,\
-            self.parsed_desc
+        return self.parsed_id, self.parsed_parameter, self.parsed_option
 
     def _read_next(self):
         self._read_while(BlockParser._is_whitespace)
@@ -40,7 +39,7 @@ class BlockParser(BaseParser):
         elif self.state == 1:
             self._read_id()
         else:
-            self._read_desc()
+            self._read_option()
 
     def _end(self):
         self.i = len(self.line)  # stop parsing
@@ -60,6 +59,7 @@ class BlockParser(BaseParser):
             self._throw('expected {}'.format(kw))
 
     def _read_id(self):
+        """ Read the thing inside the parenthesis. """
         # open paren
         if self._peek_char() != '(':
             self._throw('Cannot find "("')
@@ -74,23 +74,27 @@ class BlockParser(BaseParser):
         self.parsed_id = self._read_while(self._is_id)
         self._read_while(self._is_whitespace)
 
-        # read the optional ":"
-        if self._peek_char() == ':':
-            self._next_char()
-            self._read_while(self._is_whitespace)
-
-            # read the identifier following :
-            self.parsed_parameter = self.parsed_id
-            self.parsed_option = self._read_while(self._is_id)
-            self.parsed_id += ':' + self.parsed_option
-            self._read_while(self._is_whitespace)
-
         # close paren
         if self._peek_char() != ')':
             self._throw('Cannot find ")"')
         self._next_char()
         self.state += 1
 
-    def _read_desc(self):
-        self.parsed_desc = self._remaining().strip()
-        self._end()
+    def _read_option(self):
+        """ Read whatever remains after the parenthesis. """
+        s = self._remaining().strip()  # for error message
+
+        self._read_while(self._is_whitespace)
+        # option follows the same naming convention as ID
+        # but we didn't check the starting character, so option can start with
+        # a number or the underscore
+        opt = self._read_while(self._is_id)
+        if opt != '':
+            self.parsed_parameter = self.parsed_id
+            self.parsed_option = opt
+            self.parsed_id += ':' + self.parsed_option
+
+        self._read_while(self._is_whitespace)
+        # throw an error for anything we can't handle
+        if not self._is_end():
+            self._throw('Invalid option syntax "{}"'.format(s))

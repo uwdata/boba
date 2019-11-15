@@ -149,7 +149,7 @@ class Parser:
 
                     # parse the metadata and create a new block
                     try:
-                        bp_id, par, opt, _ = BlockParser(line).parse()
+                        bp_id, par, opt = BlockParser(line).parse()
                         bl = Block(bp_id, par, opt, [])
                     except ParseError as e:
                         self._throw_parse_error(e.args[0])

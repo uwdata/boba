@@ -1,19 +1,19 @@
 """ Test the block-level parameter syntax """
 
 if __name__ == '__main__':
-    # --- (a:1)
+    # --- (a) a1
     a = {{b}}
 
-    # --- (a:2)
+    # --- (a) a2
     a = 2
 
-    # --- (b:1)
+    # --- (b) b1
     b = 1
 
-    # --- (b:2)
+    # --- (b) b2
     b = 2
 
-    # --- (b:3)
+    # --- (b) b3
     b = 3
 
     # --- (c)

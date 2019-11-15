@@ -28,11 +28,13 @@ if __name__ == '__main__':
     df = df[~df.device.isin({{bad_device}})]
 
     # remove outliers based on reading speed
-    # --- (B1) remove reading speed outside median + 3 x iqr
+    # --- (B1)
+    # remove reading speed outside median + 3 x iqr
     iqr = np.subtract(*np.percentile(df.speed, [75, 25]))
     cutoff_high = np.median(df.speed) + 3 * iqr
 
-    # --- (B2) remove reading speed outside mean + 2 x std
+    # --- (B2)
+    # remove reading speed outside mean + 2 x std
     cutoff_high = np.mean(df.speed) + 2 * np.std(df.speed)
 
     # --- (C)
@@ -53,22 +55,26 @@ if __name__ == '__main__':
     df.dyslexia = df.dyslexia.astype('category')
 
     # remove trials based on comprehension < 2/3
-    # --- (D1) just remove trials
+    # --- (D1)
+    # just remove trials
     df = df[df.correct_rate > 0.6]
 
-    # --- (D2) drop entire participants
+    # --- (D2)
+    # drop entire participants
     bad_uuid = set()
     for i, row in df.iterrows():
         if row.correct_rate < 0.6:
             bad_uuid.add(str(row.uuid))
     df = df[~df.uuid.isin(bad_uuid)]
 
-    # --- (F1) fit a linear mixed effects model
+    # --- (F1)
+    # fit a linear mixed effects model
     fml = '{{formula}}'
     model = smf.mixedlm(fml, df, groups=df.uuid).fit()
     print(model.summary())
 
-    # --- (F2) fit a multinomial logit model to accuracy
+    # --- (F2)
+    # fit a multinomial logit model to accuracy
     df['acc'] = 3 - pd.Categorical(df.correct_rate).codes
     fml = 'acc ~ page_condition*dyslexia_bin'
     model = smf.mnlogit(fml, df).fit()
