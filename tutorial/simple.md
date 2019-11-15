@@ -39,13 +39,13 @@ first insert a placeholder variable `{{var_name}}` in the above code:
 df = df[np.abs(df.y - df.y.mean()) <= ({{cutoff}} * df.y.std())]
 ```
 
-Then, in a separate JSON file, you could list the possible values this placeholder
-variable can take up:
+Then, in a separate JSON file, you could list the possible options this
+placeholder variable can take up:
 
 ```json
 {
   "decisions": [
-    {"var": "cutoff", "type": "discrete", "value": [2, 2.5, 3] }
+    {"var": "cutoff", "options": [2, 2.5, 3] }
   ]
 }
 ```
@@ -106,7 +106,7 @@ if __name__ == '__main__':
 
     # --- (A) std
     # remove outliers based on std
-    df = df[np.abs(df.y - df.y.mean()) <= ({{std_cutoff}} * df.y.std())]
+    df = df[np.abs(df.y - df.y.mean()) <= ({{cutoff}} * df.y.std())]
 
     # --- (A) iqr
     # remove outliers based on iqr
@@ -147,7 +147,7 @@ graph in the JSON file:
 {
   "graph": ["A->B"],
   "decisions": [
-    {"var": "std_cutoff", "type": "discrete", "value": [2, 2.5, 3] }
+    {"var": "cutoff", "options": [2, 2.5, 3] }
   ]
 }
 ```

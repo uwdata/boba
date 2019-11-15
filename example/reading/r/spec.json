@@ -6,7 +6,7 @@
     "OLR2->O2"
   ],
   "decisions": [
-    {"var": "brmsfamily", "type": "discrete", "value": ["shifted_lognormal", "lognormal"]}
+    {"var": "brmsfamily", "options": ["shifted_lognormal", "lognormal"]}
   ],
   "outputs": [
     {"name": "aic/waic", "value": "aic"}

@@ -7,12 +7,12 @@
     "C->F2"
   ],
   "decisions": [
-    {"var": "sample_size", "type": "discrete", "value": [1284, 2568]},
-    {"var": "rt", "type": "discrete", "value": ["adjust_rt", "rt"] },
-    {"var": "bad_device", "type": "discrete", "value": [[], ["smartphone"], ["smartphone", "tablet"]]},
-    {"var": "dyslexia", "type": "discrete", "value": ["dyslexia", "dyslexia_bin"] },
-    {"var": "min_wpm", "type": "discrete", "value": [10, 150] },
-    {"var": "formula", "type": "discrete", "value":  [
+    {"var": "sample_size", "options": [1284, 2568]},
+    {"var": "rt", "options": ["adjust_rt", "rt"] },
+    {"var": "bad_device", "options": [[], ["smartphone"], ["smartphone", "tablet"]]},
+    {"var": "dyslexia", "options": ["dyslexia", "dyslexia_bin"] },
+    {"var": "min_wpm", "options": [10, 150] },
+    {"var": "formula", "options":  [
       "log_speed ~ page_condition*dyslexia",
       "log_speed ~ page_condition*dyslexia + img_width + num_words + age + english_native",
       "log_speed ~ page_condition*dyslexia + img_width + num_words + age + english_native + device + edu_level"

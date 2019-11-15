@@ -7,7 +7,6 @@ from .baseparser import ParseError, BaseParser
 @dataclass
 class Decision:
     var: str
-    type: str
     value: list
     desc: str = ''
 
@@ -32,10 +31,6 @@ class DecisionParser(BaseParser):
                 return False
 
         return True
-
-    @staticmethod
-    def _is_type(s):
-        return s == 'discrete'
 
     @staticmethod
     def _read_value(s):
@@ -71,11 +66,9 @@ class DecisionParser(BaseParser):
 
             var = self._check_type(self._read_json_safe(d, 'var'),
                                    DecisionParser._is_id_token, 'id')
-            tp = self._check_type(self._read_json_safe(d, 'type'),
-                                  DecisionParser._is_type, 'type')
-            value = self._read_value(self._read_json_safe(d, 'value'))
+            value = self._read_value(self._read_json_safe(d, 'options'))
 
-            decision = Decision(var, tp, value, desc)
+            decision = Decision(var, value, desc)
             res[var] = decision
 
         self.decisions = res
@@ -84,7 +77,7 @@ class DecisionParser(BaseParser):
     def get_num_alt(self, dec):
         """
         Return the number of possible alternatives.
-        For discrete type, it's the number of values.
+        For discrete type, it's the number of options.
         :param dec: variable ID of a decision
         :return: number
         """

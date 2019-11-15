@@ -4,7 +4,7 @@
         "NB->O"
       ],
       "decisions": [
-        {"var": "outliers", "type": "discrete", "value": [
+        {"var": "outliers", "options": [
             "c()",
             "c('Katrina')",
             "c('Katrina', 'Audrey')",
@@ -12,9 +12,9 @@
             "c('Katrina', 'Audrey', 'Sandy', 'Andrew')",
             "c('Katrina', 'Audrey', 'Sandy', 'Andrew', 'Donna')"
         ]},
-        {"var": "feminity", "type": "discrete", "value": ["female", "masfem"]},
-        {"var": "damage", "type": "discrete", "value": ["dam", "log_dam"]},
-        {"var": "predictions", "type": "discrete", "value": [
+        {"var": "feminity", "options": ["female", "masfem"]},
+        {"var": "damage", "options": ["dam", "log_dam"]},
+        {"var": "predictions", "options": [
             "feminity * damage",
             "feminity + damage + pressure + feminity:damage + feminity:pressure",
             "feminity + damage + zwin + feminity:damage + feminity:zwin",
@@ -22,7 +22,7 @@
             "feminity + damage + z3 + feminity:damage + feminity:z3",
             "feminity + damage + z3"
         ]},
-        {"var": "covariates", "type": "discrete", "value": [
+        {"var": "covariates", "options": [
             "",
             "+ year:damage",
             "+ post:damage"

@@ -1,7 +1,7 @@
 {
   "graph": ["a->b->c"],
   "decisions": [
-    {"var": "a", "type": "discrete", "value": [2, 2.5, 3], "desc": "outlier" },
-    {"var": "b", "type": "discrete", "value": [0, 1] }
+    {"var": "a", "options": [2, 2.5, 3], "desc": "outlier" },
+    {"var": "b", "options": [0, 1] }
   ]
 }

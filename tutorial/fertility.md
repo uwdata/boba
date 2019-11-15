@@ -80,7 +80,7 @@ df = df[{{filter_condition}}]
 # JSON
 {
   "decisions": [
-    {"var": "filter_condition", "value": [
+    {"var": "filter_condition", "options": [
       "[True]*df.shape[0]",
       "(df.computed_cycle_length >= 25) & (df.computed_cycle_length <= 35)",
       "(df.reported_cycle_length >= 25) & (df.reported_cycle_length <= 35)"
@@ -107,7 +107,7 @@ df = df[(df.{{cycle_length}} >= 25) & (df.{{cycle_length}} <= 35)]
 {
   "graph": ["A->B", "A->ECL->B"],
   "decisions": [
-    {"var": "cycle_length", "value": ["reported_cycle_length", "computed_cycle_length"]}
+    {"var": "cycle_length", "options": ["reported_cycle_length", "computed_cycle_length"]}
   ]
 }
 ```
