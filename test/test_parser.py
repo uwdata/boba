@@ -139,6 +139,12 @@ class TestParser(unittest.TestCase):
             ps._parse_blocks()
         self.assertRegex(stdout.getvalue(), '(?i)duplicated')
 
+    def test_script_5(self):
+        base = abs_path('./specs/')
+        ps = Parser(base+'script5.py', base+'spec-good.json')
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 9)
+
     # --- parse graph ---
     def test_spec_good(self):
         base = abs_path('../example/simple/')

@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from typing import List
 
 from .blockparser import BlockParser, ParseError
-from .graphparser import GraphParser
+from .graphparser import GraphParser, Edge
 from .graphanalyzer import GraphAnalyzer, InvalidGraphError
 from .decisionparser import DecisionParser
 from .lang import LangError, Lang
@@ -24,7 +24,6 @@ class Block:
     parameter: parameter name, if the block is a decision.
     option: option name, if the block is a decision.
     chunks: code broken up at the boundaries of placeholder variables.
-    children: all options of a dummy parameter block.
     """
 
     id: str = ''
@@ -36,10 +35,10 @@ class Block:
 @dataclass
 class Chunk:
     """A class for code chunks.
-    A code chunk only contains one placeholder variable.
+    A code chunk contains at most one placeholder variable.
 
-    variable: the corresponding placeholder variable.
-    code: the code template.
+    variable: the corresponding placeholder variable, if any.
+    code: the code template proceeding the variable or the block boundary.
     """
     variable: str = ''
     code: str = ''
@@ -61,8 +60,8 @@ class History:
 
 @dataclass
 class DecRecord:
-    """ A class for what options a placeholder variable took. """
-    variable: str = ''
+    """ A class for what options a parameter took. """
+    parameter: str = ''
     option: str = ''
     idx: int = -1
 
@@ -129,6 +128,9 @@ class Parser:
         self.blocks[block.id] = block
 
     def _parse_blocks(self):
+        """ Make a pass over the template, parsing block declarations and
+        placeholder variables inside the code."""
+
         try:
             self.dec_parser.read_decisions()
         except ParseError as e:
@@ -140,7 +142,7 @@ class Parser:
 
             for line in f:
                 if BlockParser.can_parse(line):
-                    # end of the last block
+                    # end of the previous block
                     bl.chunks.append(Chunk('', code))
                     code = ''
                     self._add_block(bl)
@@ -175,15 +177,49 @@ class Parser:
             self._add_block(bl)
 
     def _match_nodes(self, nodes):
-        # nodes in spec and script should match
+        """ Nodes in spec and script should match. """
+        blocks = set()
+        for b in self.blocks:
+            bl = self.blocks[b]
+            blocks.add(bl.id if bl.parameter == '' else bl.parameter)
+
         for nd in nodes:
-            if nd not in self.blocks:
+            if nd not in blocks:
                 self._throw_spec_error('Cannot find matching node "{}" in script'.format(nd))
 
-        for nd in self.blocks:
+        for nd in blocks:
             # ignore special nodes inserted by us
             if not nd.startswith('_') and nd not in nodes:
                 util.print_warn('Cannot find matching node "{}" in graph spec'.format(nd))
+
+    def _replace_graph(self, nodes, edges):
+        """ Replace the block-level decision nodes in the graph with option nodes."""
+
+        # create a dict where key is the parameter and values are the options
+        decs = {}
+        for b in self.blocks:
+            bl = self.blocks[b]
+            if bl.parameter:
+                p = bl.parameter
+                if p in decs:
+                    decs[p].append(bl.id)
+                else:
+                    decs[p] = [bl.id]
+
+        # replace nodes
+        nds = []
+        for nd in nodes:
+            tmp = decs[nd] if nd in decs else [nd]
+            nds.extend(tmp)
+
+        # replace edges
+        egs = []
+        for eg in edges:
+            ss = decs[eg.start] if eg.start in decs else [eg.start]
+            es = decs[eg.end] if eg.end in decs else [eg.end]
+            egs.extend([Edge(s, e) for s in ss for e in es])
+
+        return set(nds), set(egs)
 
     def _parse_graph(self):
         graph_spec = self.spec['graph'] if 'graph' in self.spec else []
@@ -191,6 +227,7 @@ class Parser:
         try:
             nodes, edges = GraphParser(graph_spec).parse()
             self._match_nodes(nodes)
+            nodes, edges = self._replace_graph(nodes, edges)
             self.paths = GraphAnalyzer(nodes, edges).analyze()
 
             # an ugly way to handle the artificial _start node
@@ -212,6 +249,7 @@ class Parser:
         for path in self.paths:
             pt = []
             for nd in path:
+                # replace the node by its chunks
                 pt.extend(self.blocks[nd].chunks)
             res.append(pt)
 
@@ -238,10 +276,10 @@ class Parser:
             chunk = path[i]
 
             if chunk.variable != '':
-                # check if we have already encountered the decision
+                # check if we have already encountered the placeholder variable
                 prev_idx = None
                 for d in history.decisions:
-                    if d.variable == chunk.variable:
+                    if d.parameter == chunk.variable:
                         prev_idx = d.idx
 
                 if prev_idx is not None:
@@ -275,16 +313,29 @@ class Parser:
         # output a script to execute all universes
         self.wrangler.write_sh()
 
+    @staticmethod
+    def _nice_path(path):
+        """ Convert the path containing block options back to the simpler path
+         containing only block parameters."""
+        ps = [p.split(':')[0] for p in path]
+        decs = [DecRecord(p.split(':')[0], p.split(':')[1]) for p in path if ':' in p]
+        return ps, decs
+
     def _write_csv(self):
         rows = []
-        decs = self.dec_parser.get_decs()
+        decs = self.dec_parser.get_decs() +\
+            list(set(['({})'.format(b.parameter) for b in self.blocks.values()
+                      if b.parameter != '']))
         ops = self.wrangler.get_outputs()
         rows.append(['Filename', 'Code Path'] + decs + ops)
         for h in self.history:
-            row = [h.filename, '->'.join(self.paths[h.path])]
+            paths, bdecs = self._nice_path(self.paths[h.path])
+            row = [h.filename, '->'.join(paths)]
             mp = {}
             for d in h.decisions:
-                mp[d.variable] = d.option
+                mp[d.parameter] = d.option
+            for d in bdecs:
+                mp['({})'.format(d.parameter)] = d.option
             for d in decs:
                 value = mp[d] if d in mp else ''
                 row.append(value)
@@ -299,8 +350,9 @@ class Parser:
         print('{:<20}{:<30}{:<30}'.format('Filename', 'Code Path', 'Decisions'))
         print('=' * w)
         for idx, h in enumerate(self.history):
-            path = wrap('->'.join(self.paths[h.path]), width=27)
-            decs = ['{}={}'.format(d.variable, d.option) for d in h.decisions]
+            paths, bdecs = self._nice_path(self.paths[h.path])
+            path = wrap('->'.join(paths), width=27)
+            decs = ['{}={}'.format(d.parameter, d.option) for d in bdecs + h.decisions]
             decs = wrap(', '.join(decs), width=30)
             max_len = max(len(decs), len(path))
 
