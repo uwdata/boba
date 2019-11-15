@@ -109,7 +109,7 @@ class TestParser(unittest.TestCase):
         base = abs_path('../example/simple/')
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
-        self.assertListEqual([*ps.blocks], ['_start', 'A1', 'A2', 'B'])
+        self.assertSetEqual(set(ps.blocks.keys()), {'_start', 'A:option1', 'A:option2', 'B'})
 
     def test_script_1(self):
         base = abs_path('./specs/')
@@ -151,7 +151,7 @@ class TestParser(unittest.TestCase):
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
         ps._parse_graph()
-        expected = [['_start', 'A1', 'B'], ['_start', 'A2', 'B']]
+        expected = [['_start', 'A:option1', 'B'], ['_start', 'A:option2', 'B']]
         expected = set([','.join(p) for p in expected])
         self.assertSetEqual(set([','.join(p) for p in ps.paths]), expected)
 
