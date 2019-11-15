@@ -1,7 +1,7 @@
 {
   "graph": ["A->B"],
   "decisions": [
-    {"var": "std_cutoff", "type": "discrete", "value": [2, 2.5, 3] }
+    {"var": "cutoff", "type": "discrete", "value": [2, 2.5, 3] }
   ],
   "before_execute": "cp ../data.csv ./code/"
 }
