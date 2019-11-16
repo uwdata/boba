@@ -1,20 +1,15 @@
-""" Test the block-level parameter syntax """
+""" Should fail to parse because of a block and a variable
+ have the same name."""
 
 if __name__ == '__main__':
-    # --- (a) a1
-    a = {{b}}
-
-    # --- (a) a2
-    a = 2
+    # --- (a)
+    a = {{a}}
 
     # --- (b) b1
     b = 1
 
     # --- (b) b2
     b = 2
-
-    # --- (b) b3
-    b = 3
 
     # --- (c)
     print(a * b)

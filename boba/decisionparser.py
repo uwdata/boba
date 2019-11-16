@@ -53,6 +53,16 @@ class DecisionParser(BaseParser):
             raise ParseError('Cannot handle {} "{}"'.format(msg, var))
         return var
 
+    def verify_naming(self, reserved):
+        """
+        Verify if the decision names collide with any other variable names.
+        :param reserved: A list of reserved names.
+        :return:
+        """
+        for w in reserved:
+            if w in self.decisions:
+                raise ParseError('Duplicate variable/block name "{}"'.format(w))
+
     def read_decisions(self):
         """
         Read decisions from the JSON spec.
@@ -67,6 +77,10 @@ class DecisionParser(BaseParser):
             var = self._check_type(self._read_json_safe(d, 'var'),
                                    DecisionParser._is_id_token, 'id')
             value = self._read_value(self._read_json_safe(d, 'options'))
+
+            # check if two variables have the same name
+            if var in res:
+                raise ParseError('Duplicate variable name "{}"'.format(var))
 
             decision = Decision(var, value, desc)
             res[var] = decision

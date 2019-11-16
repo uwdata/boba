@@ -1,4 +1,4 @@
 {
-  "graph": ["a->b->c", "a->"],
+  "graph": ["A->B->C", "A->"],
   "decisions": {}
 }

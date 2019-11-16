@@ -227,6 +227,7 @@ class Parser:
         try:
             nodes, edges = GraphParser(graph_spec).parse()
             self._match_nodes(nodes)
+            self.dec_parser.verify_naming(nodes)
             nodes, edges = self._replace_graph(nodes, edges)
             self.paths = GraphAnalyzer(nodes, edges).analyze()
 

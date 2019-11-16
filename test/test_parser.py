@@ -115,13 +115,13 @@ class TestParser(unittest.TestCase):
         base = abs_path('./specs/')
         ps = Parser(base+'script1.py', base+'spec-good.json')
         ps._parse_blocks()
-        self.assertListEqual([*ps.blocks], ['a', 'b', 'c'])
+        self.assertListEqual([*ps.blocks], ['A', 'B', 'C'])
 
     def test_script_2(self):
         base = abs_path('./specs/')
         ps = Parser(base+'script2.py', base+'spec-good.json')
         ps._parse_blocks()
-        self.assertListEqual([*ps.blocks], ['_start', 'a', 'b', 'c'])
+        self.assertListEqual([*ps.blocks], ['_start', 'A', 'B', 'C'])
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_script_3(self, stdout):
@@ -139,9 +139,17 @@ class TestParser(unittest.TestCase):
             ps._parse_blocks()
         self.assertRegex(stdout.getvalue(), '(?i)duplicated')
 
-    def test_script_5(self):
+    @patch('sys.stdout', new_callable=io.StringIO)
+    def test_script_5(self, stdout):
         base = abs_path('./specs/')
-        ps = Parser(base+'script5.py', base+'spec-good.json')
+        ps = Parser(base+'script5.py', base+'spec-dup-name.json')
+        with self.assertRaises(SystemExit):
+            ps.main(verbose=False)
+        self.assertRegex(stdout.getvalue(), '(?i)name')
+
+    def test_script_6(self):
+        base = abs_path('./specs/')
+        ps = Parser(base+'script6.py', base+'spec-good.json')
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 9)
 

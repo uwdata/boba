@@ -1,0 +1,6 @@
+{
+  "graph": ["a->b->c"],
+  "decisions": [
+    {"var": "a", "options": [2, 2.5, 3], "desc": "outlier" }
+  ]
+}
