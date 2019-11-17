@@ -5,7 +5,7 @@ from .baseparser import BaseParser, ParseError
 kw = '# ---'
 
 
-class BlockParser(BaseParser):
+class BlockSyntaxParser(BaseParser):
     """
     Parse the metadata of a code block, which must have the structure:
         # --- (ID) option
@@ -13,7 +13,7 @@ class BlockParser(BaseParser):
     """
 
     def __init__(self, line):
-        super(BlockParser, self).__init__(line)
+        super(BlockSyntaxParser, self).__init__(line)
 
         self.state = 0
         self.parsed_id = ''
@@ -30,7 +30,7 @@ class BlockParser(BaseParser):
         return self.parsed_id, self.parsed_parameter, self.parsed_option
 
     def _read_next(self):
-        self._read_while(BlockParser._is_whitespace)
+        self._read_while(BlockSyntaxParser._is_whitespace)
         if self._is_end():
             return
 

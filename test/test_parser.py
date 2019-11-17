@@ -109,19 +109,19 @@ class TestParser(unittest.TestCase):
         base = abs_path('../example/simple/')
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
-        self.assertSetEqual(set(ps.blocks.keys()), {'_start', 'A:std', 'A:iqr', 'B'})
+        self.assertSetEqual(set(ps.code_parser.blocks.keys()), {'_start', 'A:std', 'A:iqr', 'B'})
 
     def test_script_1(self):
         base = abs_path('./specs/')
         ps = Parser(base+'script1.py', base+'spec-good.json')
         ps._parse_blocks()
-        self.assertListEqual([*ps.blocks], ['A', 'B', 'C'])
+        self.assertListEqual([*ps.code_parser.blocks], ['A', 'B', 'C'])
 
     def test_script_2(self):
         base = abs_path('./specs/')
         ps = Parser(base+'script2.py', base+'spec-good.json')
         ps._parse_blocks()
-        self.assertListEqual([*ps.blocks], ['_start', 'A', 'B', 'C'])
+        self.assertListEqual([*ps.code_parser.blocks], ['_start', 'A', 'B', 'C'])
 
     @patch('sys.stdout', new_callable=io.StringIO)
     def test_script_3(self, stdout):

@@ -6,42 +6,14 @@ from textwrap import wrap
 from dataclasses import dataclass, field
 from typing import List
 
-from .blockparser import BlockParser, ParseError
+from .baseparser import ParseError
+from .codeparser import CodeParser
 from .graphparser import GraphParser, Edge
 from .graphanalyzer import GraphAnalyzer, InvalidGraphError
 from .decisionparser import DecisionParser
 from .lang import LangError, Lang
 from .wrangler import Wrangler
 import boba.util as util
-
-
-@dataclass
-class Block:
-    """
-    A class for code blocks.
-
-    id: unique identifier.
-    parameter: parameter name, if the block is a decision.
-    option: option name, if the block is a decision.
-    chunks: code broken up at the boundaries of placeholder variables.
-    """
-
-    id: str = ''
-    parameter: str = ''
-    option: str = ''
-    chunks: List = field(default_factory=lambda: [])
-
-
-@dataclass
-class Chunk:
-    """A class for code chunks.
-    A code chunk contains at most one placeholder variable.
-
-    variable: the corresponding placeholder variable, if any.
-    code: the code template proceeding the variable or the block boundary.
-    """
-    variable: str = ''
-    code: str = ''
 
 
 @dataclass
@@ -75,7 +47,6 @@ class Parser:
         self.fn_spec = f2
         self.out = os.path.join(out, 'multiverse/')
 
-        self.blocks = {}
         self.paths = []
         self.history = []
 
@@ -85,6 +56,7 @@ class Parser:
 
         # initialize helper class
         self.dec_parser = DecisionParser(self.spec)
+        self.code_parser = CodeParser()
         try:
             self.lang = Lang(lang, f1)
             self.wrangler = Wrangler(self.spec, self.lang, self.out)
@@ -112,76 +84,23 @@ class Parser:
         prefix = 'In parsing file "{}":\n'.format(self.fn_spec)
         self._throw(prefix + self._indent(msg))
 
-    def _add_block(self, block):
-        # ignore empty block
-        if block.id == '' and block.chunks[0].code == '':
-            return
-
-        # handle unnamed block
-        if block.id == '':
-            block.id = '_start' if len(self.blocks) == 0 else '_end'
-
-        # check if id exists
-        if block.id in self.blocks:
-            err = 'Duplicated code block ID "{}"'.format(block.id)
-            self._throw_parse_error(err)
-        self.blocks[block.id] = block
-
     def _parse_blocks(self):
         """ Make a pass over the template, parsing block declarations and
         placeholder variables inside the code."""
-
         try:
             self.dec_parser.read_decisions()
         except ParseError as e:
             self._throw_spec_error(e.args[0])
 
         with open(self.fn_script, 'r') as f:
-            code = ''
-            bl = Block()
-
-            for line in f:
-                if BlockParser.can_parse(line):
-                    # end of the previous block
-                    bl.chunks.append(Chunk('', code))
-                    code = ''
-                    self._add_block(bl)
-
-                    # parse the metadata and create a new block
-                    try:
-                        bp_id, par, opt = BlockParser(line).parse()
-                        bl = Block(bp_id, par, opt, [])
-                    except ParseError as e:
-                        self._throw_parse_error(e.args[0])
-                else:
-                    # match decision variables
-                    try:
-                        vs, codes = self.dec_parser.parse_code(line)
-                        if len(vs):
-                            # chop into more chunks
-                            # combine first chunk with previous code
-                            bl.chunks.append(Chunk(vs[0], code + codes[0]))
-                            for i in range(1, len(vs)):
-                                bl.chunks.append(Chunk(vs[i], codes[i]))
-
-                            # remaining code after the last matched variable
-                            code = codes[-1]
-                        else:
-                            code += line
-                    except ParseError as e:
-                        msg = 'At line "{}"\n\t{}'.format(line, e.args[0])
-                        self._throw_parse_error(msg)
-
-            # add the last block
-            bl.chunks.append(Chunk('', code))
-            self._add_block(bl)
+            try:
+                self.code_parser.parse(self.dec_parser, f)
+            except ParseError as e:
+                self._throw_parse_error(e.args[0])
 
     def _match_nodes(self, nodes):
         """ Nodes in spec and script should match. """
-        blocks = set()
-        for b in self.blocks:
-            bl = self.blocks[b]
-            blocks.add(bl.id if bl.parameter == '' else bl.parameter)
+        blocks = self.code_parser.get_block_names()
 
         for nd in nodes:
             if nd not in blocks:
@@ -194,17 +113,7 @@ class Parser:
 
     def _replace_graph(self, nodes, edges):
         """ Replace the block-level decision nodes in the graph with option nodes."""
-
-        # create a dict where key is the parameter and values are the options
-        decs = {}
-        for b in self.blocks:
-            bl = self.blocks[b]
-            if bl.parameter:
-                p = bl.parameter
-                if p in decs:
-                    decs[p].append(bl.id)
-                else:
-                    decs[p] = [bl.id]
+        decs = self.code_parser.get_decisions()
 
         # replace nodes
         nds = []
@@ -232,7 +141,7 @@ class Parser:
             self.paths = GraphAnalyzer(nodes, edges).analyze()
 
             # an ugly way to handle the artificial _start node
-            if '_start' in self.blocks:
+            if '_start' in self.code_parser.blocks:
                 for p in self.paths:
                     p.insert(0, '_start')
                 if len(self.paths) == 0:
@@ -251,7 +160,7 @@ class Parser:
             pt = []
             for nd in path:
                 # replace the node by its chunks
-                pt.extend(self.blocks[nd].chunks)
+                pt.extend(self.code_parser.blocks[nd].chunks)
             res.append(pt)
 
         return res
@@ -325,8 +234,7 @@ class Parser:
     def _write_csv(self):
         rows = []
         decs = self.dec_parser.get_decs() +\
-            list(set(['({})'.format(b.parameter) for b in self.blocks.values()
-                      if b.parameter != '']))
+            ['({})'.format(b) for b in self.code_parser.get_decisions()]
         ops = self.wrangler.get_outputs()
         rows.append(['Filename', 'Code Path'] + decs + ops)
         for h in self.history:
