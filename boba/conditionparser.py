@@ -39,6 +39,6 @@ class ConditionParser(BaseParser):
             w = self._read_while(ConditionParser._is_operator)
             self.parsed_code += w
         else:
-            msg = 'Cannot handle character "{}".'
+            msg = 'Cannot handle character "{}".'.format(ch)
             msg = 'At character {} of "{}":\n\t{}'.format(self.i+1, self.line, msg)
             raise ParseError(msg)

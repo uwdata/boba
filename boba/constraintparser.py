@@ -9,9 +9,9 @@ from .conditionparser import ConditionParser
 @dataclass
 class Constraint:
     block: str = ''
-    parameter: str = ''
+    variable: str = ''
     option: str = ''
-    conditions: str = ''
+    condition: str = ''
 
 
 class ConstraintParser:
@@ -50,11 +50,11 @@ class ConstraintParser:
                 msg = 'Block "{}" does not match any existing block ID'
                 ConstraintParser._throw(msg.format(block), c)
 
-            # read parameter
-            param = ConstraintParser._read_optional(c, 'parameter')
+            # read variable
+            param = ConstraintParser._read_optional(c, 'variable')
             if param is not None:
                 if param not in decs:
-                    msg = 'Parameter "{}" does not match any existing variable'
+                    msg = 'Variable "{}" does not match any existing variable'
                     ConstraintParser._throw(msg.format(param), c)
                 if block is not None:
                     msg = 'Cannot handle variable and block at the same line.'
@@ -82,11 +82,16 @@ class ConstraintParser:
             # read condition
             cond = ConstraintParser._read_required(c, 'condition')
             code, parsed_decs = ConditionParser(cond).parse()
-            # todo: check the decs exist
-            recon = code.format(*parsed_decs)
+            # todo: ensure that the parameters and options exist
+
+            # now transform it into valid python code
+            exe = []
+            for i, d in enumerate(parsed_decs):
+                exe.append('"{}"'.format(d) if i % 2 else d)
+            recon = code.format(*exe)
 
             # save
-            key = param if param is not None else \
+            key = '{}:{}'.format(param, opt) if param is not None else \
                 (block if opt is None else '{}:{}'.format(block, opt))
             self.constraints[key] = Constraint(block, param, opt, recon)
 

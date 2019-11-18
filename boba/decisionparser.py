@@ -97,6 +97,16 @@ class DecisionParser(BaseParser):
         """
         return len(self.decisions[dec].value)
 
+    def get_alt(self, dec, i_alt):
+        """
+        Return the i-th alternative. For discrete type, it's simply the i-th
+        option specified.
+        :param dec: variable ID of a decision
+        :param i_alt: which alternative
+        :return: value of the option
+        """
+        return self.decisions[dec].value[i_alt]
+
     def get_cross_prod(self):
         """
         Get the maximum possible cardinality of options, computed as a cross
@@ -120,8 +130,7 @@ class DecisionParser(BaseParser):
         :param i_alt: which alternative
         :return: {string, string} replaced code and the value at this parameter
         """
-        dec = self.decisions[dec_id]
-        v = dec.value[i_alt]
+        v = self.get_alt(dec_id, i_alt)
 
         # assuming the placeholder var is always at the end
         # which is true given how we chop up the chunks

@@ -153,6 +153,34 @@ class TestParser(unittest.TestCase):
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 9)
 
+    def test_constraint_1(self):
+        """ Block options depend on block parameter """
+        base = abs_path('./specs/')
+        ps = Parser(base+'script6.py', base+'spec-constraint-1.json')
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 6)
+
+    def test_constraint_2(self):
+        """ Block parameter depends on block parameter """
+        base = abs_path('./specs/')
+        ps = Parser(base+'script6.py', base+'spec-constraint-2.json')
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 3)
+
+    def test_constraint_3(self):
+        """ Normal block depends on block parameter """
+        base = abs_path('./specs/')
+        ps = Parser(base+'script7.py', base+'spec-constraint-3.json')
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 8)
+
+    def test_constraint_4(self):
+        """ Variable depends on variable """
+        base = abs_path('./specs/')
+        ps = Parser(base+'script7.py', base+'spec-constraint-4.json')
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 4)
+
     # --- parse graph ---
     def test_spec_good(self):
         base = abs_path('../example/simple/')

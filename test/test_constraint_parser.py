@@ -50,7 +50,7 @@ class TestConstraintParser(unittest.TestCase):
             read_wrapper(spec, ps)
 
         # no matching variable - should fail
-        spec = {'constraints': [{'parameter': 'c'}]}
+        spec = {'constraints': [{'variable': 'c'}]}
         with self.assertRaises(ParseError):
             read_wrapper(spec, ps)
 
@@ -68,12 +68,12 @@ class TestConstraintParser(unittest.TestCase):
         read_wrapper(spec, ps)
 
         # variable and option - should parse
-        spec = {'constraints': [{'parameter': 'a', 'option': '2.5', 'condition': 'B=b1'}]}
+        spec = {'constraints': [{'variable': 'a', 'option': '2.5', 'condition': 'B=b1'}]}
         read_wrapper(spec, ps)
 
         # weird option - should parse
         # fixme: {'option': '[1,2]'} will fail
-        spec = {'constraints': [{'parameter': 'c', 'option': '[1, 2]', 'condition': 'B=b1'}]}
+        spec = {'constraints': [{'variable': 'c', 'option': '[1, 2]', 'condition': 'B=b1'}]}
         read_wrapper(spec, ps)
 
 if __name__ == '__main__':

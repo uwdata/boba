@@ -11,6 +11,7 @@ from .codeparser import CodeParser
 from .graphparser import GraphParser, Edge
 from .graphanalyzer import GraphAnalyzer, InvalidGraphError
 from .decisionparser import DecisionParser
+from .constraintparser import ConstraintParser
 from .lang import LangError, Lang
 from .wrangler import Wrangler
 import boba.util as util
@@ -49,6 +50,7 @@ class Parser:
 
         self.paths = []
         self.history = []
+        self.constraints = {}
 
         # read spec
         with open(f2, 'rb') as f:
@@ -151,6 +153,31 @@ class Parser:
         except InvalidGraphError as e:
             self._throw_spec_error(e.args[0])
 
+    def _parse_constraints(self):
+        try:
+            self.constraints = ConstraintParser(self.spec)\
+                .read_constraints(self.code_parser, self.dec_parser)
+        except ParseError as e:
+            self._throw_spec_error(e.args[0])
+
+    def _eval_constraint(self, history, con):
+        """ See if the constraint holds true given the choices made. """
+        con = self.constraints[con].condition
+        paths, bdecs = self._nice_path(self.paths[history.path])
+        decs = bdecs + history.decisions
+
+        # A dict where the key is each parameter and the value is the chosen
+        # option. For ordinary blocks, key and value are the same.
+        res = {}
+        for p in paths:
+            res[p] = p
+        for d in decs:
+            # note that block parameter will override with the actual option
+            res[d.parameter] = d.option
+
+        # now evaluate
+        return eval(con, res)
+
     def _get_code_paths(self):
         """ Convert paths of block to paths of code chunk """
 
@@ -160,7 +187,8 @@ class Parser:
             pt = []
             for nd in path:
                 # replace the node by its chunks
-                pt.extend(self.code_parser.blocks[nd].chunks)
+                chunks = [(nd, ch) for ch in self.code_parser.blocks[nd].chunks]
+                pt.extend(chunks)
             res.append(pt)
 
         return res
@@ -183,7 +211,15 @@ class Parser:
             history.filename = fn
             self.history.append(history)
         else:
-            chunk = path[i]
+            nd, chunk = path[i]
+
+            # check if the block has constraints attached to it
+            names = [nd, nd.split(':')[0]]
+            for n in names:
+                if n in self.constraints and\
+                        not self._eval_constraint(history, n):
+                    # constraint met, abort
+                    return
 
             if chunk.variable != '':
                 # check if we have already encountered the placeholder variable
@@ -200,6 +236,15 @@ class Parser:
                     # expand the decision
                     num_alt = self.dec_parser.get_num_alt(chunk.variable)
                     for k in range(num_alt):
+                        # check if the option has constraints attached to it
+                        v = self.dec_parser.get_alt(chunk.variable, k)
+                        v = '{}:{}'.format(chunk.variable, v)
+                        if v in self.constraints and \
+                                not self._eval_constraint(history, v):
+                            # constraint met, abort
+                            continue
+
+                        # code gen
                         snippet, opt = self.dec_parser.gen_code(chunk.code, chunk.variable, k)
                         decs = [a for a in history.decisions]
                         decs.append(DecRecord(chunk.variable, opt, k))
@@ -279,10 +324,7 @@ class Parser:
                 print('... {} more rows'.format(len(self.history) - max_rows))
                 break
 
-    def main(self, verbose=True):
-        self._parse_blocks()
-        self._parse_graph()
-
+    def _warn_size(self):
         cap = self.dec_parser.get_cross_prod() * len(self.paths)
         if cap > 1024:
             rs = input('\nBoba may create as many as {} scripts. '
@@ -291,6 +333,12 @@ class Parser:
                 print('Aborted.')
                 exit(0)
 
+    def main(self, verbose=True):
+        self._parse_blocks()
+        self._parse_graph()
+        self._parse_constraints()
+
+        self._warn_size()
         self._code_gen()
         self._write_csv()
         if verbose:

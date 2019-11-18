@@ -1,0 +1,11 @@
+{
+  "graph": ["A->B->C", "B->D"],
+  "decisions": [
+    {"var": "a", "options": ["if", "else"]},
+    {"var": "b", "options": [0, 1] }
+  ],
+  "constraints": [
+    {"block": "C", "condition": "B == b1"},
+    {"block": "D", "condition": "B == b2"}
+  ]
+}
