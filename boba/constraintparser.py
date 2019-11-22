@@ -35,6 +35,37 @@ class ConstraintParser:
         raise ParseError('In parsing constraints:\n\t' + json.dumps(c)
                          + '\n\t\t' + msg)
 
+    @staticmethod
+    def make_index_var(w):
+        """ Embellish the variable name if the user is checking the option
+         by its index in the options array."""
+        return '_i_' + w
+
+    def _recon(self, code, parsed_decs, cond):
+        """ Transform parsed code and decisions into valid python code """
+        exe = []
+        for i, d in enumerate(parsed_decs):
+            if d.type == 'index_var':
+                exe.append(self.make_index_var(d.value))
+            elif d.type == 'var' and i % 2 == 1:
+                exe.append('"{}"'.format(d.value))
+            else:
+                exe.append(d.value)
+
+        recon = code.format(*exe)
+
+        # check if the code has syntax error
+        try:
+            eval(recon, {})
+        except SyntaxError:
+            msg = 'In parsing condition:\n\t' + cond + \
+                  '\nSyntax Error: invalid syntax'
+            raise ParseError(msg)
+        except NameError:
+            pass
+
+        return recon
+
     def read_constraints(self, code_parser, dec_parser):
         """ Read the constraints from the JSON spec. """
         cons = ConstraintParser._read_optional(self.spec, 'constraints', [])
@@ -85,10 +116,7 @@ class ConstraintParser:
             # todo: ensure that the parameters and options exist
 
             # now transform it into valid python code
-            exe = []
-            for i, d in enumerate(parsed_decs):
-                exe.append('"{}"'.format(d) if i % 2 else d)
-            recon = code.format(*exe)
+            recon = self._recon(code, parsed_decs, cond)
 
             # save
             key = '{}:{}'.format(param, opt) if param is not None else \

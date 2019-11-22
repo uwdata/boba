@@ -164,16 +164,18 @@ class Parser:
         """ See if the constraint holds true given the choices made. """
         con = self.constraints[con].condition
         paths, bdecs = self._nice_path(self.paths[history.path])
-        decs = bdecs + history.decisions
 
         # A dict where the key is each parameter and the value is the chosen
         # option. For ordinary blocks, key and value are the same.
         res = {}
         for p in paths:
             res[p] = p
-        for d in decs:
+        for d in bdecs:
             # note that block parameter will override with the actual option
             res[d.parameter] = d.option
+        for d in history.decisions:
+            res[d.parameter] = d.option
+            res[ConstraintParser.make_index_var(d.parameter)] = d.idx
 
         # now evaluate
         return eval(con, res)
