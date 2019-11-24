@@ -181,6 +181,20 @@ class TestParser(unittest.TestCase):
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 4)
 
+    def test_constraint_5(self):
+        """ Skip a block """
+        # first, skip a normal block
+        base = abs_path('./specs/')
+        ps = Parser(base+'script7.py', base+'spec-constraint-5.json')
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 8)
+
+        # then, skip a decision block
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-5.json')
+        ps.spec['constraints'] = [{"block": "B", "skip": True, "condition": "a == if"}]
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 6)
+
     # --- parse graph ---
     def test_spec_good(self):
         base = abs_path('../example/simple/')

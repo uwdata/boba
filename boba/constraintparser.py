@@ -11,6 +11,7 @@ class Constraint:
     block: str = ''
     variable: str = ''
     option: str = ''
+    skip: bool = False
     condition: str = ''
 
 
@@ -91,6 +92,9 @@ class ConstraintParser:
                     msg = 'Cannot handle variable and block at the same line.'
                     ConstraintParser._throw(msg, c)
 
+            # read skip flag
+            skip = bool(ConstraintParser._read_optional(c, 'skip'))
+
             # read option
             opt = ConstraintParser._read_optional(c, 'option')
             if opt:
@@ -121,6 +125,6 @@ class ConstraintParser:
             # save
             key = '{}:{}'.format(param, opt) if param is not None else \
                 (block if opt is None else '{}:{}'.format(block, opt))
-            self.constraints[key] = Constraint(block, param, opt, recon)
+            self.constraints[key] = Constraint(block, param, opt, skip, recon)
 
         return self.constraints

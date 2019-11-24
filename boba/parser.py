@@ -25,10 +25,12 @@ class History:
     path: index of the code path.
     filename: file name of the universe.
     decisions: placeholder variables and the options they took.
+    skipped: nodes that are skipped.
     """
     path: int
     filename: str = ''
     decisions: List = field(default_factory=lambda: [])
+    skipped: List = field(default_factory=lambda: [])
 
 
 @dataclass
@@ -163,7 +165,7 @@ class Parser:
     def _eval_constraint(self, history, con):
         """ See if the constraint holds true given the choices made. """
         con = self.constraints[con].condition
-        paths, bdecs = self._nice_path(self.paths[history.path])
+        paths, bdecs = self._nice_path(self._get_skipped_path(history))
 
         # A dict where the key is each parameter and the value is the chosen
         # option. For ordinary blocks, key and value are the same.
@@ -220,8 +222,15 @@ class Parser:
             for n in names:
                 if n in self.constraints and\
                         not self._eval_constraint(history, n):
-                    # constraint met, abort
-                    return
+                    # constraint met
+                    if self.constraints[n].skip:
+                        # skip the node and continue
+                        history.skipped.append(nd)
+                        self._code_gen_recur(path, i + 1, code, history)
+                        return
+                    else:
+                        # abort codegen
+                        return
 
             if chunk.variable != '':
                 # check if we have already encountered the placeholder variable
@@ -278,6 +287,11 @@ class Parser:
         decs = [DecRecord(p.split(':')[0], p.split(':')[1]) for p in path if ':' in p]
         return ps, decs
 
+    def _get_skipped_path(self, h):
+        """ Get the history's path, with skipped nodes removed. """
+        sk = set(h.skipped)
+        return [nd for nd in self.paths[h.path] if nd not in sk]
+
     def _write_csv(self):
         rows = []
         decs = self.dec_parser.get_decs() +\
@@ -285,7 +299,7 @@ class Parser:
         ops = self.wrangler.get_outputs()
         rows.append(['Filename', 'Code Path'] + decs + ops)
         for h in self.history:
-            paths, bdecs = self._nice_path(self.paths[h.path])
+            paths, bdecs = self._nice_path(self._get_skipped_path(h))
             row = [h.filename, '->'.join(paths)]
             mp = {}
             for d in h.decisions:
@@ -306,7 +320,7 @@ class Parser:
         print('{:<20}{:<30}{:<30}'.format('Filename', 'Code Path', 'Decisions'))
         print('=' * w)
         for idx, h in enumerate(self.history):
-            paths, bdecs = self._nice_path(self.paths[h.path])
+            paths, bdecs = self._nice_path(self._get_skipped_path(h))
             path = wrap('->'.join(paths), width=27)
             decs = ['{}={}'.format(d.parameter, d.option) for d in bdecs + h.decisions]
             decs = wrap(', '.join(decs), width=30)
