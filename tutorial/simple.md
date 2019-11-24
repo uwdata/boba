@@ -30,7 +30,7 @@ if __name__ == '__main__':
 
 Suppose the threshold for removing outliers is pretty subjective; you can
 justify removing data points outside 2, 2.5 or 3 standard deviations of the
-mean. Would the linear model change if you adopt a different threshold? To test
+mean. Would the prediction change if you adopt a different threshold? To test
 this, you might insert a decision point and ask the tool to output a
 separate script for each possible threshold configuration. To insert a decision,
 first insert a placeholder variable `{{var_name}}` in the above code:
@@ -83,13 +83,13 @@ df = df[abs(df.y - median) <= 3 * iqr]
 ```
 As you can see, this alternative requires a few lines to implement; it is no
 longer a straightforward value substitution. You can of course write the entire
-block of code as a string into the decision array, but it will be really
+block of code as a string into the options array, but it will be really
 cumbersome.
 
 You might instead consider using code blocks. Instead of a
 linear flow from start to end, your code can consist of blocks, similar to
 cells in Jupyter notebook or R markdown. To specify a code block, simply insert
-a comment line that looks like `# --- (ID) option` immediately
+a comment line with the syntax `# --- (ID) option` immediately
 before the starting line of the block. The lines of code between this
 declaration and the next (or the end of file) is a block
 named `ID`. We will go ahead and insert three such comments into
@@ -161,9 +161,10 @@ universes where the following value and code path is chosen:
 |universe_3.py|_start->A->B|3     |std|
 |universe_4.py|_start->A->B|      |iqr|
 
-Note that the cell of row "universe_4.py" and column "cutoff" is empty, because
-we did not use the parameter `cutoff` in our outlier removal code involving IQR.
-If we change the line to:
+Since we did not use the parameter `cutoff` in our outlier removal code
+involving IQR, our multiverse does not expand the parameter `cutoff` when
+block `A` takes the option `iqr`. If we change the code in IQR to be:
+
 ```python
 df = df[abs(df.y - median) <= {{cutoff}} * iqr]
 ```
@@ -197,8 +198,13 @@ cd your_output_dir/multiverse
 sh execute.sh
 ```
 It will run **all** the scripts for you! Before you do this, you might want
-to run one script manually (or simply look at a few scripts) to ensure that
-the generated code does not have syntax errors, etc.
+to run one script, or simply look at a few scripts, to ensure that
+the generated code does not have syntax errors, etc. To run a selected range
+of universes, for example universe number 1 through 3, do:
+
+```bash
+sh execute.sh 1 3
+```
 
 ### Try it yourself!
 

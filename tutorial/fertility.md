@@ -29,9 +29,12 @@ points:
     }
   }
 ```
-Using for-loops have multiple issues, for instance the nested structure looks
-bloated (what if we have 20 decision points and thus 20 nested levels?).
-But a more important issue is the inability to express
+
+The nested structure looks quite clumsy -- what if we have 10 decision points
+and thus 10 nested levels? With boba, we hope the users could focus on the
+decisions and the options, and let boba handle the rest.
+
+Another issue with these for-loops is the inability to express
 conditional branches where a downstream decision depends on an upstream one.
 Steegen et al. explained a conditional branch in the paper:
 
@@ -41,24 +44,91 @@ Steegen et al. explained a conditional branch in the paper:
 > computed or reported cycle length, respectively. 
 
 To implement this, they ran 180 analyses but excluded 60 of the inconsistent
-ones. It will be much better if we do not run these 60 analyses in the first
-place.
+ones. We will show how you could express such dependencies in boba.
 
 ### Our implementation
 
-We converted the analysis of study 1 in Steegen's R script into
-[python](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility/script.py)
-and expanded it to a multiverse specification (
+We expanded the analysis of study 1 in Steegen's R script into a multiverse
+specification (
+[template](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility_r/template.R),
+[JSON](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility_r/spec.json)).
+
+Recall that in boba, we have basically two ways to specify a decision: via a
+template variable ``{{var_name}}``, or via a code block. In our multiverse, we
+make use of both.
+
+For example, a decision about next menstrual onset (`NMO`) is implemented
+as a code block with two variants:
+
+```python
+# --- (NMO) computed
+# first nmo option: based on computed cycle length
+df$NextMenstrualOnset <- df$StartDateofLastPeriod + df$ComputedCycleLength
+
+# --- (NMO) reported
+# second nmo option: based on reported cycle length
+df$NextMenstrualOnset <- df$StartDateofLastPeriod + df$ReportedCycleLength
+```
+
+Another decision, assessment of relationship status, is a placeholder variable:
+
+```python
+# relationship status assessment
+rel.bounds = {{relationship_bounds}}
+df$RelationshipStatus[df$Relationship <= rel.bounds[1]] <- "Single"
+df$RelationshipStatus[df$Relationship >= rel.bounds[2]] <- "Relationship"
+```
+```json
+{"var": "relationship_bounds", "options": [
+  "c(2, 3)", "c(1, 2)", "c(1, 3)"
+]}
+```
+
+Although it has a upper bound and a lower bound, we implement this decision as
+one variable instead of two, because we do not want boba to take a cross
+product of the two cutoffs. Here, the two cutoffs belong to a list in a single
+placeholder variable, so they are paired.
+
+After specifying two more decisions (`ECL` and `EC`) as code blocks, we now
+tell boba the relationship between the blocks:
+```json
+{ "graph": ["NMO->ECL->A->EC->B"] }
+```
+
+If we stop here, boba will take a cross product of all five decisions and
+produce 180 universes. But as we described earlier, some paths are not reasonable.
+Specifically, when we compute NMO using *computed* cycle length, we do not want
+to exclude outliers based on *reported* cycle length, and vice versa. To tell
+boba that a decision depends on the choices made by another decision, we could
+use `constraints` in the JSON spec:
+
+```json
+{
+  "constraints": [
+    {"block": "ECL", "option": "computed", "condition": "NMO == computed"},
+    {"block": "ECL", "option": "reported", "condition": "NMO == reported"}
+  ]
+}
+```
+
+In the field `block` and `option`, we specify the dependent decision, and in
+the field `condition`, we specify the condition when this dependent decision
+should happen. With these constraints, boba will generate only 120 universes.
+
+### Advanced usage of the graph
+
+There is yet another, arguably simpler and more flexible way to specify
+decisions and procedural dependencies, if you are comfortable with directed
+acyclic graphs (DAGs). Recall that we wrote in the JSON spec a graph
+indicating the relationship between blocks. The relationship needs not be
+linear, but can be any valid DAGs.
+
+To illustrate advanced usage of the graph, we built another multiverse, this
+time using a python version of the analysis (
 [template](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility/script_annotated.py),
 [JSON](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility/spec.json)).
 
-Recall that in our tool, we have basically 
-two ways to specify a decision point: via a template variable `{{var_name}}`
-which chooses from one of the available options, or via nodes in
-a directed acyclic graph (DAG) which dictates non-linear flow of code blocks.
-The first approach is simpler, but the second approach is far more flexible 
-and powerful. Now, we will illustrate how we used DAG to meet our needs.
-
+We now describe how you might specify a decision in different ways.
 One of the decision point, ECL, has the following options:
 
 > Exclusion of women based on cycle length (ECL)  
@@ -136,16 +206,29 @@ df = df[(df.reported_cycle_length >= 25) & (df.reported_cycle_length <= 35)]
   "graph": ["A->B", "A->ECL2->B", "A->ELC3->B"]
 }
 ```
-All three ways are (somewhat) equivalent. But it turns out that the decision
-point ECL is conditioned on a previous decision point NMO:
 
-> Next menstrual onset (NMO)  
-> (a) NMO1: reported start date previous menstrual onset +
-computed cycle length  
-> (b) NMO2: reported start date previous menstrual onset +
-reported cycle length
+Of course, we could also use decision blocks as we did in the previous example:
+```python
+# --- (ECL) computed
+# exclusion based on computed cycle length
+df <- df[!(df$ComputedCycleLength < 25 | df$ComputedCycleLength > 35), ]
 
-Filtering on reported cycle length is only applicable if next menstrual onset
+# --- (ECL) reported
+# exclusion based on reported cycle length
+df <- df[!(df$ReportedCycleLength < 25 | df$ReportedCycleLength > 35), ]
+
+# --- (ECL) none
+# include all cycle lengths
+
+```
+
+(The third option does nothing basically, but it is necessary to explicitly
+write an empty block, otherwise boba wouldn't know that we intend to have an
+option that filters nothing.)
+
+All four ways are (somewhat) equivalent. But how do we specify procedural
+dependencies? Recall that
+filtering on reported cycle length is only applicable if next menstrual onset
 is calculated using reported cycle length, and vice versa. In other words, ECL2
 is present only if NMO1 is present and ECL3 is present only if NMO2 is present.
 Note that our third specification above naturally supports such branching
@@ -187,8 +270,9 @@ the number after excluding inconsistent analyses.
 
 # Try it yourself!
 
-The complete code and data are [here](
-https://github.com/uwdata/multiverse-spec/tree/master/example/fertility).
+The complete code and data are here (
+[R](https://github.com/uwdata/multiverse-spec/tree/master/example/fertility_r),
+[python](https://github.com/uwdata/multiverse-spec/tree/master/example/fertility)).
 We do not include the output scripts because there will be 120 of them. But
 you are welcome to invoke the parser, take a look at the generated scripts, 
 and execute the multiverse to inspect the results.
@@ -198,6 +282,6 @@ To run the example, clone this repository and run the following commands:
 ```bash
 pip install -e .
 pip install -r requirements.txt
-cd example/fertility
-boba
+cd example/fertility_r
+boba -s template.R
 ```
