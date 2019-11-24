@@ -12,21 +12,24 @@ df$StartDateofPeriodBeforeLast <- as.Date(df$StartDateofPeriodBeforeLast,
                                                     format = "%m/%d/%y")
 df$ComputedCycleLength <- df$StartDateofLastPeriod - df$StartDateofPeriodBeforeLast
 
-# --- (NMO1)
+# --- (NMO) computed
 # first nmo option: based on computed cycle length
 df$NextMenstrualOnset <- df$StartDateofLastPeriod + df$ComputedCycleLength
 
-# --- (NMO2)
+# --- (NMO) reported
 # second nmo option: based on reported cycle length
 df$NextMenstrualOnset <- df$StartDateofLastPeriod + df$ReportedCycleLength
 
-# --- (ECL1)
+# --- (ECL) computed
 # exclusion based on computed cycle length
 df <- df[!(df$ComputedCycleLength < 25 | df$ComputedCycleLength > 35), ]
 
-# --- (ECL2)
+# --- (ECL) reported
 # exclusion based on reported cycle length
 df <- df[!(df$ReportedCycleLength < 25 | df$ReportedCycleLength > 35), ]
+
+# --- (ECL) none
+# include all cycle lengths
 
 # --- (A)
 # compute cycle day
@@ -47,9 +50,12 @@ rel.bounds = {{relationship_bounds}}
 df$RelationshipStatus[df$Relationship <= rel.bounds[1]] <- "Single"
 df$RelationshipStatus[df$Relationship >= rel.bounds[2]] <- "Relationship"
 
-# --- (EC)
+# --- (EC) certainty
 # exclusion based on certainty ratings
 df <- df[!(df$Sure1 < 6 | df$Sure2 < 6), ]
+
+# --- (EC) none
+# include all certainty ratings
 
 # --- (B)
 # perform an ANOVA on the processed data set

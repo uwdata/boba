@@ -1,12 +1,5 @@
 {
-  "graph": [
-    "NMO1->ECL1->A",
-    "NMO2->ECL2->A",
-    "NMO1->A",
-    "NMO2->A",
-    "A->B",
-    "A->EC->B"
-  ],
+  "graph": ["NMO->ECL->A->EC->B"],
   "decisions": [
     {"var": "fertility_bounds", "options": [
       "c(7, 14, 17, 25, 17, 25)",
@@ -18,6 +11,10 @@
     {"var": "relationship_bounds", "options": [
       "c(2, 3)", "c(1, 2)", "c(1, 3)"
     ]}
+  ],
+  "constraints": [
+    {"block": "ECL", "option": "computed", "condition": "NMO == computed"},
+    {"block": "ECL", "option": "reported", "condition": "NMO == reported"}
   ],
   "outputs": [
     {"name": "p-value", "value": "summar$coefficients[4, 4]"}
