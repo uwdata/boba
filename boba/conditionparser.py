@@ -23,11 +23,11 @@ class ConditionParser(BaseParser):
 
     @staticmethod
     def _is_keyword(w):
-        return w == 'and' or w == 'or'
+        return w == 'and' or w == 'or' or w == 'not'
 
     @staticmethod
     def _is_operator(ch):
-        return ch in ['=', '(', ')']
+        return ch in ['=', '(', ')', '!', '>', '<']
 
     def _throw(self, msg):
         msg = 'At character {} of "{}":\n\t{}'.format(self.i + 1, self.line, msg)

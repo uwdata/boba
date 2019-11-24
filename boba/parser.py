@@ -175,6 +175,10 @@ class Parser:
         for d in bdecs:
             # note that block parameter will override with the actual option
             res[d.parameter] = d.option
+        for d in self.dec_parser.get_decs():
+            # unmade decisions will have value None and index -1
+            res[d] = None
+            res[ConstraintParser.make_index_var(d)] = -1
         for d in history.decisions:
             res[d.parameter] = d.option
             res[ConstraintParser.make_index_var(d.parameter)] = d.idx
