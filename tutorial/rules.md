@@ -97,13 +97,13 @@ variables in your script template. The syntax is:
 ```json
 {
   "decisions": [
-    {"var":  "decision_1", "options": [1, 2, 3]},
-    {"var":  "decision_2", "options": ["1", "2", "3"]}
+    {"var": "decision_1", "options": [1, 2, 3]},
+    {"var": "decision_2", "options": ["1", "2", "3"]}
   ]
 }
 ```
 `decisions` is an array of individual decision. Each decision is a dictionary
-that contains a `var` and a `options` array. `var` must match the
+that contains a `var` string and a `options` array. `var` must match the
 corresponding placeholder variable name in the script template.
 `options` is an array of all possible values the placeholder
 variable can take. An item in the `options` array can be any valid JSON type, as
@@ -117,17 +117,24 @@ be `a=1` instead of `a="1"`.
 ### Constraints
 
 The third type of top-level array, `constraints`, indicates procedural
-dependencies (when a later decision only happens if a subset of options in an
-earlier decision is chosen). It is optional. The array contains individual
+dependencies -- when a later decision only happens if a subset of options in an
+earlier decision is chosen. It is optional. The array contains individual
 constraint as objects, with the following fields:
 ```json
-{"block": "block_ID", "variable": "placeholder_var", "option": "option", "skip": false, "condition": "A == a1"}
+{
+  "block": "block_ID",
+  "variable": "placeholder_var",
+  "option": "option",
+  "skip": false,
+  "condition": "A == a1"
+}
 ```
 
 `block`, `variable` and/or `option` specify the dependent decision. `condition`
 indicates the condition when the dependent decision should happen. `skip` is a
 flag, only applicable to blocks, to indicate whether boba should skip the block
-when the condition is not met (rather than removing the entire path).
+when the condition is not met (rather than abandoning the entire universe).
+Next, we describe each field in detail.
 
 There are three forms to identify a dependent decision. It can be a `block`
 (either a normal block or a decision block). It can be a `block` with a
@@ -136,32 +143,40 @@ specific `option`. It can be a placeholder `variable` with a specific
 `option` refers to the name of the block option or the actual value of the
 placeholder option.
 
-`skip` is optional, with the default value `false`. In other words, if the
-condition evaluates to false, all universes containing the block
-will not be created by default.
+`skip` is optional, with the default value `false`. If `skip` is false, when
+a universe does not satisfy the `condition`, the universe will be removed --
+no script will be created for this universe. It is useful when some
+combination of decisions are inherently not reasonable in your multiverse.
+On the other hand, if `skip` is true, boba will not
+abandon the universe, but will instead skip the block with this flag and
+continue from the next block in the graph. The universe still
+exist, but the block will be removed from the script. This scenario is useful
+when a helper block is only applicable to a certain subset of universes.
 
 `condition` must be valid python syntax that can evaluate to a boolean. Only
 a subset of python operators are allowed: `and`, `or`, `not`, and these
 symbols `( ) < > ! =`. To say that a block/variable decision `A` takes up
 the option `a1`, use the syntax `A == a1`. Alternatively for placeholder
-variable `A`, you might refer to its options by the index of the option in
+variable `A`, you might refer to its option by the index of the option in
  the array, using
-this syntax `A.index == 0`. The index starts from 0. 
+the syntax `A.index == 0`. The index starts from 0. 
 
-More caveats:
+Some caveats:
 1. For placeholder variables, the decision is NOT made at the beginning, but
 until the placeholder variable first appears in the code. Any unmade decision
 will have option `None` and index `-1`.
 
-2. For security reasons, an option in a `condition` can only be a single word
-or a single number. Use the index for anything more complex.
+2. For security reasons, when referring to an option by its value in the
+`condition`, it only works if the option value is a single word (satisfying
+the identifier naming rule) or a single number. Please use the index for
+anything more complex.
 
 ### Other Top-Level Fields
 
-1. `before_execute`: is a string of a single-line bash script, which will be
-executed every time prior to executing any universe, if you invoke `execute.sh`.
-This field is optional.
+1. `before_execute` is a string of a single-line bash script. It will be
+executed every time prior to executing any universe, when `execute.sh` is
+invoked. This field is optional.
 
-2. `after_execute`: is a string of a single-line bash script, which will be 
-executed every time after executing all universes, if you invoke `execute.sh`.
+2. `after_execute` is a string of a single-line bash script. it will be 
+executed every time after executing all universes, when `execute.sh` is invoked.
 This field is optional.

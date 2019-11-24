@@ -1,7 +1,7 @@
 # A Real-World Multiverse Example
 
 In this tutorial, we will implement the multiverse analysis of Steegen et al.
-using our tool. In their pioneering [paper](
+using boba. In their pioneering [paper](
 https://journals.sagepub.com/doi/full/10.1177/1745691616658637
 ) , Steegen et al. reanalyzed the [datasets](https://osf.io/zj68b/)
 collected by Durante et al. to study the effect of fertility on religiosity
@@ -60,7 +60,7 @@ make use of both.
 For example, a decision about next menstrual onset (`NMO`) is implemented
 as a code block with two variants:
 
-```python
+```r
 # --- (NMO) computed
 # first nmo option: based on computed cycle length
 df$NextMenstrualOnset <- df$StartDateofLastPeriod + df$ComputedCycleLength
@@ -72,7 +72,7 @@ df$NextMenstrualOnset <- df$StartDateofLastPeriod + df$ReportedCycleLength
 
 Another decision, assessment of relationship status, is a placeholder variable:
 
-```python
+```r
 # relationship status assessment
 rel.bounds = {{relationship_bounds}}
 df$RelationshipStatus[df$Relationship <= rel.bounds[1]] <- "Single"
@@ -84,7 +84,7 @@ df$RelationshipStatus[df$Relationship >= rel.bounds[2]] <- "Relationship"
 ]}
 ```
 
-Although it has a upper bound and a lower bound, we implement this decision as
+Although `relationship_bounds` has a upper bound and a lower bound, we implement this decision as
 one variable instead of two, because we do not want boba to take a cross
 product of the two cutoffs. Here, the two cutoffs belong to a list in a single
 placeholder variable, so they are paired.
@@ -98,8 +98,8 @@ tell boba the relationship between the blocks:
 If we stop here, boba will take a cross product of all five decisions and
 produce 180 universes. But as we described earlier, some paths are not reasonable.
 Specifically, when we compute NMO using *computed* cycle length, we do not want
-to exclude outliers based on *reported* cycle length, and vice versa. To tell
-boba that a decision depends on the choices made by another decision, we could
+to filter data based on *reported* cycle length, and vice versa. To tell
+boba that a decision depends on the choices made in another decision, we could
 use `constraints` in the JSON spec:
 
 ```json
@@ -111,7 +111,8 @@ use `constraints` in the JSON spec:
 }
 ```
 
-In the field `block` and `option`, we specify the dependent decision, and in
+In the field `block` and `option`, we specify the dependent decision, in this
+case the two options of `ECL`. Then in
 the field `condition`, we specify the condition when this dependent decision
 should happen. With these constraints, boba will generate only 120 universes.
 
@@ -209,63 +210,37 @@ df = df[(df.reported_cycle_length >= 25) & (df.reported_cycle_length <= 35)]
 
 Of course, we could also use decision blocks as we did in the previous example:
 ```python
-# --- (ECL) computed
-# exclusion based on computed cycle length
-df <- df[!(df$ComputedCycleLength < 25 | df$ComputedCycleLength > 35), ]
-
-# --- (ECL) reported
-# exclusion based on reported cycle length
-df <- df[!(df$ReportedCycleLength < 25 | df$ReportedCycleLength > 35), ]
-
-# --- (ECL) none
+# --- (ECL) ecl1
 # include all cycle lengths
 
+# --- (ECL) ecl2
+# exclusion based on computed cycle length
+df = df[(df.computed_cycle_length >= 25) & (df.computed_cycle_length <= 35)]
+
+# --- (ECL) ecl3
+# exclusion based on reported cycle length
+df = df[(df.reported_cycle_length >= 25) & (df.reported_cycle_length <= 35)]
 ```
 
-(The third option does nothing basically, but it is necessary to explicitly
+(The first option does nothing basically, but it is necessary to explicitly
 write an empty block, otherwise boba wouldn't know that we intend to have an
 option that filters nothing.)
 
 All four ways are (somewhat) equivalent. But how do we specify procedural
-dependencies? Recall that
+dependencies using DAG? Recall that
 filtering on reported cycle length is only applicable if next menstrual onset
 is calculated using reported cycle length, and vice versa. In other words, ECL2
 is present only if NMO1 is present and ECL3 is present only if NMO2 is present.
 Note that our third specification above naturally supports such branching
 condition and we might extend it to include the NMO code blocks:
 
-```python
-# template
-# --- (NMO1)
-# first nmo option: based on computed cycle length
-cl = df.last_period_start - df.period_before_last_start
-next_onset = df.last_period_start + cl
-df['computed_cycle_length'] = (cl / np.timedelta64(1, 'D')).astype(int)
-
-# --- (NMO2)
-# second nmo option: based on reported cycle length
-df = df.dropna(subset=['reported_cycle_length'])
-next_onset = df.last_period_start + df.reported_cycle_length.apply(
-    lambda a: pd.Timedelta(days=a))
-
-# --- (ECL2)
-# exclusion based on computed cycle length
-df = df[(df.computed_cycle_length >= 25) & (df.computed_cycle_length <= 35)]
-
-# --- (ECL3)
-# exclusion based on reported cycle length
-df = df[(df.reported_cycle_length >= 25) & (df.reported_cycle_length <= 35)]
-
-# --- (A)
-# ... some other stuff
-
-# JSON
+```json
 {
   "graph": ["NMO1->ECL2->A", "NMO2->ECL3->A", "NMO1->A", "NMO2->A"]
 }
 ```
 
-With the complete specification, we will only generate 120 universes, which is 
+With this graph, we will only generate 120 universes, which is 
 the number after excluding inconsistent analyses.
 
 # Try it yourself!
