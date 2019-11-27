@@ -43,15 +43,15 @@ df <- read_csv('../data.csv',
         damage =  {{damage}}
     )
 
-# --- (LM)
+# --- (M) ols_regression
 # OLS regression with log(deaths+1) as the dependent variable 
-model <- lm(log_death ~ {{predictions}} {{covariates}}, data = df)
+model <- lm(log_death ~ {{predictors}} {{covariates}}, data = df)
 result <- tidy(model, conf.int = TRUE) %>%
     mutate(model = 'OLS regression')
 
-# --- (NB)
+# --- (M) negative_binomial
 # Negative binomial with deaths as the dependent variable
-model <- glm.nb(death ~ {{predictions}} {{covariates}}, data = df)
+model <- glm.nb(death ~ {{predictors}} {{covariates}}, data = df)
 result <- tidy(model, conf.int = TRUE) %>%
     mutate(model = 'Negative binomial')
 

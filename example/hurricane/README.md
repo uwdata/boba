@@ -43,3 +43,12 @@ But in their actual implementation, Simonsohn separated the first decision (of s
 into a cross product of two decisions (3x4), thus doubling the size of the final multiverse.
 
 2. As we used a slightly different dataset than the one used by Jung et al., we did not obtain the same result when using the original specification in Jung's study.
+
+3. About 40 universes, all fitting a negative binomial model, will fail because
+of this error:
+```
+Error in glm.fitter(x = X, y = Y, w = w, etastart = eta, offset = offset,  : 
+  NA/NaN/Inf in 'x'
+Calls: glm.nb -> glm.fitter
+```
+The helper script `debug_count.py` outputs which universes had failed.

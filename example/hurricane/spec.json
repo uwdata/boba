@@ -1,8 +1,5 @@
 {
-    "graph": [
-        "LM->O",
-        "NB->O"
-      ],
+    "graph": ["M->O"],
       "decisions": [
         {"var": "outliers", "options": [
             "c()",
@@ -14,7 +11,7 @@
         ]},
         {"var": "feminity", "options": ["female", "masfem"]},
         {"var": "damage", "options": ["dam", "log_dam"]},
-        {"var": "predictions", "options": [
+        {"var": "predictors", "options": [
             "feminity * damage",
             "feminity + damage + pressure + feminity:damage + feminity:pressure",
             "feminity + damage + zwin + feminity:damage + feminity:zwin",
