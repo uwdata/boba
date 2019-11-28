@@ -9,7 +9,7 @@ from .__init__ import __version__
 
 @click.command()
 @click.option('--script', '-s', help='Path to template script',
-              default='./script_annotated.py', show_default=True)
+              default='./template.py', show_default=True)
 @click.option('--json', '-j', help='Path to JSON spec',
               default='./spec.json', show_default=True)
 @click.option('--out', '-o', help='Output directory',

@@ -126,7 +126,7 @@ linear, but can be any valid DAGs.
 
 To illustrate advanced usage of the graph, we built another multiverse, this
 time using a python version of the analysis (
-[template](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility/script_annotated.py),
+[template](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility/template.py),
 [JSON](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility/spec.json)).
 
 We now describe how you might specify a decision in different ways.
@@ -252,11 +252,20 @@ We do not include the output scripts because there will be 120 of them. But
 you are welcome to invoke the parser, take a look at the generated scripts, 
 and execute the multiverse to inspect the results.
 
-To run the example, clone this repository and run the following commands:
+To run the R example, clone this repository and run the following commands:
+
+```bash
+pip install -e .
+cd example/fertility_r
+boba -s template.R
+Rscript install.R
+```
+
+To run the python example, clone this repo and run the following commands:
 
 ```bash
 pip install -e .
 pip install -r requirements.txt
-cd example/fertility_r
-boba -s template.R
+cd example/fertility
+boba
 ```

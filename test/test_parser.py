@@ -32,19 +32,19 @@ class TestParser(unittest.TestCase):
     # a simple synthetic example
     def test_code_gen(self):
         base = abs_path('../example/simple/')
-        ps = Parser(base+'script_annotated.py', base+'spec.json', base)
+        ps = Parser(base+'template.py', base+'spec.json', base)
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 6)
 
     # a complex example
     def test_codegen_reading(self):
         base = abs_path('../example/reading/python/')
-        Parser(base+'script_annotated.py', base+'spec.json', base).main(verbose=False)
+        Parser(base+'template.py', base+'spec.json', base).main(verbose=False)
 
     # another complex example
     def test_codegen_fertility(self):
         base = abs_path('../example/fertility/')
-        ps = Parser(base+'script_annotated.py', base+'spec.json', base)
+        ps = Parser(base+'template.py', base+'spec.json', base)
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 120)
 
@@ -59,7 +59,7 @@ class TestParser(unittest.TestCase):
     def test_default_graph(self):
         base = abs_path('../example/simple/')
         sp = abs_path('./specs/')
-        ps = Parser(base+'script_annotated.py', sp+'spec-simple-example.json', base)
+        ps = Parser(base+'template.py', sp+'spec-simple-example.json', base)
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 6)
 
@@ -115,7 +115,7 @@ class TestParser(unittest.TestCase):
     # --- parse blocks ---
     def test_parse_blocks(self):
         base = abs_path('../example/simple/')
-        ps = Parser(base+'script_annotated.py', base+'spec.json')
+        ps = Parser(base+'template.py', base+'spec.json')
         ps._parse_blocks()
         self.assertSetEqual(set(ps.code_parser.blocks.keys()), {'_start', 'A:std', 'A:iqr', 'B'})
         self.assertListEqual(['_start', 'A', 'B'], ps.code_parser.order)
@@ -209,7 +209,7 @@ class TestParser(unittest.TestCase):
     # --- parse graph ---
     def test_spec_good(self):
         base = abs_path('../example/simple/')
-        ps = Parser(base+'script_annotated.py', base+'spec.json')
+        ps = Parser(base+'template.py', base+'spec.json')
         ps._parse_blocks()
         ps._parse_graph()
         expected = [['_start', 'A:std', 'B'], ['_start', 'A:iqr', 'B']]
