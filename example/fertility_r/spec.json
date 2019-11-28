@@ -1,5 +1,4 @@
 {
-  "graph": ["NMO->ECL->A->EC->B"],
   "decisions": [
     {"var": "fertility_bounds", "options": [
       "c(7, 14, 17, 25, 17, 25)",

@@ -138,14 +138,24 @@ class Parser:
         graph_spec = self.spec['graph'] if 'graph' in self.spec else []
 
         try:
-            nodes, edges = GraphParser(graph_spec).parse()
-            self._match_nodes(nodes)
-            self.dec_parser.verify_naming(nodes)
-            nodes, edges = self._replace_graph(nodes, edges)
-            self.paths = GraphAnalyzer(nodes, edges).analyze()
+            gp = GraphParser(graph_spec)
+            nodes, edges = gp.parse()
 
+            # if the user didn't specify the graph, use default
+            if len(nodes) == 0:
+                nodes, edges = gp.create_default_graph(self.code_parser.order)
+
+            # check if graph nodes matches block IDs, and vice versa
+            self._match_nodes(nodes)
+            # check if any name of nodes collides with variable names
+            self.dec_parser.verify_naming(nodes)
+            # expand the graph with options
+            nodes, edges = self._replace_graph(nodes, edges)
+
+            # analyze the graph to get paths
+            self.paths = GraphAnalyzer(nodes, edges).analyze()
             # an ugly way to handle the artificial _start node
-            if '_start' in self.code_parser.blocks:
+            if '_start' in self.code_parser.blocks and '_start' not in nodes:
                 for p in self.paths:
                     p.insert(0, '_start')
                 if len(self.paths) == 0:

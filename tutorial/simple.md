@@ -151,6 +151,10 @@ graph in the JSON file:
   ]
 }
 ```
+The graph is optional, with the default being a linear path of all the blocks
+according to their order in the template script. In this example, we could
+omit the graph and still get the same result.
+
 Now, calling the program with our updated script and JSON will generate 4
 universes where the following value and code path is chosen:
 

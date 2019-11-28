@@ -1,6 +1,6 @@
 {
+  "graph": ["A->B"],
   "decisions": [
     {"var": "cutoff", "options": [2, 2.5, 3] }
-  ],
-  "before_execute": "cp ../data.csv ./code/"
+  ]
 }

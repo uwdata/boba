@@ -82,10 +82,12 @@ Examples
 ========
 
 - A `simple example`_ to walk you through the basics
-- A `more complex example`_ using `Steegen's_ multiverse analysis`_ and `Durante's fertility dataset`_.
-- Another multiverse analysis_ applied to a `reading speed dataset`_ collected by Qisheng Li et al.
+- A `more complex example`_ using `Steegen's multiverse analysis`_ and `Durante's fertility dataset`_.
+- Another multiverse example_, based on the `specification curve paper`_ by Simonsohn et al.
 
 .. _reading speed dataset: https://github.com/QishengLi/CHI2019_Reader_View
 .. _analysis: https://github.com/uwdata/multiverse-spec/tree/master/example/reading
-.. _Steegen's_ multiverse analysis: https://journals.sagepub.com/doi/pdf/10.1177/1745691616658637
+.. _example: https://github.com/uwdata/multiverse-spec/tree/master/example/hurricane
+.. _specification curve paper: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694998
+.. _Steegen's multiverse analysis: https://journals.sagepub.com/doi/pdf/10.1177/1745691616658637
 .. _Durante's fertility dataset: https://osf.io/zj68b/

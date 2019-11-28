@@ -29,6 +29,13 @@ Any valid pattern will be recognized as a template variable, even if you do not
 intend to. Any non-valid pattern will be dropped silently, even if you intend
 it to be a template variable. All recognized variable will be in `summary.csv`.
 
+Boba also has a few reserved variables, all starting with an underscore. These
+variables represent predefined values and you do not need to supply options for
+them in the JSON file:
+1. `{{_n}}` represents the universe number, namely the number attached to the
+generated universe file. It's useful for creating a separate filename for
+outputting a separate file in each universe.
+
 ### Code Block
 A code block declaration breaks the template script into blocks. All lines
 following this declaration until the next code block declaration or the end of
@@ -63,6 +70,11 @@ contains any amounts of string and each string contains nodes and edges in
 the following format. An edge is represented by the syntax `->` and it is
 directed, pointing from the left node to the right node. A node is a block
 identifier and thus it follows the naming rule of block identifiers.
+
+If graph is not present in the JSON and the template script contains code
+blocks, boba will create a default graph, which is a linear path of all blocks.
+The order of the nodes is the order that the blocks appear in the template
+script.
 
 Here is an example that denotes a circle consisting of node A, B and C:
 

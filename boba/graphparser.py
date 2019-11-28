@@ -67,3 +67,16 @@ class GraphParser(BaseParser):
                 break
 
         return self.nodes, self.edges
+
+    def create_default_graph(self, nodes):
+        """
+        Create the default graph, which is a linear flow of blocks, with the
+        same order as they appear in the template script.
+        :param nodes: A list of unique blocks.
+        :return: nodes and edges
+        """
+        self.nodes = set(nodes)
+        self.edges = set()
+        for i in range(len(nodes) - 1):
+            self.edges.add(Edge(nodes[i], nodes[i + 1]))
+        return self.nodes, self.edges

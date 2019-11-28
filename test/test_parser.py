@@ -55,6 +55,14 @@ class TestParser(unittest.TestCase):
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 120)
 
+    # the simple example without graph, to test default graph generation
+    def test_default_graph(self):
+        base = abs_path('../example/simple/')
+        sp = abs_path('./specs/')
+        ps = Parser(base+'script_annotated.py', sp+'spec-simple-example.json', base)
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 6)
+
     # the spec has one decision and no graphs; should work
     def test_codegen_decision_only(self):
         base = abs_path('./specs/')
@@ -110,12 +118,14 @@ class TestParser(unittest.TestCase):
         ps = Parser(base+'script_annotated.py', base+'spec.json')
         ps._parse_blocks()
         self.assertSetEqual(set(ps.code_parser.blocks.keys()), {'_start', 'A:std', 'A:iqr', 'B'})
+        self.assertListEqual(['_start', 'A', 'B'], ps.code_parser.order)
 
     def test_script_1(self):
         base = abs_path('./specs/')
         ps = Parser(base+'script1.py', base+'spec-good.json')
         ps._parse_blocks()
         self.assertListEqual([*ps.code_parser.blocks], ['A', 'B', 'C'])
+        self.assertListEqual(['A', 'B', 'C'], ps.code_parser.order)
 
     def test_script_2(self):
         base = abs_path('./specs/')
@@ -153,6 +163,7 @@ class TestParser(unittest.TestCase):
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 9)
 
+    # --- constraints ---
     def test_constraint_1(self):
         """ Block options depend on block parameter """
         base = abs_path('./specs/')

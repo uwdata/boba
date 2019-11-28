@@ -1,29 +1,28 @@
 {
-    "graph": ["M->O"],
-      "decisions": [
-        {"var": "outliers", "options": [
-            "c()",
-            "c('Katrina')",
-            "c('Katrina', 'Audrey')",
-            "c('Katrina', 'Audrey', 'Sandy')",
-            "c('Katrina', 'Audrey', 'Sandy', 'Andrew')",
-            "c('Katrina', 'Audrey', 'Sandy', 'Andrew', 'Donna')"
-        ]},
-        {"var": "feminity", "options": ["female", "masfem"]},
-        {"var": "damage", "options": ["dam", "log_dam"]},
-        {"var": "predictors", "options": [
-            "feminity * damage",
-            "feminity + damage + pressure + feminity:damage + feminity:pressure",
-            "feminity + damage + zwin + feminity:damage + feminity:zwin",
-            "feminity + damage + zcat + feminity:damage + feminity:zcat",
-            "feminity + damage + z3 + feminity:damage + feminity:z3",
-            "feminity + damage + z3"
-        ]},
-        {"var": "covariates", "options": [
-            "",
-            "+ year:damage",
-            "+ post:damage"
-        ]}
-      ],
-      "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
+  "decisions": [
+    {"var": "outliers", "options": [
+        "c()",
+        "c('Katrina')",
+        "c('Katrina', 'Audrey')",
+        "c('Katrina', 'Audrey', 'Sandy')",
+        "c('Katrina', 'Audrey', 'Sandy', 'Andrew')",
+        "c('Katrina', 'Audrey', 'Sandy', 'Andrew', 'Donna')"
+    ]},
+    {"var": "feminity", "options": ["female", "masfem"]},
+    {"var": "damage", "options": ["dam", "log_dam"]},
+    {"var": "predictors", "options": [
+        "feminity * damage",
+        "feminity + damage + pressure + feminity:damage + feminity:pressure",
+        "feminity + damage + zwin + feminity:damage + feminity:zwin",
+        "feminity + damage + zcat + feminity:damage + feminity:zcat",
+        "feminity + damage + z3 + feminity:damage + feminity:z3",
+        "feminity + damage + z3"
+    ]},
+    {"var": "covariates", "options": [
+        "",
+        "+ year:damage",
+        "+ post:damage"
+    ]}
+  ],
+  "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
 }

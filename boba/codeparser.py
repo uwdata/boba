@@ -38,8 +38,15 @@ class Chunk:
 class CodeParser:
     def __init__(self):
         self.blocks = {}
+        self.order = []
+
+    @staticmethod
+    def _get_block_name(block):
+        """Get the ID of the block, ignoring options."""
+        return block.id if block.parameter == '' else block.parameter
 
     def _add_block(self, block):
+        """Add a block to our data structure."""
         # ignore empty block
         if block.id == '' and block.chunks[0].code == '':
             return
@@ -52,7 +59,12 @@ class CodeParser:
         if block.id in self.blocks:
             err = 'Duplicated code block ID "{}"'.format(block.id)
             raise ParseError(err)
+
+        # add to data structure
         self.blocks[block.id] = block
+        bn = CodeParser._get_block_name(block)
+        if bn not in self.order:
+            self.order.append(bn)
 
     def get_block_names(self):
         """
@@ -62,7 +74,7 @@ class CodeParser:
         blocks = set()
         for b in self.blocks:
             bl = self.blocks[b]
-            blocks.add(bl.id if bl.parameter == '' else bl.parameter)
+            blocks.add(CodeParser._get_block_name(bl))
         return blocks
 
     def get_decisions(self):
