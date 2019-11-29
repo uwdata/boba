@@ -16,14 +16,9 @@ from .__init__ import __version__
               default='.', show_default=True)
 @click.option('--lang', '-l', help='Language, can be python/R [default: inferred from file extension]',
               default='')
-@click.option('--version', help='Show version and exit.', is_flag=True)
-def main(script, json, out, lang, version):
-    if version:
-        click.echo('boba ' + __version__)
-        ctx = click.get_current_context()
-        ctx.exit()
-
+def compile(script, json, out, lang):
     """Generate multiverse analysis from specifications."""
+
     check_path(script)
     check_path(json)
 
@@ -55,6 +50,14 @@ def print_help(err=''):
         click.echo('\n' + err)
     ctx.exit()
 
+
+@click.group()
+@click.version_option()
+def main():
+    pass
+
+
+main.add_command(compile)
 
 if __name__ == "__main__":
     main()

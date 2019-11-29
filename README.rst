@@ -38,45 +38,14 @@ Here is a `simple example`_ to get you started!
 To parse your specification and generate actual scripts, invoke boba and pass
 in the path to your template script and your JSON spec::
 
-  boba --script template.py -- json spec.json
+  boba compile --script template.py -- json spec.json
 
 For more command line options, see `CLI`_.
 
 .. _rules: https://github.com/uwdata/multiverse-spec/blob/master/tutorial/rules.md
 .. _simple example: https://github.com/uwdata/multiverse-spec/blob/master/tutorial/simple.md
 .. _more complex example: https://github.com/uwdata/multiverse-spec/blob/master/tutorial/fertility.md
-
-CLI
-===
-
-You might invoke the command line tool via::
-  boba [options]
-
-It has a few simple options:
-
-``--script, -s``
-  **default: ./script_annotated.py** (optional)
-
-  The path to your template script.
-
-``--json, -j``
-  **default: ./spec.json** (optional)
-
-  The path to your JSON specification.
-
-``--out, -o``
-  **default: .** (optional)
-
-  The output directory to hold generated universe scripts, summary table, etc.
-
-``--lang, -l``
-  (optional)
-
-  Language of your analysis script; we support python and R at the moment.
-  If not specified, we will infer it from the file extension.
-
-``--help``
-  Show help message and exit.
+.. _CLI: https://github.com/uwdata/multiverse-spec/blob/master/tutorial/cli.rst
 
 Examples
 ========

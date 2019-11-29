@@ -257,7 +257,7 @@ To run the R example, clone this repository and run the following commands:
 ```bash
 pip install -e .
 cd example/fertility_r
-boba -s template.R
+boba compile -s template.R
 Rscript install.R
 ```
 
@@ -267,5 +267,5 @@ To run the python example, clone this repo and run the following commands:
 pip install -e .
 pip install -r requirements.txt
 cd example/fertility
-boba
+boba compile
 ```
