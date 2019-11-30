@@ -54,6 +54,38 @@ class TestConstraintParser(unittest.TestCase):
         cond = '1 2 a b 4'  # we did not check other semantics ...
         ConditionParser(cond).parse()
 
+    def test_eval(self):
+        """ Evaluation of various conditions """
+        # expr and expr
+        base = abs_path('./specs/')
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 2)
+
+        # expr or expr
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
+        ps.spec['constraints'] = [{"block": "D", "condition": "a == if or B == b1"}]
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 6)
+
+        # expr and (expr or expr)
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
+        ps.spec['constraints'] = [{"block": "D", "condition": "a == if and (B == b1 or B == b2)"}]
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 4)
+
+        # testing !=
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
+        ps.spec['constraints'] = [{"block": "D", "condition": "a != if"}]
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 4)
+
+        # testing >=
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
+        ps.spec['constraints'] = [{"block": "D", "condition": "a.index >= 1"}]
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 4)
+
     def test_condition_syntax(self):
         """ Does the condition code contain python syntax error? """
 

@@ -67,6 +67,7 @@ class ConditionParser(BaseParser):
             w = self._read_while(self._is_id)
             if ConditionParser._is_keyword(w):
                 self.parsed_code += w
+                return
 
             tk = ParsedToken(w, TokenType.var)
             if self._maybe_read_index():
