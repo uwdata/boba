@@ -3,7 +3,7 @@
 import json
 from dataclasses import dataclass
 from .baseparser import ParseError
-from .conditionparser import ConditionParser
+from .conditionparser import ConditionParser, TokenType
 
 
 @dataclass
@@ -42,13 +42,71 @@ class ConstraintParser:
          by its index in the options array."""
         return '_i_' + w
 
+    @staticmethod
+    def _verify_block(block, blocks, constraint):
+        """ Check if a block is defined in the template script. """
+        if block is not None and block not in blocks:
+            msg = 'Block "{}" does not match any existing block ID'
+            ConstraintParser._throw(msg.format(block), constraint)
+
+    @staticmethod
+    def _verify_placeholder_var(v, decs, constraint):
+        """ Check if a placeholder variable is declared in decisions. """
+        if v is not None and v not in decs:
+            msg = 'Variable "{}" does not match any existing variable'
+            ConstraintParser._throw(msg.format(v), constraint)
+
+    @staticmethod
+    def _verify_var_option(v, opt, decs, constraint):
+        """ Check if an option to a placeholder variable exists. """
+        opts = [str(o) for o in decs[v].value]
+        if str(opt) not in opts:
+            msg = 'Variable "{}" has no option "{}"'
+            ConstraintParser._throw(msg.format(v, opt), constraint)
+
+    @staticmethod
+    def _verify_block_option(block, opt, bl_decs, constraint):
+        """ Check if an option to a block exists."""
+        if '{}:{}'.format(block, opt) not in bl_decs[block]:
+            msg = 'Block "{}" has no option "{}"'
+            ConstraintParser._throw(msg.format(block, opt), constraint)
+
+    @staticmethod
+    def _verify_json_syntax(block, param, opt, constraint):
+        """ Check if the json has the correct combination of fields. """
+        if block is not None and param is not None:
+            msg = 'Cannot handle variable and block at the same line.'
+            ConstraintParser._throw(msg, constraint)
+
+        if opt:
+            if param is None and block is None:
+                msg = 'No corresponding variable/block for option "{}"'
+                ConstraintParser._throw(msg.format(opt), constraint)
+        elif param is not None:
+            msg = 'Must specify option for a variable.'
+            ConstraintParser._throw(msg, constraint)
+
+    @staticmethod
+    def _verify_condition_vars(parsed, decs, blocks, constraint):
+        """ Check if the variables and blocks in the condition exist. """
+        for i, p in enumerate(parsed):
+            if i % 2 == 1:
+                # skipping the rhs
+                continue
+
+            # see if it matches anything from decs and blocks
+            pv = p.value
+            if pv not in decs and pv not in blocks:
+                msg = '"{}" does not match any block or variable'.format(pv)
+                ConstraintParser._throw(msg, constraint)
+
     def _recon(self, code, parsed_decs, cond):
         """ Transform parsed code and decisions into valid python code """
         exe = []
         for i, d in enumerate(parsed_decs):
-            if d.type == 'index_var':
+            if d.type == TokenType.index_var:
                 exe.append(self.make_index_var(d.value))
-            elif d.type == 'var' and i % 2 == 1:
+            elif d.type == TokenType.var and i % 2 == 1:
                 exe.append('"{}"'.format(d.value))
             else:
                 exe.append(d.value)
@@ -78,46 +136,27 @@ class ConstraintParser:
         for c in cons:
             # read block
             block = ConstraintParser._read_optional(c, 'block')
-            if block is not None and block not in bls:
-                msg = 'Block "{}" does not match any existing block ID'
-                ConstraintParser._throw(msg.format(block), c)
+            ConstraintParser._verify_block(block, bls, c)
 
             # read variable
             param = ConstraintParser._read_optional(c, 'variable')
-            if param is not None:
-                if param not in decs:
-                    msg = 'Variable "{}" does not match any existing variable'
-                    ConstraintParser._throw(msg.format(param), c)
-                if block is not None:
-                    msg = 'Cannot handle variable and block at the same line.'
-                    ConstraintParser._throw(msg, c)
+            ConstraintParser._verify_placeholder_var(param, decs, c)
 
             # read skip flag
             skip = bool(ConstraintParser._read_optional(c, 'skip'))
 
             # read option
             opt = ConstraintParser._read_optional(c, 'option')
-            if opt:
-                if param is None and block is None:
-                    msg = 'No corresponding variable/block for option "{}"'
-                    ConstraintParser._throw(msg.format(opt), c)
-                if param is not None:
-                    opts = [str(o) for o in decs[param].value]
-                    if str(opt) not in opts:
-                        msg = 'Variable "{}" has no option "{}"'
-                        ConstraintParser._throw(msg.format(param, opt), c)
-                if block is not None and \
-                        '{}:{}'.format(block, opt) not in bl_decs[block]:
-                    msg = 'Block "{}" has no option "{}"'
-                    ConstraintParser._throw(msg.format(block, opt), c)
-            elif param is not None:
-                msg = 'Must specify option for a variable.'
-                ConstraintParser._throw(msg, c)
+            ConstraintParser._verify_json_syntax(block, param, opt, c)
+            if opt and param:
+                ConstraintParser._verify_var_option(param, opt, decs, c)
+            if opt and block:
+                ConstraintParser._verify_block_option(block, opt, bl_decs, c)
 
             # read condition
             cond = ConstraintParser._read_required(c, 'condition')
             code, parsed_decs = ConditionParser(cond).parse()
-            # todo: ensure that the parameters and options exist
+            ConstraintParser._verify_condition_vars(parsed_decs, decs, bls, c)
 
             # now transform it into valid python code
             recon = self._recon(code, parsed_decs, cond)

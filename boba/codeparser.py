@@ -80,7 +80,7 @@ class CodeParser:
     def get_decisions(self):
         """
         Get a dict of all block-level decisions, where the key is the parameter
-        and the values are the options.
+        and the value is a list of options.
         :return:
         """
         decs = {}

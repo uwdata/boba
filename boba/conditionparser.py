@@ -1,12 +1,19 @@
 # -*- coding: utf-8 -*-
 from .baseparser import BaseParser, ParseError
 from dataclasses import dataclass
+from enum import Enum
+
+
+class TokenType(Enum):
+    var = 1
+    index_var = 2
+    number = 3
 
 
 @dataclass
 class ParsedToken:
     value: str
-    type: str
+    type: TokenType
 
 
 class ConditionParser(BaseParser):
@@ -61,9 +68,9 @@ class ConditionParser(BaseParser):
             if ConditionParser._is_keyword(w):
                 self.parsed_code += w
 
-            tk = ParsedToken(w, 'var')
+            tk = ParsedToken(w, TokenType.var)
             if self._maybe_read_index():
-                tk.type = 'index_var'
+                tk.type = TokenType.index_var
 
             self.parsed_decs.append(tk)
             self.parsed_code += '{}'
@@ -72,7 +79,7 @@ class ConditionParser(BaseParser):
             if not self._is_end() and self._peek_char() == '.':  # read decimal
                 w += self._next_char() + self._read_while(self._is_digit)
 
-            self.parsed_decs.append(ParsedToken(w, 'number'))
+            self.parsed_decs.append(ParsedToken(w, TokenType.number))
             self.parsed_code += '{}'
         elif self._is_operator(ch):
             w = self._read_while(ConditionParser._is_operator)
