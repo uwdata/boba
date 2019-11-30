@@ -156,6 +156,8 @@ class ConstraintParser:
             # read condition
             cond = ConstraintParser._read_required(c, 'condition')
             code, parsed_decs = ConditionParser(cond).parse()
+            if len(parsed_decs) % 2 == 1:
+                ConstraintParser._throw('Binary operator expected', c)
             ConstraintParser._verify_condition_vars(parsed_decs, decs, bls, c)
 
             # now transform it into valid python code

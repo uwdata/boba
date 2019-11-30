@@ -166,12 +166,11 @@ exist, but the block will be removed from the script. This scenario is useful
 when a helper block is only applicable to a certain subset of universes.
 
 `condition` must be valid python syntax that can evaluate to a boolean. Only
-a subset of python operators are allowed: `and`, `or`, `not`, and these
+a subset of python operators are allowed: `and`, `or`, and these
 symbols `( ) < > ! =`. To say that a block/variable decision `A` takes up
 the option `a1`, use the syntax `A == a1`. Alternatively for placeholder
 variable `A`, you might refer to its option by the index of the option in
- the array, using
-the syntax `A.index == 0`. The index starts from 0. 
+the array, using the syntax `A.index == 0`. The index starts from 0. 
 
 Some caveats:
 1. For placeholder variables, the decision is NOT made at the beginning, but

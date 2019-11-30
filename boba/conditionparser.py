@@ -30,7 +30,7 @@ class ConditionParser(BaseParser):
 
     @staticmethod
     def _is_keyword(w):
-        return w == 'and' or w == 'or' or w == 'not'
+        return w == 'and' or w == 'or'
 
     @staticmethod
     def _is_operator(ch):
