@@ -106,7 +106,9 @@ class ConstraintParser:
         for i, d in enumerate(parsed_decs):
             if d.type == TokenType.index_var:
                 exe.append(self.make_index_var(d.value))
-            elif d.type == TokenType.var and i % 2 == 1:
+            elif i % 2 == 1 and parsed_decs[i - 1].type == TokenType.var:
+                # wrap any RHS in quotes, except for indices
+                # because the history class represent any option as strings
                 exe.append('"{}"'.format(d.value))
             else:
                 exe.append(d.value)

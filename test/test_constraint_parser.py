@@ -86,6 +86,37 @@ class TestConstraintParser(unittest.TestCase):
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 4)
 
+        # testing index
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
+        ps.spec['constraints'] = [{"block": "D", "condition": "b.index == 1"}]
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 4)
+
+        # testing option with integer type
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
+        ps.spec['constraints'] = [{"block": "D", "condition": "b == 0"}]
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 4)
+
+        # testing option with float type
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
+        ps.spec['constraints'] = [{"block": "D", "condition": "b == 1.5"}]
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 4)
+
+        # testing unmade decision
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
+        ps.spec['constraints'] = [{"block": "A", "condition": "b.index == 0"}]
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 0)
+
+        # testing if the decision is made when the block depends on a variable
+        # inside the block
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
+        ps.spec['constraints'] = [{"block": "B", "condition": "b.index == 0"}]
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 0)
+
     def test_condition_syntax(self):
         """ Does the condition code contain python syntax error? """
 
