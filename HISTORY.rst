@@ -2,6 +2,14 @@
 History
 =======
 
+0.1.3 (2019-11-30)
+==================
+
+* Revise authoring syntax to support decision blocks and constraints
+* Revise CLI, with separate commands to compile and to run
+* Improve execution
+* Add the hurricane example
+
 0.1.2 (2019-09-19)
 ==================
 

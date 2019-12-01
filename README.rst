@@ -40,6 +40,10 @@ in the path to your template script and your JSON spec::
 
   boba compile --script template.py -- json spec.json
 
+To execute the multiverse, namely running all the generated scripts, use::
+
+  boba run --all
+
 For more command line options, see `CLI`_.
 
 .. _rules: https://github.com/uwdata/multiverse-spec/blob/master/tutorial/rules.md
