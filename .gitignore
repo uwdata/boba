@@ -5,6 +5,8 @@ durante_etal_2013_study2.txt
 MTurk_ratings_femeninity_of_hurricanes.csv
 data_updated.csv
 multiverse_analysis.R
+amk-notes.txt
+venv/
 
 # packaging
 *.egg-info/
