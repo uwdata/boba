@@ -13,7 +13,7 @@ df <- read_csv('../data.csv',
         alldeaths = col_integer()
     )) %>%
     # rename some variables
-    select(
+    dplyr::select(
         year = Year,
         name = Name,
         dam = NDAM,
@@ -46,14 +46,34 @@ df <- read_csv('../data.csv',
 # --- (M) ols_regression
 # OLS regression with log(deaths+1) as the dependent variable 
 model <- lm(log_death ~ {{predictors}} {{covariates}}, data = df)
+# get results
 result <- tidy(model, conf.int = TRUE) %>%
     mutate(model = 'OLS regression')
+# get predictions
+pred <- predict(model) # se.fit = TRUE, interval="prediction"
+prediction <- df %>% 
+  mutate(
+    pred = pred,                         # add fitted predictions to dataframe
+    pred = exp(pred) - 1                 # undo transformation of outcome variable (preprocessing)
+  ) %>%
+  group_by(feminity) %>%                 # group by predictor(s) of interest
+  summarize(pred = weighted.mean(pred))  # marninalize across other predictors
 
 # --- (M) negative_binomial
 # Negative binomial with deaths as the dependent variable
 model <- glm.nb(death ~ {{predictors}} {{covariates}}, data = df)
+# get results
 result <- tidy(model, conf.int = TRUE) %>%
     mutate(model = 'Negative binomial')
+# get predictions
+pred <- predict(model) # type = "response", se.fit = TRUE, interval = "prediction"
+prediction <- df %>%
+  mutate(
+    pred = pred,                         # add fitted predictions to dataframe
+    pred = exp(pred)                     # undo transformation of outcome variable (log link function)
+  ) %>%
+  group_by(feminity) %>%                 # group by predictor(s) of interest
+  summarize(pred = weighted.mean(pred))  # marninalize across other predictors
 
 # --- (O)
 # output
@@ -61,3 +81,4 @@ sink('../results/summary_{{_n}}.txt')
 summary(model)
 sink()
 write_csv(result, '../results/table_{{_n}}.csv')
+write_csv(prediction, '../results/prediction_{{_n}}.csv')
