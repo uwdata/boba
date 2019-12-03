@@ -7,6 +7,7 @@ data_updated.csv
 multiverse_analysis.R
 amk-notes.txt
 venv/
+prototype/
 
 # packaging
 *.egg-info/

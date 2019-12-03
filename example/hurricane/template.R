@@ -52,13 +52,13 @@ result <- tidy(model, conf.int = TRUE) %>%
 # get predictions
 pred <- predict(model) # se.fit = TRUE, interval="prediction"
 disagg_pred <- df %>% 
-  mutate(
-    pred = pred,                         # add fitted predictions to dataframe
-    pred = exp(pred) - 1                 # undo transformation of outcome variable (preprocessing)
-  ) 
+    mutate(
+        pred = pred,                         # add fitted predictions to dataframe
+        pred = exp(pred) - 1                 # undo transformation of outcome variable (preprocessing)
+    )
 prediction <- disagg_pred %>%
-  group_by(feminity) %>%                 # group by predictor(s) of interest
-  summarize(pred = weighted.mean(pred))  # marninalize across other predictors
+    group_by(female) %>%                     # group by predictor(s) of interest
+    summarize(pred = weighted.mean(pred))    # marninalize across other predictors
 
 # --- (M) negative_binomial
 # Negative binomial with deaths as the dependent variable
@@ -69,13 +69,13 @@ result <- tidy(model, conf.int = TRUE) %>%
 # get predictions
 pred <- predict(model) # type = "response", se.fit = TRUE, interval = "prediction"
 disagg_pred <- df %>%
-  mutate(
-    pred = pred,                         # add fitted predictions to dataframe
-    pred = exp(pred)                     # undo transformation of outcome variable (log link function)
-  ) 
+    mutate(
+        pred = pred,                         # add fitted predictions to dataframe
+        pred = exp(pred)                     # undo transformation of outcome variable (log link function)
+    )
 prediction <- disagg_pred %>%
-  group_by(feminity) %>%                 # group by predictor(s) of interest
-  summarize(pred = weighted.mean(pred))  # marninalize across other predictors
+    group_by(female) %>%                     # group by predictor(s) of interest
+    summarize(pred = weighted.mean(pred))    # marninalize across other predictors
 
 # --- (O)
 # output
