@@ -5,7 +5,7 @@ import click
 import os
 import subprocess
 from .parser import Parser
-from .__init__ import __version__
+from .output.csvmerger import CSVMerger
 
 
 @click.command()
@@ -82,6 +82,27 @@ def run(folder, run_all, num, till):
     subprocess.run(cmd, cwd=folder)
 
 
+@click.command()
+@click.argument('pattern', nargs=1)
+@click.option('--base', '-b', default='./multiverse/results',
+              show_default=True, help='Folder containing the universe outputs')
+@click.option('--out', default='./multiverse/merged.csv',
+              show_default=True, help='Name of the merged file')
+@click.option('--delimiter', default=',', show_default=True,
+              help='CSV delimiter')
+def merge(pattern, base, out, delimiter):
+    """
+    Merge CSV outputs from individual universes into one file.
+
+    Required argument:
+    the filename pattern of individual outputs where the universe id is
+    replaced by {}, for example output_{}.csv
+    """
+
+    check_path(base)
+    CSVMerger(pattern, base, out, delimiter).main()
+
+
 @click.group()
 @click.version_option()
 def main():
@@ -90,6 +111,7 @@ def main():
 
 main.add_command(compile)
 main.add_command(run)
+main.add_command(merge)
 
 if __name__ == "__main__":
     main()
