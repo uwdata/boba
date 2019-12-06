@@ -51,11 +51,12 @@ result <- tidy(model, conf.int = TRUE) %>%
     mutate(model = 'OLS regression')
 # get predictions
 pred <- predict(model) # se.fit = TRUE, interval="prediction"
-prediction <- df %>% 
+disagg_pred <- df %>% 
   mutate(
     pred = pred,                         # add fitted predictions to dataframe
     pred = exp(pred) - 1                 # undo transformation of outcome variable (preprocessing)
-  ) %>%
+  ) 
+prediction <- disagg_pred %>%
   group_by(feminity) %>%                 # group by predictor(s) of interest
   summarize(pred = weighted.mean(pred))  # marninalize across other predictors
 
@@ -67,11 +68,12 @@ result <- tidy(model, conf.int = TRUE) %>%
     mutate(model = 'Negative binomial')
 # get predictions
 pred <- predict(model) # type = "response", se.fit = TRUE, interval = "prediction"
-prediction <- df %>%
+disagg_pred <- df %>%
   mutate(
     pred = pred,                         # add fitted predictions to dataframe
     pred = exp(pred)                     # undo transformation of outcome variable (log link function)
-  ) %>%
+  ) 
+prediction <- disagg_pred %>%
   group_by(feminity) %>%                 # group by predictor(s) of interest
   summarize(pred = weighted.mean(pred))  # marninalize across other predictors
 
@@ -81,4 +83,5 @@ sink('../results/summary_{{_n}}.txt')
 summary(model)
 sink()
 write_csv(result, '../results/table_{{_n}}.csv')
+write_csv(disagg_pred, '../results/disagg_pred_{{_n}}.csv')
 write_csv(prediction, '../results/prediction_{{_n}}.csv')
