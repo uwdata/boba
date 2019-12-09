@@ -78,6 +78,13 @@ prediction <- disagg_pred %>%
     summarize(pred = weighted.mean(pred))    # marninalize across other predictors
 
 # --- (O)
+# only output relevant fields in disagg_pred
+disagg_pred <- disagg_pred %>%
+    select(
+        observed = death,
+        pred = pred
+    )
+
 # output
 sink('../results/summary_{{_n}}.txt')
 summary(model)
