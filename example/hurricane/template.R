@@ -77,6 +77,23 @@ prediction <- disagg_pred %>%
     group_by(female) %>%                     # group by predictor(s) of interest
     summarize(pred = weighted.mean(pred))    # marninalize across other predictors
 
+# --- (M) anova
+# ANOVA with log(deaths+1) as the dependent variable
+model <- aov(log_death ~ {{predictors}} {{covariates}}, data = df)
+# get results
+result <- tidy(model, conf.int = TRUE) %>%
+    mutate(model = 'ANOVA')
+# get predictions
+pred <- predict(model) # se.fit = TRUE, interval = "prediction"
+disagg_pred <- df %>%
+    mutate(
+        pred = pred,                         # add fitted predictions to dataframe
+        pred = exp(pred)                     # undo transformation of outcome variable (log link function)
+    )
+prediction <- disagg_pred %>%
+    group_by(female) %>%                     # group by predictor(s) of interest
+    summarize(pred = weighted.mean(pred))    # marninalize across other predictors
+
 # --- (O)
 # only output relevant fields in disagg_pred
 disagg_pred <- disagg_pred %>%
