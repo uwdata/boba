@@ -23,12 +23,23 @@ kill -s TERM $!
 exit 0
 }}
 
+merge_log ()
+{{
+boba merge exit_status_{{}}.csv -b $DLOG --out $DLOG/exit_status.csv
+rm $DLOG/exit_status_*.csv
+}}
+
 {}
 
 DIR="$( cd "$( dirname "${{BASH_SOURCE[0]}}" )" >/dev/null 2>&1 && pwd )"
+DLOG=$DIR/boba_logs
 suffix={}
 num={}
 i=1
+
+# create a folder for logs
+rm -rf $DLOG
+mkdir $DLOG
 
 # if specified, change the range of universes to execute
 if [ "$1" != "" ]; then i=$1; num=$1; fi
@@ -40,13 +51,20 @@ trap cleanup SIGINT SIGTERM
 
 while [ $i -le $num ]
 do
+  # execute the universe
   f="universe_$i$suffix"
   echo "{} $f"
-  {} $f &
+  {} $f 2>&1 | tee $DLOG/log_$i.txt
+
+  # collect exit status
+  printf "%s\n%d" exit_status $? > $DLOG/exit_status_$i.csv
+
+  # increment
   i=$(( i+1 ))
   wait $!
 done
 
+merge_log
 {}
 """
 

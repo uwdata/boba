@@ -25,28 +25,25 @@ class CSVMerger:
             util.print_fail('Invalid pattern: {}'.format(self.pattern))
             exit(1)
 
-        rg = re.compile('^' + self.pattern[:i] + '\d+' + self.pattern[i+2:])
+        rg = re.compile('^' + re.escape(self.pattern[:i]) + '(\d+)' +
+                        re.escape(self.pattern[i+2:]))
         return rg
 
     def get_files(self):
-        """ Get a list of files in the folder that matches given pattern """
-        fs = []
+        """ Get a list of universe indices in the folder that matches given
+        pattern. The indices are sorted."""
+        idx = []
         for f in os.listdir(self.base):
-            if re.match(self._to_regex(), f):
-                fs.append(f)
-        return fs
-
-    @staticmethod
-    def get_sorted_index(fs):
-        """ Get the universe indices in sorted order. """
-        idx = [int(f.split('.')[0].split('_')[1]) for f in fs]
+            m = re.match(self._to_regex(), f)
+            if m:
+                idx.append(int(m.group(1)))
         idx.sort()
         return idx
 
     def merge(self):
         """ Merge the CSV files into one file """
         result = pd.DataFrame()
-        for i in CSVMerger.get_sorted_index(self.get_files()):
+        for i in self.get_files():
             # read the file
             df = pd.read_csv(os.path.join(self.base, self._fn_func(i)),
                              delimiter=self.delimiter,
