@@ -54,10 +54,10 @@ do
   # execute the universe
   f="universe_$i$suffix"
   echo "{} $f"
-  {} $f 2>&1 | tee $DLOG/log_$i.txt
+  (set -o pipefail; {} $f 2>&1 | tee $DLOG/log_$i.txt)
 
   # collect exit status
-  printf "%s\n%d" exit_status $? > $DLOG/exit_status_$i.csv
+  printf "%s\\n%d" exit_status $? > $DLOG/exit_status_$i.csv
 
   # increment
   i=$(( i+1 ))
