@@ -284,7 +284,8 @@ class Parser:
 
         self.wrangler.counter = 0  # keep track of file name
         self.history = []          # keep track of choices made for each file
-        self.wrangler.col = len(self.dec_parser.get_decs()) + 2
+        self.wrangler.col = 2 + len(self.dec_parser.get_decs())\
+            + len(self.code_parser.get_decisions())
 
         self.wrangler.create_dir()
         for idx, p in enumerate(paths):

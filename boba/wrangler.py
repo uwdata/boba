@@ -80,7 +80,7 @@ class Wrangler:
         self.fn = os.path.abspath(os.path.join(out, 'summary.csv'))
 
         self.outputs = {}
-        self.col = 0
+        self.col = 0  # output column number, will be set by parser
         self.counter = 0
 
         self.pre_exe = ''
@@ -117,7 +117,8 @@ class Wrangler:
 
         # read csv
         code = '\n\n# wrangles output\n' \
-            'df <- read.csv2("{}", sep = ",", stringsAsFactors = FALSE)'\
+            'df <- read.csv2("{}", sep = ",", stringsAsFactors = FALSE, ' \
+               'check.names=FALSE)'\
             .format(self.fn)
 
         # record outputs
