@@ -137,16 +137,16 @@ constraint as objects, with the following fields:
   "block": "block_ID",
   "variable": "placeholder_var",
   "option": "option",
-  "skip": false,
+  "skippable": false,
   "condition": "A == a1"
 }
 ```
 
 `block`, `variable` and/or `option` specify the dependent decision. `condition`
-indicates the condition when the dependent decision should happen. `skip` is a
-flag, only applicable to blocks, to indicate whether boba should skip the block
-when the condition is not met (rather than abandoning the entire universe).
-Next, we describe each field in detail.
+indicates the condition when the dependent decision should happen. `skippable`
+is a flag, only applicable to blocks, to indicate whether boba should skip the
+block when the condition is not met and continue with the next block (rather
+than abandoning the entire universe). Next, we describe each field in detail.
 
 There are three forms to identify a dependent decision. It can be a `block`
 (either a normal block or a decision block). It can be a `block` with a
@@ -155,11 +155,11 @@ specific `option`. It can be a placeholder `variable` with a specific
 `option` refers to the name of the block option or the actual value of the
 placeholder option.
 
-`skip` is optional, with the default value `false`. If `skip` is false, when
+`skippable` is optional, with the default value `false`. If `skippable` is false, when
 a universe does not satisfy the `condition`, the universe will be removed --
 no script will be created for this universe. It is useful when some
 combination of decisions are inherently not reasonable in your multiverse.
-On the other hand, if `skip` is true, boba will not
+On the other hand, if `skippable` is true, boba will not
 abandon the universe, but will instead skip the block with this flag and
 continue from the next block in the graph. The universe still
 exist, but the block will be removed from the script. This scenario is useful

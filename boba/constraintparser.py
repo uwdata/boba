@@ -145,7 +145,7 @@ class ConstraintParser:
             ConstraintParser._verify_placeholder_var(param, decs, c)
 
             # read skip flag
-            skip = bool(ConstraintParser._read_optional(c, 'skip'))
+            skip = bool(ConstraintParser._read_optional(c, 'skippable'))
 
             # read option
             opt = ConstraintParser._read_optional(c, 'option')

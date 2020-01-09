@@ -202,7 +202,7 @@ class TestParser(unittest.TestCase):
 
         # then, skip a decision block
         ps = Parser(base + 'script7.py', base + 'spec-constraint-5.json')
-        ps.spec['constraints'] = [{"block": "B", "skip": True, "condition": "a == if"}]
+        ps.spec['constraints'] = [{"block": "B", "skippable": True, "condition": "a == if"}]
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 6)
 

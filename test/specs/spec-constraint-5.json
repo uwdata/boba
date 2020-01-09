@@ -5,6 +5,6 @@
     {"var": "b", "options": [0, 1] }
   ],
   "constraints": [
-    {"block": "C", "skip": true, "condition": "a == if"}
+    {"block": "C", "skippable": true, "condition": "a == if"}
   ]
 }
