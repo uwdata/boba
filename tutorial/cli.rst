@@ -58,4 +58,4 @@ example, if you want to run universe_1.py, use::
 
 To run a range of universes, for example universe_1 through universe_5, use::
 
-  boba run 1 --till 5
+  boba run 1 --thru 5

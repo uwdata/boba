@@ -55,17 +55,17 @@ def print_help(err=''):
 @click.argument('num', nargs=1, default=-1)
 @click.option('--all', '-a', 'run_all', is_flag=True,
               help='Execute all universes')
-@click.option('--till', default=-1, help='Run until this universe number')
+@click.option('--thru', default=-1, help='Run until this universe number')
 @click.option('--dir', 'folder', help='Multiverse directory',
               default='./multiverse', show_default=True)
-def run(folder, run_all, num, till):
+def run(folder, run_all, num, thru):
     """ Execute the generated universe scripts.
 
     Run all universes: boba run --all
 
     Run a single universe, for example universe_1: boba run 1
 
-    Run a range of universes for example 1 through 5: boba run 1 --till 5
+    Run a range of universes for example 1 through 5: boba run 1 --thru 5
     """
 
     check_path(folder)
@@ -76,8 +76,8 @@ def run(folder, run_all, num, till):
     cmd = ['sh', 'execute.sh']
     if not run_all:
         cmd.append(str(num))
-        if till > 0:
-            cmd.append(str(till))
+        if thru > 0:
+            cmd.append(str(thru))
 
     subprocess.run(cmd, cwd=folder)
 
