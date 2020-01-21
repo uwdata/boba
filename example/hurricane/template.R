@@ -4,6 +4,8 @@ library(readr)
 library(MASS)
 library(tidyverse)
 library(broom.mixed)
+library(brms)
+library(tidybayes)
 
 df <- read_csv('../data.csv',
     col_types = cols(
@@ -93,6 +95,27 @@ disagg_pred <- df %>%
 prediction <- disagg_pred %>%
     group_by(female) %>%                     # group by predictor(s) of interest
     summarize(pred = weighted.mean(pred))    # marninalize across other predictors
+
+# --- (M) bayesian_poisson
+# Bayesian Poisson regression with deaths as the dependent variable
+model <- brm(formula = death ~ {{predictors}} {{covariates}}, 
+    family = poisson(), 
+    data = df,
+    # use default priors for now
+    iter = 3000, warmup = 1000, chains = 2, cores = 2, # init = 1,
+    seed = 1234)
+# get results
+result <- model %>% 
+    mutate(model = 'Bayesian Poisson')
+# get predictions
+pred <- df %>% 
+    add_predicted_draws(model)                   # add fitted predictions to dataframe (should already be in death units)
+disagg_pred <- pred %>% 
+    group_by_at(vars(-.draw, -.prediction))      # group by everything but .draw and .prediction
+    summarize(pred = weighted.mean(.prediction)) # calculate disaggregated means to match other model outputs
+prediction <- pred %>%
+    group_by(female) %>%                         # group by predictor(s) of interest
+    summarize(pred = weighted.mean(.prediction)) # marninalize across other predictors
 
 # --- (O)
 # only output relevant fields in disagg_pred
