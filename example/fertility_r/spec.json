@@ -12,8 +12,8 @@
     ]}
   ],
   "constraints": [
-    {"block": "ECL", "option": "computed", "condition": "NMO == computed"},
-    {"block": "ECL", "option": "reported", "condition": "NMO == reported"}
+    {"block": "ECL", "option": "computed", "condition": "NMO != reported"},
+    {"block": "ECL", "option": "reported", "condition": "NMO != computed"}
   ],
   "outputs": [
     {"name": "p-value", "value": "summar$coefficients[4, 4]"}
