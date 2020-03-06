@@ -70,7 +70,10 @@ uncertainty <- df %>%
         pred_t = map(df, ~rt(200, .))               # simulate draws as t-scores
     ) %>%
     unnest(cols = c(".draw", "pred_t")) %>%
-    mutate(pred = pred_t * .se.fit + .fitted) %>%   # scale and shift t-scores to create predictive distribution
+    mutate(
+        pred = pred_t * .se.fit + .fitted,          # scale and shift t-scores to create predictive distribution
+        pred = exp(pred) - 1                        # undo transformation of outcome variable (preprocessing)
+    ) %>% 
     group_by(.draw, female) %>%                     # group by predictor(s) of interest
     summarize(pred = weighted.mean(pred)) %>%       # marninalize across other predictors
     compare_levels(pred, by = female)
@@ -101,7 +104,10 @@ uncertainty <- df %>%
         pred_t = map(df, ~rt(200, .))               # simulate draws as t-scores
     ) %>%
     unnest(cols = c(".draw", "pred_t")) %>%
-    mutate(pred = pred_t * .se.fit + .fitted) %>%   # scale and shift t-scores to create predictive distribution
+    mutate(
+        pred = pred_t * .se.fit + .fitted,          # scale and shift t-scores to create predictive distribution
+        pred = exp(pred)                            # undo transformation of outcome variable (log link function)
+    ) %>% 
     group_by(.draw, female) %>%                     # group by predictor(s) of interest
     summarize(pred = weighted.mean(pred)) %>%       # marninalize across other predictors
     compare_levels(pred, by = female)
@@ -117,7 +123,7 @@ pred <- predict(model) # se.fit = TRUE, interval = "prediction"
 disagg_pred <- df %>%
     mutate(
         pred = pred,                                # add fitted predictions to dataframe
-        pred = exp(pred)                            # undo transformation of outcome variable (log link function)
+        pred = exp(pred) - 1                        # undo transformation of outcome variable (preprocessing)
     )
 prediction <- disagg_pred %>%
     group_by(female) %>%                            # group by predictor(s) of interest
@@ -132,7 +138,10 @@ uncertainty <- df %>%
         pred_t = map(df, ~rt(200, .))               # simulate draws as t-scores
     ) %>%
     unnest(cols = c(".draw", "pred_t")) %>%
-    mutate(pred = pred_t * .se.fit + .fitted) %>%   # scale and shift t-scores to create predictive distribution
+    mutate(
+        pred = pred_t * .se.fit + .fitted,          # scale and shift t-scores to create predictive distribution
+        pred = exp(pred) - 1                        # undo transformation of outcome variable (preprocessing)
+    ) %>%   
     group_by(.draw, female) %>%                     # group by predictor(s) of interest
     summarize(pred = weighted.mean(pred)) %>%       # marninalize across other predictors
     compare_levels(pred, by = female)
