@@ -27,6 +27,14 @@ class TestConstraintParser(unittest.TestCase):
         cs = cp.read_constraints(ps.code_parser, ps.dec_parser)
         self.assertEqual(len(cs), 2)
 
+    def test_link(self):
+        base = abs_path('./specs/')
+        ps = Parser(base + 'script6.py', base + 'spec-constraint-7.json')
+        ps._parse_blocks()
+        cp = ConstraintParser(ps.spec)
+        cs = cp.read_constraints(ps.code_parser, ps.dec_parser)
+        self.assertEqual(len(cs), 10)
+
     def test_condition_parser(self):
         cond = ''
         ConditionParser(cond).parse()

@@ -72,13 +72,57 @@ class ConstraintParser:
             ConstraintParser._throw(msg.format(block, opt), constraint)
 
     @staticmethod
+    def _verify_link(link, decs, bl_decs, constraint):
+        """ Check if the linked decisions exist and have the same size """
+        m = 0
+        for l in link:
+            if l not in decs and l not in bl_decs:
+                msg = 'Decision "{}" not found'
+                ConstraintParser._throw(msg.format(l), constraint)
+            n = len(decs[l].value) if l in decs else len(bl_decs[l])
+            if m != 0 and n != m:
+                msg = 'Linked decisions must have the same number of options'
+                ConstraintParser._throw(msg, constraint)
+            m = n
+
+    @staticmethod
+    def _convert_link(link, decs, bl_decs):
+        """ Convert linked decisions to constraints """
+        res = []
+        ls = []
+        size = 0
+
+        # first, turn variable/block decisions into a shared format
+        for l in link:
+            tp = 'variable' if l in decs else 'block'
+            opt = decs[l].value if l in decs \
+                else list(map(lambda x: x.split(':')[1], bl_decs[l]))
+            ls.append({'type': tp, 'name': l, 'options': opt})
+            size = len(opt)
+
+        # then, construct pairwise dependencies
+        for i in range(size):
+            for l in ls:
+                cond = ''
+                for j in ls:
+                    if j != l:
+                        if j['type'] == 'variable':
+                            cond += ' and ({}.index < 0 or {}.index == {})'\
+                                .format(j['name'], j['name'], i)
+                        else:
+                            cond += ' and {} == {}'.format(j['name'], j['options'][i])
+                res.append({'option': l['options'][i], l['type']: l['name'],
+                            'condition': cond[5:]})
+        return res
+
+    @staticmethod
     def _verify_json_syntax(block, param, opt, constraint):
         """ Check if the json has the correct combination of fields. """
         if block is not None and param is not None:
             msg = 'Cannot handle variable and block at the same line.'
             ConstraintParser._throw(msg, constraint)
 
-        if opt:
+        if opt is not None:
             if param is None and block is None:
                 msg = 'No corresponding variable/block for option "{}"'
                 ConstraintParser._throw(msg.format(opt), constraint)
@@ -135,7 +179,19 @@ class ConstraintParser:
         bls = code_parser.get_block_names()
         bl_decs = code_parser.get_decisions()
 
+        # first separate links and conditions
+        pure_cons = []
         for c in cons:
+            # read link
+            link = ConstraintParser._read_optional(c, 'link')
+            if link:
+                ConstraintParser._verify_link(link, decs, bl_decs, c)
+                pure_cons += ConstraintParser._convert_link(link, decs, bl_decs)
+            else:
+                pure_cons.append(c)
+
+        # then parse all conditions, including generated ones from link
+        for c in pure_cons:
             # read block
             block = ConstraintParser._read_optional(c, 'block')
             ConstraintParser._verify_block(block, bls, c)

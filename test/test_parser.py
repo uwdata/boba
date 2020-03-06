@@ -206,6 +206,13 @@ class TestParser(unittest.TestCase):
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 6)
 
+    def test_constraint_7(self):
+        """ Block options depend on block parameter """
+        base = abs_path('./specs/')
+        ps = Parser(base+'script7.py', base+'spec-constraint-7.json')
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 10)
+
     # --- parse graph ---
     def test_spec_good(self):
         base = abs_path('../example/simple/')

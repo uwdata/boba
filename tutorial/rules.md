@@ -128,10 +128,14 @@ be `a=1` instead of `a="1"`.
 
 ### Constraints
 
-The third type of top-level array, `constraints`, indicates procedural
-dependencies -- when a later decision only happens if a subset of options in an
-earlier decision is chosen. It is optional. The array contains individual
-constraint as objects, with the following fields:
+The third type of top-level array, `constraints`, indicates the relationship
+between decisions, such that not all combinations of decisions are compatible.
+It is optional. The array contains individual constraint as objects, and we
+support two types of constraints: procedural dependencies and links.
+
+#### Procedural dependencies
+Procedural dependenciy arises when a later decision depends on the choice of
+an earlier decision. The constraint object has the following fields:
 ```json
 {
   "block": "block_ID",
@@ -181,6 +185,19 @@ will have option `None` and index `-1`.
 `condition`, it only works if the option value is a single word (satisfying
 the identifier naming rule) or a single number. Please use the index for
 anything more complex.
+
+#### Links
+When two or more decisions are linked, they can be viewed as different 
+manifestations of the same decision. The compiler will no longer take a cross
+product, but assumes a one-to-one mapping between their options.
+The constraint object has the following syntax:
+```json
+{"link": ["decision", "another_decision"]}
+```
+where the `link` field has a list of decision names (placeholder variable
+identifiers and/or block identifiers). Linked decisions must have the same
+number of options. The i-th option of all linked decisions will be chosen
+at the same time.
 
 ### Other Top-Level Fields
 
