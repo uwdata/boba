@@ -18,11 +18,28 @@
         "feminity + damage + z3 + feminity:damage + feminity:z3",
         "feminity + damage + z3"
     ]},
+    {"var": "predictor_list", "options": [
+        "feminity, damage",
+        "feminity, damage, pressure",
+        "feminity, damage, zwin",
+        "feminity, damage, zcat",
+        "feminity, damage, z3",
+        "feminity, damage, z3"
+    ]},
     {"var": "covariates", "options": [
         "",
         "+ year:damage",
         "+ post:damage"
+    ]},
+    {"var": "covariate_list", "options": [
+        "",
+        ", year",
+        ", post"
     ]}
+  ],
+  "constraints": [
+    {"link": ["predictors", "predictor_list"]},
+    {"link": ["covariates", "covariate_list"]}
   ],
   "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
 }
