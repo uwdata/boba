@@ -11,6 +11,7 @@ class Constraint:
     block: str = ''
     variable: str = ''
     option: str = ''
+    index: int = -1
     skip: bool = False
     condition: str = ''
 
@@ -72,6 +73,21 @@ class ConstraintParser:
             ConstraintParser._throw(msg.format(block, opt), constraint)
 
     @staticmethod
+    def _verify_option(param, block, opt, decs, bl_decs, c):
+        """ Check if an option exists. """
+        if opt is not None and param:
+            ConstraintParser._verify_var_option(param, opt, decs, c)
+        if opt is not None and block:
+            ConstraintParser._verify_block_option(block, opt, bl_decs, c)
+
+    @staticmethod
+    def _verify_index(v, idx, decs, constraint):
+        """ Check if the index of a placeholder variable is valid. """
+        if idx is not None and (idx < 0 or idx >= len(decs[v].value)):
+            msg = 'Index {} is out of range for variable "{}"'
+            ConstraintParser._throw(msg.format(idx, v), constraint)
+
+    @staticmethod
     def _verify_link(link, decs, bl_decs, constraint):
         """ Check if the linked decisions exist and have the same size """
         m = 0
@@ -111,12 +127,16 @@ class ConstraintParser:
                                 .format(j['name'], j['name'], i)
                         else:
                             cond += ' and {} == {}'.format(j['name'], j['options'][i])
-                res.append({'option': l['options'][i], l['type']: l['name'],
-                            'condition': cond[5:]})
+                cs = {l['type']: l['name'], 'condition': cond[5:]}
+                if l['type'] == 'block':
+                    cs['option'] = l['options'][i]
+                else:
+                    cs['index'] = i
+                res.append(cs)
         return res
 
     @staticmethod
-    def _verify_json_syntax(block, param, opt, constraint):
+    def _verify_json_syntax(block, param, opt, constraint, idx):
         """ Check if the json has the correct combination of fields. """
         if block is not None and param is not None:
             msg = 'Cannot handle variable and block at the same line.'
@@ -126,9 +146,11 @@ class ConstraintParser:
             if param is None and block is None:
                 msg = 'No corresponding variable/block for option "{}"'
                 ConstraintParser._throw(msg.format(opt), constraint)
-        elif param is not None:
-            msg = 'Must specify option for a variable.'
-            ConstraintParser._throw(msg, constraint)
+
+        if param is not None:
+            if opt is None and idx is None:
+                msg = 'Must specify option/index for a variable.'
+                ConstraintParser._throw(msg, constraint)
 
     @staticmethod
     def _verify_condition_vars(parsed, decs, blocks, constraint):
@@ -143,6 +165,26 @@ class ConstraintParser:
             if pv not in decs and pv not in blocks:
                 msg = '"{}" does not match any block or variable'.format(pv)
                 ConstraintParser._throw(msg, constraint)
+
+    @staticmethod
+    def _maybe_get_index(param, opt, idx, decs):
+        """ Placeholder's option is always checked by index. """
+        if not param:
+            return -1
+        if idx is not None:
+            return idx
+        for i, o in enumerate(decs[param].value):
+            if str(o) == str(opt):
+                return i
+
+    @staticmethod
+    def _create_key(c):
+        if c.block:
+            key = '{}:{}'.format(c.block, c.option) if c.option else c.block
+        else:
+            v = ConstraintParser.make_index_var(c.variable)
+            key = '{}:{}'.format(v, c.index)
+        return key
 
     def _recon(self, code, parsed_decs, cond):
         """ Transform parsed code and decisions into valid python code """
@@ -206,13 +248,17 @@ class ConstraintParser:
             # read skip flag
             skip = bool(ConstraintParser._read_optional(c, 'skippable'))
 
+            # read index
+            idx = ConstraintParser._read_optional(c, 'index')
+            ConstraintParser._verify_index(param, idx, decs, c)
+
             # read option
             opt = ConstraintParser._read_optional(c, 'option')
-            ConstraintParser._verify_json_syntax(block, param, opt, c)
-            if opt and param:
-                ConstraintParser._verify_var_option(param, opt, decs, c)
-            if opt and block:
-                ConstraintParser._verify_block_option(block, opt, bl_decs, c)
+            ConstraintParser._verify_option(param, block, opt, decs, bl_decs, c)
+
+            # verify everything and convert option to index for placeholder
+            ConstraintParser._verify_json_syntax(block, param, opt, c, idx)
+            idx = ConstraintParser._maybe_get_index(param, opt, idx, decs)
 
             # read condition
             cond = ConstraintParser._read_required(c, 'condition')
@@ -225,8 +271,8 @@ class ConstraintParser:
             recon = self._recon(code, parsed_decs, cond)
 
             # save
-            key = '{}:{}'.format(param, opt) if param is not None else \
-                (block if opt is None else '{}:{}'.format(block, opt))
-            self.constraints[key] = Constraint(block, param, opt, skip, recon)
+            constraint = Constraint(block, param, opt, idx, skip, recon)
+            key = ConstraintParser._create_key(constraint)
+            self.constraints[key] = constraint
 
         return self.constraints

@@ -262,8 +262,9 @@ class Parser:
                     num_alt = self.dec_parser.get_num_alt(chunk.variable)
                     for k in range(num_alt):
                         # check if the option has constraints attached to it
-                        v = self.dec_parser.get_alt(chunk.variable, k)
-                        v = '{}:{}'.format(chunk.variable, v)
+                        # always check by index, rather than actual value
+                        v = ConstraintParser.make_index_var(chunk.variable)
+                        v = '{}:{}'.format(v, k)
                         if v in self.constraints and \
                                 not self._eval_constraint(history, v):
                             # constraint met, abort

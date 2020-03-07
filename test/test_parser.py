@@ -188,7 +188,15 @@ class TestParser(unittest.TestCase):
     def test_constraint_4(self):
         """ Variable depends on variable """
         base = abs_path('./specs/')
-        ps = Parser(base+'script7.py', base+'spec-constraint-4.json')
+        ps = Parser(base + 'script7.py', base+'spec-constraint-4.json')
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 4)
+
+        # then, test index
+        ps = Parser(base + 'script7.py', base + 'spec-constraint-4.json')
+        ps.spec['constraints'] = [
+            {"variable": "b", "index": 1, "condition": "a.index == 0"},
+            {"variable": "b", "index": 0, "condition": "a == else"}]
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 4)
 
@@ -207,7 +215,7 @@ class TestParser(unittest.TestCase):
         self.assertEqual(ps.wrangler.counter, 6)
 
     def test_constraint_7(self):
-        """ Block options depend on block parameter """
+        """ Linked decisions """
         base = abs_path('./specs/')
         ps = Parser(base+'script7.py', base+'spec-constraint-7.json')
         ps.main(verbose=False)

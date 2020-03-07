@@ -5,7 +5,7 @@
     {"var": "b", "options": [0, 1] }
   ],
   "constraints": [
-    {"variable": "b", "option": "1", "condition": "a.index == 0"},
-    {"variable": "b", "option": "0", "condition": "a == else"}
+    {"variable": "b", "option": 1, "condition": "a.index == 0"},
+    {"variable": "b", "option": 0, "condition": "a == else"}
   ]
 }
