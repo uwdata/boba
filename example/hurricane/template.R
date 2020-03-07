@@ -2,6 +2,7 @@
 
 library(readr)
 library(MASS)
+library(modelr)
 library(tidyverse)
 library(broom.mixed)
 library(tidybayes)
@@ -50,33 +51,6 @@ model <- lm(log_death ~ {{predictors}} {{covariates}}, data = df)
 # get results
 result <- tidy(model, conf.int = TRUE) %>%
     mutate(model = 'OLS regression')
-# get predictions
-pred <- predict(model) # se.fit = TRUE, interval="prediction"
-disagg_pred <- df %>% 
-    mutate(
-        pred = pred,                                # add fitted predictions to dataframe
-        pred = exp(pred) - 1                        # undo transformation of outcome variable (preprocessing)
-    )
-prediction <- disagg_pred %>%
-    group_by(female) %>%                            # group by predictor(s) of interest
-    summarize(pred = weighted.mean(pred))           # marninalize across other predictors
-uncertainty <- df %>%
-    group_by({{predictor_list}} {{covariate_list}}) %>%
-    data_grid(female) %>%
-    augment(model, newdata = .) %>%
-    mutate(
-        df = df.residual(model),                    # calculate degrees of freedom
-        .draw = list(1:200),                        # generate list of draw numbers
-        pred_t = map(df, ~rt(200, .))               # simulate draws as t-scores
-    ) %>%
-    unnest(cols = c(".draw", "pred_t")) %>%
-    mutate(
-        pred = pred_t * .se.fit + .fitted,          # scale and shift t-scores to create predictive distribution
-        pred = exp(pred) - 1                        # undo transformation of outcome variable (preprocessing)
-    ) %>% 
-    group_by(.draw, female) %>%                     # group by predictor(s) of interest
-    summarize(pred = weighted.mean(pred)) %>%       # marninalize across other predictors
-    compare_levels(pred, by = female)
 
 # --- (M) negative_binomial
 # Negative binomial with deaths as the dependent variable
@@ -84,33 +58,6 @@ model <- glm.nb(death ~ {{predictors}} {{covariates}}, data = df)
 # get results
 result <- tidy(model, conf.int = TRUE) %>%
     mutate(model = 'Negative binomial')
-# get predictions
-pred <- predict(model) # type = "response", se.fit = TRUE, interval = "prediction"
-disagg_pred <- df %>%
-    mutate(
-        pred = pred,                                # add fitted predictions to dataframe
-        pred = exp(pred)                            # undo transformation of outcome variable (log link function)
-    )
-prediction <- disagg_pred %>%
-    group_by(female) %>%                            # group by predictor(s) of interest
-    summarize(pred = weighted.mean(pred))           # marninalize across other predictors
-uncertainty <- df %>%
-    group_by({{predictor_list}} {{covariate_list}}) %>%
-    data_grid(female) %>%
-    augment(model, newdata = .) %>%
-    mutate(
-        df = df.residual(model),                    # calculate degrees of freedom
-        .draw = list(1:200),                        # generate list of draw numbers
-        pred_t = map(df, ~rt(200, .))               # simulate draws as t-scores
-    ) %>%
-    unnest(cols = c(".draw", "pred_t")) %>%
-    mutate(
-        pred = pred_t * .se.fit + .fitted,          # scale and shift t-scores to create predictive distribution
-        pred = exp(pred)                            # undo transformation of outcome variable (log link function)
-    ) %>% 
-    group_by(.draw, female) %>%                     # group by predictor(s) of interest
-    summarize(pred = weighted.mean(pred)) %>%       # marninalize across other predictors
-    compare_levels(pred, by = female)
 
 # --- (M) anova
 # ANOVA with log(deaths+1) as the dependent variable
@@ -118,16 +65,21 @@ model <- aov(log_death ~ {{predictors}} {{covariates}}, data = df)
 # get results
 result <- tidy(model, conf.int = TRUE) %>%
     mutate(model = 'ANOVA')
+
+# --- (O)
 # get predictions
-pred <- predict(model) # se.fit = TRUE, interval = "prediction"
+pred <- predict(model) # se.fit = TRUE, interval="prediction"
 disagg_pred <- df %>%
     mutate(
         pred = pred,                                # add fitted predictions to dataframe
-        pred = exp(pred) - 1                        # undo transformation of outcome variable (preprocessing)
+        pred = {{undo_transform}}                   # undo transformation of outcome variable (preprocessing)
     )
+
 prediction <- disagg_pred %>%
     group_by(female) %>%                            # group by predictor(s) of interest
     summarize(pred = weighted.mean(pred))           # marninalize across other predictors
+
+# uncertainty
 uncertainty <- df %>%
     group_by({{predictor_list}} {{covariate_list}}) %>%
     data_grid(female) %>%
@@ -140,13 +92,12 @@ uncertainty <- df %>%
     unnest(cols = c(".draw", "pred_t")) %>%
     mutate(
         pred = pred_t * .se.fit + .fitted,          # scale and shift t-scores to create predictive distribution
-        pred = exp(pred) - 1                        # undo transformation of outcome variable (preprocessing)
-    ) %>%   
+        pred = {{undo_transform}}                   # undo transformation of outcome variable (preprocessing)
+    ) %>%
     group_by(.draw, female) %>%                     # group by predictor(s) of interest
-    summarize(pred = weighted.mean(pred)) %>%       # marninalize across other predictors
+    summarize(pred = weighted.mean(pred)) %>%       # marginalize across other predictors
     compare_levels(pred, by = female)
 
-# --- (O)
 # only output relevant fields in disagg_pred
 disagg_pred <- disagg_pred %>%
     dplyr::select(
