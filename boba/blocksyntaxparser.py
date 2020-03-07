@@ -8,8 +8,10 @@ kw = '# ---'
 class BlockSyntaxParser(BaseParser):
     """
     Parse the metadata of a code block, which must have the structure:
-        # --- (ID) option
+        # --- (ID) option @if condition
     option is optional, but including it will mark the block as a parameter.
+    @if is optional and it creates a procedural dependency constraint on this
+        block and this option (if any).
     """
 
     def __init__(self, line):
@@ -19,15 +21,25 @@ class BlockSyntaxParser(BaseParser):
         self.parsed_id = ''
         self.parsed_parameter = ''
         self.parsed_option = ''
+        self.parsed_condition = ''
 
     @staticmethod
     def can_parse(line):
         return line.lstrip().startswith(kw)
 
+    @staticmethod
+    def _is_operator_start(ch):
+        return ch == '@'
+
+    @staticmethod
+    def _is_condition(word):
+        return word == 'if'
+
     def parse(self):
         while not self._is_end():
             self._read_next()
-        return self.parsed_id, self.parsed_parameter, self.parsed_option
+        return self.parsed_id, self.parsed_parameter, self.parsed_option,\
+            self.parsed_condition
 
     def _read_next(self):
         self._read_while(BlockSyntaxParser._is_whitespace)
@@ -38,8 +50,14 @@ class BlockSyntaxParser(BaseParser):
             self._read_kw()
         elif self.state == 1:
             self._read_id()
+        elif self.state == 2:
+            self._maybe_read_option()
+        elif self.state == 3:
+            self._read_condition()
         else:
-            self._read_option()
+            # we've read anything we can handle but haven't reached the end
+            s = self._remaining().strip()
+            self._throw('Cannot handle "{}"'.format(s))
 
     def _end(self):
         self.i = len(self.line)  # stop parsing
@@ -80,14 +98,16 @@ class BlockSyntaxParser(BaseParser):
         self._next_char()
         self.state += 1
 
-    def _read_option(self):
-        """ Read whatever remains after the parenthesis. """
-        s = self._remaining().strip()  # for error message
-
+    def _maybe_read_option(self):
+        """ Read the option, if there is any. """
         self._read_while(self._is_whitespace)
+
+        # check if the next word is maybe an option
+        if not self._is_id_start(self._peek_char()):
+            self.state += 1
+            return
+
         # option follows the same naming convention as ID
-        # but we didn't check the starting character, so option can start with
-        # a number or the underscore
         opt = self._read_while(self._is_id)
         if opt != '':
             self.parsed_parameter = self.parsed_id
@@ -95,6 +115,30 @@ class BlockSyntaxParser(BaseParser):
             self.parsed_id += ':' + self.parsed_option
 
         self._read_while(self._is_whitespace)
-        # throw an error for anything we can't handle
-        if not self._is_end():
-            self._throw('Invalid option syntax "{}"'.format(s))
+        self.state += 1
+
+    def _read_condition(self):
+        """ Read condition. """
+        self._read_while(self._is_whitespace)
+
+        # check if the next char is indeed an operator
+        if not BlockSyntaxParser._is_operator_start(self._peek_char()):
+            self.state += 1
+            return
+
+        # read @if
+        self._next_char()
+        w = self._read_while(self._is_id)
+        if not BlockSyntaxParser._is_condition(w):
+            self._throw('Cannot handle @{}'.format(w))
+
+        # read whatever remains as the condition
+        s = self._remaining().strip()
+        self._end()
+        self.state += 1
+
+        # construct the condition
+        bl = self.parsed_parameter if self.parsed_option else self.parsed_id
+        self.parsed_condition = {'block': bl, 'condition': s}
+        if self.parsed_option:
+            self.parsed_condition['option'] = self.parsed_option

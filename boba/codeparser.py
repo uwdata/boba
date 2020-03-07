@@ -38,6 +38,7 @@ class Chunk:
 class CodeParser:
     def __init__(self):
         self.blocks = {}
+        self.inline_constraints = []
         self.order = []
 
     @staticmethod
@@ -108,8 +109,12 @@ class CodeParser:
                 self._add_block(bl)
 
                 # parse the metadata and create a new block
-                bp_id, par, opt = BlockSyntaxParser(line).parse()
+                bp_id, par, opt, cond = BlockSyntaxParser(line).parse()
                 bl = Block(bp_id, par, opt, [])
+
+                # store inline constraints, if any
+                if cond:
+                    self.inline_constraints.append(cond)
             else:
                 # match decision variables
                 try:

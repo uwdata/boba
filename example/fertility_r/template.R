@@ -25,11 +25,11 @@ df$NextMenstrualOnset <- df$StartDateofLastPeriod + df$ReportedCycleLength
 # # note: this is not available in study one
 # df$NextMenstrualOnset <- df$StartDateNext
 
-# --- (ECL) computed
+# --- (ECL) computed @if NMO != reported
 # exclusion based on computed cycle length
 df <- df[!(df$ComputedCycleLength < 25 | df$ComputedCycleLength > 35), ]
 
-# --- (ECL) reported
+# --- (ECL) reported @if NMO != computed
 # exclusion based on reported cycle length
 df <- df[!(df$ReportedCycleLength < 25 | df$ReportedCycleLength > 35), ]
 

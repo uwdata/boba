@@ -58,6 +58,16 @@ error will be raised. However, if the script template contains a block that
 does not appear in the graph, only a warning will be raised and the block will
 not appear in any generated universes.
 
+You may also write a procedural dependency constraint when declaring a block,
+using the following syntax:
+
+```python
+# --- (ID) option @if condition
+```
+It adds a constraint on this block and option (option is optional).
+For more information on how procedural dependecy works, see 
+[this section](#procedural-dependencies).
+
 ## JSON Spec
 JSON spec is a JSON file containing a number of fields: a graph indicating the
 relationship between code blocks, the options of all placeholder variables,

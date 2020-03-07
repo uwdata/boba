@@ -190,6 +190,9 @@ class ConstraintParser:
             else:
                 pure_cons.append(c)
 
+        # add inline constraints
+        pure_cons += code_parser.inline_constraints
+
         # then parse all conditions, including generated ones from link
         for c in pure_cons:
             # read block

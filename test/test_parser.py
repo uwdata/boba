@@ -213,6 +213,13 @@ class TestParser(unittest.TestCase):
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 10)
 
+    def test_constraint_inline(self):
+        """ Inline constraints """
+        base = abs_path('./specs/')
+        ps = Parser(base+'script-inline-constraints.py', base+'spec-empty.json')
+        ps.main(verbose=False)
+        self.assertEqual(ps.wrangler.counter, 2)
+
     # --- parse graph ---
     def test_spec_good(self):
         base = abs_path('../example/simple/')
