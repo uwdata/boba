@@ -3,6 +3,7 @@
 library(readr)
 library(tidyverse)
 library(broom.mixed)
+library(caret)
 
 # read data
 df <- read_csv('../mortgage.csv', 
@@ -36,6 +37,15 @@ disagg_pred <- disagg_pred %>%
         pred = pred
     )
 
+# cross validation
+cv <- train(accept_scaled ~ female {{black}} {{housing_expense_ratio}}
+    {{self_employed}} {{married}} {{bad_history}} {{PI_ratio}}
+    {{loan_to_value}} {{denied_PMI}}, data = df, method='lm',
+    trControl=trainControl(method='cv', number=5))
+# normalize using max - min, because IQR is zero
+nrmse = cv$results$RMSE / (max(df$accept_scaled) - min(df$accept_scaled))
+fit = data.frame('NRMSE'=nrmse)
+
 # output
 sink('../results/summary_{{_n}}.txt')
 summary(model)
@@ -43,3 +53,4 @@ sink()
 write_csv(result, '../results/table_{{_n}}.csv')
 write_csv(prediction, '../results/prediction_{{_n}}.csv')
 write_csv(disagg_pred, '../results/disagg_pred_{{_n}}.csv')
+write_csv(fit, '../results/fit_{{_n}}.csv')
