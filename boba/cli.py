@@ -11,20 +11,17 @@ from .output.csvmerger import CSVMerger
 @click.command()
 @click.option('--script', '-s', help='Path to template script',
               default='./template.py', show_default=True)
-@click.option('--json', '-j', help='Path to JSON spec',
-              default='./spec.json', show_default=True)
 @click.option('--out', help='Output directory',
               default='.', show_default=True)
 @click.option('--lang', help='Language, can be python/R [default: inferred from file extension]',
               default='')
-def compile(script, json, out, lang):
+def compile(script, out, lang):
     """Generate multiverse analysis from specifications."""
 
     check_path(script)
-    check_path(json)
 
-    click.echo('Creating multiverse from {} and {}'.format(script, json))
-    ps = Parser(script, json, out, lang)
+    click.echo('Creating multiverse from {}'.format(script))
+    ps = Parser(script, out, lang)
     ps.main()
 
     ex = """To execute the multiverse, run the following commands:

@@ -30,8 +30,8 @@ class TestDecisionParser(unittest.TestCase):
     def test_read_json(self):
         with open(abs_path('./specs/spec-good.json'), 'rb') as f:
             spec = json.load(f)
-        dp = DecisionParser(spec)
-        ds = dp.read_decisions()
+        dp = DecisionParser()
+        ds = dp.read_decisions(spec)
         self.assertListEqual(list(ds.keys()), ['a', 'b'])
         self.assertEqual(ds['a'].desc, 'outlier')
         self.assertEqual(ds['b'].desc, 'Decision b')
@@ -39,8 +39,8 @@ class TestDecisionParser(unittest.TestCase):
     def test_parse_code(self):
         with open(abs_path('./specs/spec-good.json'), 'rb') as f:
             spec = json.load(f)
-        dp = DecisionParser(spec)
-        dp.read_decisions()
+        dp = DecisionParser()
+        dp.read_decisions(spec)
 
         line = ''
         vs, codes = dp.parse_code(line)

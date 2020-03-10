@@ -45,22 +45,24 @@ class Parser:
 
     """ Parse everything """
 
-    def __init__(self, f1, f2, out='.', lang=''):
+    def __init__(self, f1, out='.', lang=''):
         self.fn_script = f1
-        self.fn_spec = f2
         self.out = os.path.join(out, 'multiverse/')
 
         self.paths = []
         self.history = []
         self.constraints = {}
 
-        # read spec
-        with open(f2, 'rb') as f:
-            self.spec = json.load(f)
-
-        # initialize helper class
-        self.dec_parser = DecisionParser(self.spec)
+        # parse
         self.code_parser = CodeParser()
+        self.dec_parser = DecisionParser()
+        self._parse_blocks()
+        self.spec = self.code_parser.spec
+        self._parse_decs()
+        self._parse_graph()
+        self._parse_constraints()
+
+        # init helper class
         try:
             self.lang = Lang(lang, f1)
             self.wrangler = Wrangler(self.spec, self.lang, self.out)
@@ -85,22 +87,30 @@ class Parser:
         self._throw(prefix + self._indent(msg))
 
     def _throw_spec_error(self, msg):
-        prefix = 'In parsing file "{}":\n'.format(self.fn_spec)
+        prefix = 'In parsing boba config:\n' + json.dumps(self.spec) + '\n'
         self._throw(prefix + self._indent(msg))
 
     def _parse_blocks(self):
         """ Make a pass over the template, parsing block declarations and
         placeholder variables inside the code."""
-        try:
-            self.dec_parser.read_decisions()
-        except ParseError as e:
-            self._throw_spec_error(e.args[0])
-
         with open(self.fn_script, 'r') as f:
             try:
                 self.code_parser.parse(self.dec_parser, f)
             except ParseError as e:
                 self._throw_parse_error(e.args[0])
+
+    def _parse_decs(self):
+        """ Parse decisions in the spec. """
+        try:
+            self.dec_parser.read_decisions(self.spec)
+        except ParseError as e:
+            self._throw_spec_error(e.args[0])
+
+        # check if used variables has been declared
+        for v in self.code_parser.used_vars:
+            if v not in set(self.dec_parser.decisions.keys()):
+                msg = 'Cannot find matching variable "{}" in spec'.format(v)
+                self._throw_spec_error(msg)
 
     def _match_nodes(self, nodes):
         """ Nodes in spec and script should match. """
@@ -366,10 +376,6 @@ class Parser:
                 exit(0)
 
     def main(self, verbose=True):
-        self._parse_blocks()
-        self._parse_graph()
-        self._parse_constraints()
-
         self._warn_size()
         self._code_gen()
         self._write_csv()

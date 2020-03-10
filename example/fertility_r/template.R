@@ -1,3 +1,24 @@
+# --- (BOBA_CONFIG)
+{
+  "decisions": [
+    {"var": "fertility_bounds", "options": [
+      "c(7, 14, 17, 25, 17, 25)",
+      "c(6, 14, 17, 27, 17, 27)",
+      "c(9, 17, 18, 25, 18, 25)",
+      "c(8, 14, 1, 7, 15, 28)",
+      "c(9, 17, 1, 8, 18, 28)"
+    ]},
+    {"var": "relationship_bounds", "options": [
+      "c(2, 3)", "c(1, 2)", "c(1, 3)"
+    ]}
+  ],
+  "outputs": [
+    {"name": "p-value", "value": "summar$coefficients[4, 4]"}
+  ],
+  "before_execute": "cp ../durante_etal_2013_study1.txt ./code/"
+}
+# --- (END)
+
 #read in raw data from Study 1
 df <- read.csv2("durante_etal_2013_study1.txt", sep = "")
 

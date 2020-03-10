@@ -1,9 +1,0 @@
-{
-  "decisions": [
-    {"var": "a", "options": [0, 1, 2, 3, 4] },
-    {"var": "b", "options": ["0", "1", "2", "3", "4"]}
-  ],
-  "constraints": [
-    {"link": ["a", "b"]}
-  ]
-}

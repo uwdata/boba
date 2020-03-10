@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass, field
 from typing import List
+import json
 
 from .blocksyntaxparser import BlockSyntaxParser, ParseError
 
@@ -38,8 +39,14 @@ class Chunk:
 class CodeParser:
     def __init__(self):
         self.blocks = {}
-        self.inline_constraints = []
         self.order = []
+
+        self.raw_spec = ''
+        self.spec = {}
+
+        self.inline_constraints = []
+        self.inline_vars = []
+        self.used_vars = set()
 
     @staticmethod
     def _get_block_name(block):
@@ -48,6 +55,16 @@ class CodeParser:
 
     def _add_block(self, block):
         """Add a block to our data structure."""
+        # handle config block
+        if block.id == 'BOBA_CONFIG':
+            self.raw_spec += block.chunks[0].code
+            return
+        if block.id == 'END':
+            block.id = ''
+            if len(self.order):
+                self.blocks[self.order[-1]].chunks += block.chunks
+                return
+
         # ignore empty block
         if block.id == '' and block.chunks[0].code == '':
             return
@@ -120,6 +137,9 @@ class CodeParser:
                 try:
                     vs, codes = dec_parser.parse_code(line)
                     if len(vs):
+                        # store inline variables
+                        self.used_vars.update(vs)
+
                         # chop into more chunks
                         # combine first chunk with previous code
                         bl.chunks.append(Chunk(vs[0], code + codes[0]))
@@ -137,3 +157,11 @@ class CodeParser:
         # add the last block
         bl.chunks.append(Chunk('', code))
         self._add_block(bl)
+
+        # parse the spec
+        try:
+            self.spec = json.loads(self.raw_spec) if self.raw_spec else {}
+        except ValueError as e:
+            msg = self.raw_spec + '\n' + e.args[0]
+            msg += '\nBoba config is not valid JSON'
+            raise ParseError(msg)

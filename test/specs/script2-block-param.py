@@ -1,5 +1,11 @@
 """ Test the block-level parameter syntax """
 
+# --- (BOBA_CONFIG)
+{"decisions": [
+    {"var": "b", "options": [1, 2]}
+]}
+# --- (END)
+
 if __name__ == '__main__':
     # --- (A) a1
     a = {{b}}

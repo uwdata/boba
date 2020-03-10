@@ -1,5 +1,17 @@
 """ Test constraints """
 
+# --- (BOBA_CONFIG)
+{
+  "decisions": [
+    {"var": "a", "options": [0, 1, 2, 3, 4] },
+    {"var": "b", "options": ["0", "1", "2", "3", "4"]}
+  ],
+  "constraints": [
+    {"link": ["a", "b"]}
+  ]
+}
+# --- (END)
+
 if __name__ == '__main__':
     # --- (A)
     a = {{a}}

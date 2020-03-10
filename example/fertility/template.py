@@ -4,6 +4,30 @@ import numpy as np
 import pandas as pd
 import statsmodels.api as sm
 import statsmodels.formula.api as smf
+# --- (BOBA_CONFIG)
+{
+  "graph": [
+    "NMO1->ECL1->A",
+    "NMO2->ECL2->A",
+    "NMO1->A",
+    "NMO2->A",
+    "A->B",
+    "A->EC->B"
+  ],
+  "decisions": [
+    {"var": "fertility_bounds", "options": [
+      [[7, 14], [17, 25], [17, 25]],
+      [[6, 14], [17, 27], [17, 27]],
+      [[9, 17], [18, 25], [18, 25]],
+      [[8, 14], [1, 7], [15, 28]],
+      [[9, 17], [1, 8], [18, 28]]
+    ]},
+    {"var": "relationship_bounds",
+      "options": [[2, 3], [1, 2], [1, 3]]}
+  ],
+  "before_execute": "cp ../durante_etal_2013_study1.txt ./code/"
+}
+# --- (END)
 
 if __name__ == '__main__':
     # read data file

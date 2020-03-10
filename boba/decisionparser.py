@@ -12,9 +12,8 @@ class Decision:
 
 
 class DecisionParser(BaseParser):
-    def __init__(self, spec):
+    def __init__(self):
         super(DecisionParser, self).__init__('')
-        self.spec = spec
         self.decisions = {}
 
     @staticmethod
@@ -63,14 +62,14 @@ class DecisionParser(BaseParser):
             if w in self.decisions:
                 raise ParseError('Duplicate variable/block name "{}"'.format(w))
 
-    def read_decisions(self):
+    def read_decisions(self, spec):
         """
         Read decisions from the JSON spec.
         :return: a dict of decisions
         """
         res = {}
 
-        dec_spec = self.spec['decisions'] if 'decisions' in self.spec else []
+        dec_spec = spec['decisions'] if 'decisions' in spec else []
         for d in dec_spec:
             desc = d['desc'] if 'desc' in d else 'Decision {}'.format(d['var'])
 
@@ -167,10 +166,6 @@ class DecisionParser(BaseParser):
                     continue
 
                 # read succeeds
-                if val not in set(self.decisions.keys()):
-                    msg = 'Cannot find the matching variable "{}" in spec'.format(val)
-                    raise ParseError(msg)
-
                 code.append(line[j:self.i])
                 res.append(val)
                 j = self.i
