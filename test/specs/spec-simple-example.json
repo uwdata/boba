@@ -1,6 +1,0 @@
-{
-  "graph": ["A->B"],
-  "decisions": [
-    {"var": "cutoff", "options": [2, 2.5, 3] }
-  ]
-}

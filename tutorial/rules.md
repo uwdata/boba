@@ -58,6 +58,16 @@ error will be raised. However, if the script template contains a block that
 does not appear in the graph, only a warning will be raised and the block will
 not appear in any generated universes.
 
+You may also write a procedural dependency constraint when declaring a block,
+using the following syntax:
+
+```python
+# --- (ID) option @if condition
+```
+It adds a constraint on this block and option (option is optional).
+For more information on how procedural dependecy works, see 
+[this section](#procedural-dependencies).
+
 ## JSON Spec
 JSON spec is a JSON file containing a number of fields: a graph indicating the
 relationship between code blocks, the options of all placeholder variables,
@@ -141,6 +151,7 @@ an earlier decision. The constraint object has the following fields:
   "block": "block_ID",
   "variable": "placeholder_var",
   "option": "option",
+  "index": "index",
   "skippable": false,
   "condition": "A == a1"
 }
@@ -152,12 +163,14 @@ is a flag, only applicable to blocks, to indicate whether boba should skip the
 block when the condition is not met and continue with the next block (rather
 than abandoning the entire universe). Next, we describe each field in detail.
 
-There are three forms to identify a dependent decision. It can be a `block`
+There are four forms to identify a dependent decision. It can be a `block`
 (either a normal block or a decision block). It can be a `block` with a
 specific `option`. It can be a placeholder `variable` with a specific
-`option`. Both `block` and `variable` refers to the identifier, whereas
+`option`. It can be a placeholder `variable` with a specific `index`.
+Both `block` and `variable` refers to the identifier, whereas
 `option` refers to the name of the block option or the actual value of the
-placeholder option.
+placeholder option. The `index` refers to the index of the desired option in
+the options array, starting from 0.
 
 `skippable` is optional, with the default value `false`. If `skippable` is false, when
 a universe does not satisfy the `condition`, the universe will be removed --

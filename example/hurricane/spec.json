@@ -35,11 +35,17 @@
         "",
         ", year",
         ", post"
+    ]},
+    {"var": "undo_transform", "options": [
+      "exp(value) - 1",
+      "exp(value)",
+      "exp(value) - 1"
     ]}
   ],
   "constraints": [
     {"link": ["predictors", "predictor_list"]},
-    {"link": ["covariates", "covariate_list"]}
+    {"link": ["covariates", "covariate_list"]},
+    {"link": ["M", "undo_transform"]}
   ],
   "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
 }

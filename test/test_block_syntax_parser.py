@@ -34,7 +34,7 @@ class TestBlockParser(unittest.TestCase):
     def test_syntax(self):
         line = '# --- (A) remove_outlier'
         self.assertTrue(BlockSyntaxParser.can_parse(line))
-        bid, par, opt = BlockSyntaxParser(line).parse()
+        bid, par, opt, cond = BlockSyntaxParser(line).parse()
         self.assertEqual(bid, 'A:remove_outlier')
         self.assertEqual(par, 'A')
         self.assertEqual(opt, 'remove_outlier')
@@ -48,38 +48,58 @@ class TestBlockParser(unittest.TestCase):
             BlockSyntaxParser(line).parse()
 
         line = '# --- ( A)'
-        bid, par, opt = BlockSyntaxParser(line).parse()
+        bid, par, opt, cond = BlockSyntaxParser(line).parse()
         self.assertEqual(bid, 'A')
         self.assertEqual(par, '')
         self.assertEqual(opt, '')
 
+    def test_condition(self):
+        line = '# --- (A) a1 @if B == b1'
+        bid, par, opt, cond = BlockSyntaxParser(line).parse()
+        self.assertEqual(bid, 'A:a1')
+        self.assertEqual(par, 'A')
+        self.assertEqual(opt, 'a1')
+        self.assertEqual(cond['block'], 'A')
+        self.assertEqual(cond['option'], 'a1')
+        self.assertEqual(cond['condition'], 'B == b1')
+
+        line = '# --- (A) @if B == b1'
+        bid, par, opt, cond = BlockSyntaxParser(line).parse()
+        self.assertEqual(cond['block'], 'A')
+        self.assertEqual(cond['condition'], 'B == b1')
+        self.assertNotIn('option', cond)
+
+        line = '# --- (A) remove outlier @if B == b1'
+        with self.assertRaises(ParseError):
+            BlockSyntaxParser(line).parse()
+
     def test_whitespace(self):
         line = '\t\t# --- (A) name'
-        bid, par, opt = BlockSyntaxParser(line).parse()
+        bid, par, opt, cond = BlockSyntaxParser(line).parse()
         self.assertEqual(par, 'A')
         self.assertEqual(opt, 'name')
 
         line = '    # --- (A) name    \t'
-        bid, par, opt = BlockSyntaxParser(line).parse()
+        bid, par, opt, cond = BlockSyntaxParser(line).parse()
         self.assertEqual(par, 'A')
         self.assertEqual(opt, 'name')
 
         line = '# ---(A)socrowded'
-        bid, par, opt = BlockSyntaxParser(line).parse()
+        bid, par, opt, cond = BlockSyntaxParser(line).parse()
         self.assertEqual(par, 'A')
         self.assertEqual(opt, 'socrowded')
 
     def test_id_syntax(self):
         line = '# --- (C1)'
-        bid, par, opt = BlockSyntaxParser(line).parse()
+        bid, par, opt, cond = BlockSyntaxParser(line).parse()
         self.assertEqual(bid, 'C1')
 
         line = '# --- (aXa) '
-        bid, par, opt = BlockSyntaxParser(line).parse()
+        bid, par, opt, cond = BlockSyntaxParser(line).parse()
         self.assertEqual(bid, 'aXa')
 
         line = '# --- (my_variable) \t'
-        bid, par, opt = BlockSyntaxParser(line).parse()
+        bid, par, opt, cond = BlockSyntaxParser(line).parse()
         self.assertEqual(bid, 'my_variable')
 
         # ID must start with a letter

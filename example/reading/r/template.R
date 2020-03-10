@@ -1,4 +1,21 @@
 #!/usr/bin/env Rscript
+# --- (BOBA_CONFIG)
+{
+  "graph": [
+    "RC->LM1->O1",
+    "RC->LM2->O2",
+    "OLR1->O1",
+    "OLR2->O2"
+  ],
+  "decisions": [
+    {"var": "brmsfamily", "options": ["shifted_lognormal", "lognormal"]}
+  ],
+  "outputs": [
+    {"name": "aic/waic", "value": "aic"}
+  ],
+  "before_execute": "cp ../../data.csv ./code/ && mkdir results"
+}
+# --- (END)
 
 library(readr)
 library(lmerTest)

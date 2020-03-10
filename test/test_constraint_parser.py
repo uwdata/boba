@@ -21,16 +21,14 @@ class TestConstraintParser(unittest.TestCase):
 
     def test_read_json(self):
         base = abs_path('./specs/')
-        ps = Parser(base+'script6.py', base+'spec-constraint-1.json')
-        ps._parse_blocks()
+        ps = Parser(base+'script3-1.py')
         cp = ConstraintParser(ps.spec)
         cs = cp.read_constraints(ps.code_parser, ps.dec_parser)
         self.assertEqual(len(cs), 2)
 
     def test_link(self):
         base = abs_path('./specs/')
-        ps = Parser(base + 'script6.py', base + 'spec-constraint-7.json')
-        ps._parse_blocks()
+        ps = Parser(base + 'script3-7.py')
         cp = ConstraintParser(ps.spec)
         cs = cp.read_constraints(ps.code_parser, ps.dec_parser)
         self.assertEqual(len(cs), 10)
@@ -66,62 +64,62 @@ class TestConstraintParser(unittest.TestCase):
         """ Evaluation of various conditions """
         # expr and expr
         base = abs_path('./specs/')
-        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
+        ps = Parser(base + 'script3-6.py', base)
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 2)
 
         # expr or expr
-        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
         ps.spec['constraints'] = [{"block": "D", "condition": "a == if or B == b1"}]
+        ps._parse_constraints()
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 6)
 
         # expr and (expr or expr)
-        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
         ps.spec['constraints'] = [{"block": "D", "condition": "a == if and (B == b1 or B == b2)"}]
+        ps._parse_constraints()
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 4)
 
         # testing !=
-        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
         ps.spec['constraints'] = [{"block": "D", "condition": "a != if"}]
+        ps._parse_constraints()
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 4)
 
         # testing >=
-        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
         ps.spec['constraints'] = [{"block": "D", "condition": "a.index >= 1"}]
+        ps._parse_constraints()
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 4)
 
         # testing index
-        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
         ps.spec['constraints'] = [{"block": "D", "condition": "b.index == 1"}]
+        ps._parse_constraints()
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 4)
 
         # testing option with integer type
-        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
         ps.spec['constraints'] = [{"block": "D", "condition": "b == 0"}]
+        ps._parse_constraints()
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 4)
 
         # testing option with float type
-        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
         ps.spec['constraints'] = [{"block": "D", "condition": "b == 1.5"}]
+        ps._parse_constraints()
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 4)
 
         # testing unmade decision
-        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
         ps.spec['constraints'] = [{"block": "A", "condition": "b.index == 0"}]
+        ps._parse_constraints()
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 0)
 
         # testing if the decision is made when the block depends on a variable
         # inside the block
-        ps = Parser(base + 'script7.py', base + 'spec-constraint-6.json')
         ps.spec['constraints'] = [{"block": "B", "condition": "b.index == 0"}]
+        ps._parse_constraints()
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 0)
 
@@ -129,8 +127,7 @@ class TestConstraintParser(unittest.TestCase):
         """ Does the condition code contain python syntax error? """
 
         base = abs_path('./specs/')
-        ps = Parser(base+'script6.py', base+'spec-constraint-1.json')
-        ps._parse_blocks()
+        ps = Parser(base+'script3-1.py', base)
 
         spec = {'constraints': [{'block': 'A', 'condition': 'B=b1'}]}
         with self.assertRaises(ParseError):
@@ -147,8 +144,7 @@ class TestConstraintParser(unittest.TestCase):
         """ Test various possibilities to specify constraints in JSON """
 
         base = abs_path('./specs/')
-        ps = Parser(base+'script6.py', base+'spec-constraint-1.json')
-        ps._parse_blocks()
+        ps = Parser(base+'script3-1.py', base)
 
         # empty - should parse
         spec = {}

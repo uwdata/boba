@@ -4,6 +4,31 @@ import pandas as pd
 import numpy as np
 import statsmodels.formula.api as smf
 
+# --- (BOBA_CONFIG)
+{
+  "graph": [
+    "B1->C",
+    "B2->C",
+    "C->D1->F1",
+    "C->D2->F1",
+    "C->F2"
+  ],
+  "decisions": [
+    {"var": "sample_size", "options": [1284, 2568]},
+    {"var": "rt", "options": ["adjust_rt", "rt"] },
+    {"var": "bad_device", "options": [[], ["smartphone"], ["smartphone", "tablet"]]},
+    {"var": "dyslexia", "options": ["dyslexia", "dyslexia_bin"] },
+    {"var": "min_wpm", "options": [10, 150] },
+    {"var": "formula", "options":  [
+      "log_speed ~ page_condition*dyslexia",
+      "log_speed ~ page_condition*dyslexia + img_width + num_words + age + english_native",
+      "log_speed ~ page_condition*dyslexia + img_width + num_words + age + english_native + device + edu_level"
+    ]}
+  ],
+  "before_execute": "cp ../../data.csv ./code/"
+}
+# --- (END)
+
 if __name__ == '__main__':
     # read data
     df = pd.read_csv('./data.csv')

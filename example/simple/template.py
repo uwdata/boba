@@ -1,8 +1,16 @@
 #!/usr/bin/env python3
-
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
+
+# --- (BOBA_CONFIG)
+{
+  "decisions": [
+    {"var": "cutoff", "options": [2, 2.5, 3]}
+  ],
+  "before_execute": "cp ../data.csv ./code/"
+}
+# --- (END)
 
 if __name__ == '__main__':
     # read data file
