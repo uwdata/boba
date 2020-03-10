@@ -107,7 +107,6 @@ fit = cross(df, aov, log_death ~ {{predictors}} {{covariates}})
 # --- (O)
 # normalize RMSE
 nrmse = fit / (max(df$death) - min(df$death))
-fit = data.frame('NRMSE'=nrmse)
 
 # get predictions
 pred <- predict(model) # se.fit = TRUE, interval="prediction"
@@ -119,7 +118,11 @@ disagg_pred <- df %>%
 
 prediction <- disagg_pred %>%
     group_by(female) %>%                            # group by predictor(s) of interest
-    summarize(pred = weighted.mean(pred))           # marninalize across other predictors
+    summarize(pred = weighted.mean(pred)) %>%       # marninalize across other predictors
+    compare_levels(pred, by = female) %>%
+    ungroup() %>%
+    dplyr::select(pred = pred) %>%
+    add_column(NRMSE = nrmse)
 
 # # uncertainty
 # uncertainty <- df %>%
@@ -155,4 +158,3 @@ write_csv(result, '../results/table_{{_n}}.csv')
 write_csv(disagg_pred, '../results/disagg_pred_{{_n}}.csv')
 write_csv(prediction, '../results/prediction_{{_n}}.csv')
 # write_csv(uncertainty, '../results/uncertainty_{{_n}}.csv')
-write_csv(fit, '../results/fit_{{_n}}.csv')
