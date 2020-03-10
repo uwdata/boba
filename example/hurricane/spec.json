@@ -37,9 +37,9 @@
         ", post"
     ]},
     {"var": "undo_transform", "options": [
-      "exp(pred) - 1",
-      "exp(pred)",
-      "exp(pred) - 1"
+      "exp(value) - 1",
+      "exp(value)",
+      "exp(value) - 1"
     ]}
   ],
   "constraints": [
