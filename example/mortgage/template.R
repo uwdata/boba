@@ -33,5 +33,34 @@ result <- tidy(model, conf.int = TRUE) %>%
     filter(term == 'female') %>%
     add_column(NRMSE = nrmse)
 
+# get uncertainty in coefficient for female as draws from sampling distribution 
+uncertainty <- result %>%
+    mutate(
+        df = df.residual(model),                        # get model degrees of freedom
+        .draw = list(1:200),                            # generate list of draw numbers
+        coef_t = map(df, ~rt(200, .))                   # simulate draws as t-scores
+    ) %>%
+    unnest(cols = c(".draw", "coef_t")) %>%
+    mutate(coef = coef_t * std.error + estimate) %>%    # scale and shift t-scores
+    dplyr::select(term, .draw, coef)
+
 # output
 write_csv(result, '../results/estimate_{{_n}}.csv')
+write_csv(result, '../results/uncertainty_{{_n}}.csv')
+
+# --- (BOBA_CONFIG)
+{
+  "decisions": [
+    {"var": "female", "options": ["female", ""]},
+    {"var": "black", "options": ["+ black", ""]},
+    {"var": "housing_expense_ratio", "options": ["+ housing_expense_ratio", ""]},
+    {"var": "self_employed", "options": ["+ self_employed", ""]},
+    {"var": "married", "options": ["+ married", ""]},
+    {"var": "bad_history", "options": ["+ bad_history", ""]},
+    {"var": "PI_ratio", "options": ["+ PI_ratio", ""]},
+    {"var": "loan_to_value", "options": ["+ loan_to_value", ""]},
+    {"var": "denied_PMI", "options": ["+ denied_PMI", ""]}
+  ],
+  "before_execute": "cp ../mortgage.csv ./ && rm -rf results && mkdir results"
+}
+# --- (END)
