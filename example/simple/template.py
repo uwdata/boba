@@ -1,16 +1,10 @@
+# --- (BOBA_CONFIG)
+{"before_execute": "cp ../data.csv ./code/"}
+# --- (END)
 #!/usr/bin/env python3
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
-
-# --- (BOBA_CONFIG)
-{
-  "decisions": [
-    {"var": "cutoff", "options": [2, 2.5, 3]}
-  ],
-  "before_execute": "cp ../data.csv ./code/"
-}
-# --- (END)
 
 if __name__ == '__main__':
     # read data file
@@ -18,7 +12,7 @@ if __name__ == '__main__':
 
     # --- (A) std
     # remove outliers based on std
-    df = df[np.abs(df.y - df.y.mean()) <= ({{cutoff}} * df.y.std())]
+    df = df[np.abs(df.y - df.y.mean()) <= ({{cutoff=2,2.5,3}} * df.y.std())]
 
     # --- (A) iqr
     # remove outliers based on iqr
