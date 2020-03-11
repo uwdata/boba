@@ -7,6 +7,11 @@ library(tidyverse)
 library(broom.mixed)
 library(tidybayes)
 
+# a function to undo data transformations when post-processing model predictions
+untransform <- function(value) {
+    return({{undo_transform}})
+}
+
 # a custom function for cross validation
 cross <- function (df, func, fml, folds = 5) {
   l = nrow(df) %/% folds
@@ -28,7 +33,7 @@ cross <- function (df, func, fml, folds = 5) {
 
     model <- func(fml, data = d_train)
     pred <- predict(model, d_test)
-    pred <- {{undo_transform}}
+    pred <- untransform(pred)
 
     mse = mse + sum((d_test$death - pred)^2)
   }
@@ -114,7 +119,7 @@ disagg_pred <- df %>%
         se = pred$se.fit,
         fit = untransform(fit), # undo transformation of outcome variable (log link function)
         se = untransform(se),
-        df = pred$df            # get degrees of freedom
+        df = df.residual(model) # get degrees of freedom
     )
 # cross validation
 fit = cross(df, glm.nb, death ~ {{predictors}} {{covariates}})
