@@ -49,5 +49,17 @@ result <- tidy(model, conf.int = TRUE) %>%
     filter(term == 'female') %>%
     add_column(NRMSE = nrmse)
 
+# get uncertainty in coefficient for female as draws from sampling distribution 
+uncertainty <- result %>%
+    mutate(
+        df = df.residual(model),                        # get model degrees of freedom
+        .draw = list(1:200),                            # generate list of draw numbers
+        coef_t = map(df, ~rt(200, .))                   # simulate draws as t-scores
+    ) %>%
+    unnest(cols = c(".draw", "coef_t")) %>%
+    mutate(coef = coef_t * std.error + estimate) %>%    # scale and shift t-scores
+    dplyr::select(term, .draw, coef)
+
 # output
 write_csv(result, '../results/estimate_{{_n}}.csv')
+write_csv(result, '../results/uncertainty_{{_n}}.csv')
