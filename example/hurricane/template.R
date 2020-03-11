@@ -1,4 +1,47 @@
 #!/usr/bin/env Rscript
+# --- (BOBA_CONFIG)
+{
+  "decisions": [
+    {"var": "outliers", "options": [
+        "c()",
+        "c('Katrina')",
+        "c('Katrina', 'Audrey')",
+        "c('Katrina', 'Audrey', 'Sandy')",
+        "c('Katrina', 'Audrey', 'Sandy', 'Andrew')",
+        "c('Katrina', 'Audrey', 'Sandy', 'Andrew', 'Donna')"
+    ]},
+    {"var": "feminity", "options": ["female", "masfem"]},
+    {"var": "damage", "options": ["dam", "log_dam"]},
+    {"var": "predictors", "options": [
+        "feminity * damage",
+        "feminity + damage + pressure + feminity:damage + feminity:pressure",
+        "feminity + damage + zwin + feminity:damage + feminity:zwin",
+        "feminity + damage + zcat + feminity:damage + feminity:zcat",
+        "feminity + damage + z3 + feminity:damage + feminity:z3",
+        "feminity + damage + z3"
+    ]},
+    {"var": "covariates", "options": [
+        "",
+        "+ year:damage",
+        "+ post:damage"
+    ]},
+    {"var": "undo_transform", "options": [
+      "exp(value) - 1",
+      "exp(value)",
+      "exp(value) - 1"
+    ]},
+    {"var": "df", "options": [
+        "pred$df",
+        "df.residual(model)",
+        "pred$df"
+    ]}
+  ],
+  "constraints": [
+    {"link": ["M", "undo_transform", "df"]}
+  ],
+  "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
+}
+# --- (END)
 
 library(readr)
 library(MASS)
@@ -89,48 +132,23 @@ df <- read_csv('../data.csv',
 # --- (M) ols_regression
 # OLS regression with log(deaths+1) as the dependent variable 
 model <- lm(log_death ~ {{predictors}} {{covariates}}, data = df)
-# get results
-result <- tidy(model, conf.int = TRUE) %>%
-    mutate(model = 'OLS regression')
-# get predictions
-pred <- predict(model, se.fit = TRUE) # interval="prediction"
-disagg_pred <- df %>% 
-    mutate(
-        fit = pred$fit,         # add fitted predictions and standard errors to dataframe
-        se = pred$se.fit,
-        fit = untransform(fit), # undo transformation of outcome variable (preprocessing)
-        se = untransform(se),
-        df = pred$df            # get degrees of freedom
-    )
-# cross validation
-fit = cross(df, lm, log_death ~ {{predictors}} {{covariates}})
+fit = cross(df, lm, log_death ~ {{predictors}} {{covariates}}) # cross validation
 
 # --- (M) negative_binomial
 # Negative binomial with deaths as the dependent variable
 model <- glm.nb(death ~ {{predictors}} {{covariates}}, data = df)
-# get results
-result <- tidy(model, conf.int = TRUE) %>%
-    mutate(model = 'Negative binomial')
-# get predictions
-pred <- predict(model, se.fit = TRUE) # type = "response", interval = "prediction"
-disagg_pred <- df %>%
-    mutate(
-        fit = pred$fit,         # add fitted predictions and standard errors to dataframe
-        se = pred$se.fit,
-        fit = untransform(fit), # undo transformation of outcome variable (log link function)
-        se = untransform(se),
-        df = df.residual(model) # get degrees of freedom
-    )
-# cross validation
-fit = cross(df, glm.nb, death ~ {{predictors}} {{covariates}})
+fit = cross(df, glm.nb, death ~ {{predictors}} {{covariates}}) # cross validation
 
 # --- (M) anova
 # ANOVA with log(deaths+1) as the dependent variable
 model <- aov(log_death ~ {{predictors}} {{covariates}}, data = df)
-# get results
-result <- tidy(model, conf.int = TRUE) %>%
-    mutate(model = 'ANOVA')
-# get predictions
+fit = cross(df, aov, log_death ~ {{predictors}} {{covariates}}) # cross validation
+
+# --- (O)
+# normalize RMSE
+nrmse = fit / (max(df$death) - min(df$death))
+
+# get prediction
 pred <- predict(model, se.fit = TRUE) # interval = "prediction"
 disagg_pred <- df %>%
     mutate(
@@ -138,14 +156,9 @@ disagg_pred <- df %>%
         se = pred$se.fit,
         fit = untransform(fit), # undo transformation of outcome variable (preprocessing)
         se = untransform(se),
-        df = pred$df            # get degrees of freedom
+        df = {{df}}             # get degrees of freedom
     )
-# cross validation
-fit = cross(df, aov, log_death ~ {{predictors}} {{covariates}})
 
-# --- (O)
-# normalize RMSE
-nrmse = fit / (max(df$death) - min(df$death))
 # aggregate predicted effect of female storm name
 prediction <- disagg_pred %>%
     group_by(female) %>%                            # group by predictor(s) of interest
@@ -154,7 +167,8 @@ prediction <- disagg_pred %>%
     ungroup() %>%
     dplyr::select(pred = pred) %>%
     add_column(NRMSE = nrmse)                       # add cross validatation metric
-# propagate uncertainty in fit to model predictions 
+
+# propagate uncertainty in fit to model predictions
 uncertainty <- disagg_pred %>%
     mutate(
         .draw = list(1:200),                        # generate list of draw numbers
@@ -164,7 +178,10 @@ uncertainty <- disagg_pred %>%
     mutate(pred = pred_t * se + fit) %>%            # scale and shift t-scores to create predictive distribution 
     group_by(.draw, female) %>%                     # group by predictor(s) of interest
     summarize(pred = weighted.mean(pred)) %>%       # marninalize across other predictors
-    compare_levels(pred, by = female)
+    compare_levels(pred, by = female) %>%
+    ungroup() %>%
+    dplyr::select(pred = pred)
+
 # only output relevant fields in disagg_pred
 disagg_pred <- disagg_pred %>%
     dplyr::select(
@@ -173,64 +190,6 @@ disagg_pred <- disagg_pred %>%
     )
 
 # output
-sink('../results/summary_{{_n}}.txt')
-summary(model)
-sink()
-write_csv(result, '../results/table_{{_n}}.csv')
 write_csv(disagg_pred, '../results/disagg_pred_{{_n}}.csv')
 write_csv(prediction, '../results/prediction_{{_n}}.csv')
 write_csv(uncertainty, '../results/uncertainty_{{_n}}.csv')
-
-# --- (BOBA_CONFIG)
-{
-  "decisions": [
-    {"var": "outliers", "options": [
-        "c()",
-        "c('Katrina')",
-        "c('Katrina', 'Audrey')",
-        "c('Katrina', 'Audrey', 'Sandy')",
-        "c('Katrina', 'Audrey', 'Sandy', 'Andrew')",
-        "c('Katrina', 'Audrey', 'Sandy', 'Andrew', 'Donna')"
-    ]},
-    {"var": "feminity", "options": ["female", "masfem"]},
-    {"var": "damage", "options": ["dam", "log_dam"]},
-    {"var": "predictors", "options": [
-        "feminity * damage",
-        "feminity + damage + pressure + feminity:damage + feminity:pressure",
-        "feminity + damage + zwin + feminity:damage + feminity:zwin",
-        "feminity + damage + zcat + feminity:damage + feminity:zcat",
-        "feminity + damage + z3 + feminity:damage + feminity:z3",
-        "feminity + damage + z3"
-    ]},
-    {"var": "predictor_list", "options": [
-        "feminity, damage",
-        "feminity, damage, pressure",
-        "feminity, damage, zwin",
-        "feminity, damage, zcat",
-        "feminity, damage, z3",
-        "feminity, damage, z3"
-    ]},
-    {"var": "covariates", "options": [
-        "",
-        "+ year:damage",
-        "+ post:damage"
-    ]},
-    {"var": "covariate_list", "options": [
-        "",
-        ", year",
-        ", post"
-    ]},
-    {"var": "undo_transform", "options": [
-      "exp(value) - 1",
-      "exp(value)",
-      "exp(value) - 1"
-    ]}
-  ],
-  "constraints": [
-    {"link": ["predictors", "predictor_list"]},
-    {"link": ["covariates", "covariate_list"]},
-    {"link": ["M", "undo_transform"]}
-  ],
-  "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
-}
-# --- (END)
