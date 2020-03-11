@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import json
 from dataclasses import dataclass
 from .baseparser import ParseError, BaseParser
 
@@ -67,8 +68,6 @@ class DecisionParser(BaseParser):
         Read decisions from the JSON spec.
         :return: a dict of decisions
         """
-        res = {}
-
         dec_spec = spec['decisions'] if 'decisions' in spec else []
         for d in dec_spec:
             desc = d['desc'] if 'desc' in d else 'Decision {}'.format(d['var'])
@@ -78,14 +77,13 @@ class DecisionParser(BaseParser):
             value = self._read_value(self._read_json_safe(d, 'options'))
 
             # check if two variables have the same name
-            if var in res:
+            if var in self.decisions:
                 raise ParseError('Duplicate variable name "{}"'.format(var))
 
             decision = Decision(var, value, desc)
-            res[var] = decision
+            self.decisions[var] = decision
 
-        self.decisions = res
-        return res
+        return self.decisions
 
     def get_num_alt(self, dec):
         """
@@ -133,8 +131,7 @@ class DecisionParser(BaseParser):
 
         # assuming the placeholder var is always at the end
         # which is true given how we chop up the chunks
-        length = 4 + len(dec_id)
-        return template[:-length] + str(v), str(v)
+        return template + str(v), str(v)
 
     def parse_code(self, line):
         """
@@ -146,6 +143,7 @@ class DecisionParser(BaseParser):
         code = []
         res = []
         j = 0
+        i_start = 0
         self.i = 0
         self.line = line
 
@@ -154,21 +152,45 @@ class DecisionParser(BaseParser):
                 token = self._read_while(lambda ch: ch == '{')
                 if len(token) < 2:
                     continue
+                i_start = self.i - 2
 
+                # read variable identifier
                 if not self._is_id_start(self._peek_char()):
                     continue
                 val = self._read_while(self._is_id)
-
                 if len(val) == 0:
                     continue
+
+                # read definition, if any
+                df = None
+                self._read_while(self._is_whitespace)
+                if not self._is_end() and self._peek_char() == '=':
+                    self._next_char()
+                    # problem: the variable value can't contain "}"
+                    df = self._read_while(lambda ch: ch != '}')
+                    self._read_while(self._is_whitespace)
+
                 token = self._read_while(lambda ch: ch == '}', max_len=2)
                 if len(token) < 2:
                     continue
 
                 # read succeeds
-                code.append(line[j:self.i])
+                code.append(line[j:i_start])
                 res.append(val)
                 j = self.i
+
+                # parse and save definition
+                if df:
+                    try:
+                        df = json.loads('[{}]'.format(df))
+                        decision = Decision(val, df, '')
+                        if val in self.decisions:
+                            msg = 'Duplicate variable definition "{}"'
+                            raise ParseError(msg.format(val))
+                        self.decisions[val] = decision
+                    except ValueError:
+                        msg = 'Cannot parse variable definition:\n{}'
+                        raise ParseError(msg.format(df))
             else:
                 self._next_char()
 

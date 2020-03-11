@@ -36,6 +36,22 @@ class TestDecisionParser(unittest.TestCase):
         self.assertEqual(ds['a'].desc, 'outlier')
         self.assertEqual(ds['b'].desc, 'Decision b')
 
+    def test_parse_variable_def(self):
+        # numbers
+        dp = DecisionParser()
+        line = 'a = b + {{c = 1, 2}}'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, ['c'])
+        self.assertListEqual(codes, ['a = b + ', ''])
+        self.assertListEqual(dp.decisions['c'].value, [1, 2])
+
+        # strings
+        line = 'family = {{fml="lognormal","normal"}}()'
+        vs, codes = dp.parse_code(line)
+        self.assertListEqual(vs, ['fml'])
+        self.assertListEqual(codes, ['family = ', '()'])
+        self.assertListEqual(dp.decisions['fml'].value, ["lognormal", "normal"])
+
     def test_parse_code(self):
         with open(abs_path('./specs/spec-good.json'), 'rb') as f:
             spec = json.load(f)
@@ -57,7 +73,7 @@ class TestDecisionParser(unittest.TestCase):
         line = "\t this is {{a}} v{{a}}riable"
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a', 'a'])
-        self.assertListEqual(codes, ["\t this is {{a}}", " v{{a}}", 'riable'])
+        self.assertListEqual(codes, ['\t this is ', ' v', 'riable'])
 
         # invalid id start {{_a}}
         line = '{{_a}}'
@@ -68,37 +84,37 @@ class TestDecisionParser(unittest.TestCase):
         line = '{{a}}{{b}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a', 'b'])
-        self.assertListEqual(codes, ['{{a}}', '{{b}}', ''])
+        self.assertListEqual(codes, ['', '', ''])
 
         # back to back, too few separators
         line = '{{a}}{a}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a'])
-        self.assertListEqual(codes, ['{{a}}', '{a}}'])
+        self.assertListEqual(codes, ['', '{a}}'])
 
         # back to back, extra separators
         line = '{{a}}{{{b}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a', 'b'])
-        self.assertListEqual(codes, ['{{a}}', '{{{b}}', ''])
+        self.assertListEqual(codes, ['', '{', ''])
 
         # back to back, extra separators
         line = '{{a}}}{{b}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a', 'b'])
-        self.assertListEqual(codes, ['{{a}}', '}{{b}}', ''])
+        self.assertListEqual(codes, ['', '}', ''])
 
         # broken + valid
         line = '{{a}{{a}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a'])
-        self.assertListEqual(codes, [line, ''])
+        self.assertListEqual(codes, ['{{a}', ''])
 
         # broken + valid
         line = '{{{{a}}'
         vs, codes = dp.parse_code(line)
         self.assertListEqual(vs, ['a'])
-        self.assertListEqual(codes, [line, ''])
+        self.assertListEqual(codes, ['{{', ''])
 
         # no pattern
         line = "'In parsing file \"{}\":\n'.format(self.fn_script)"
