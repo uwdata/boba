@@ -49,6 +49,14 @@ result <- tidy(model, conf.int = TRUE) %>%
     filter(term == 'female') %>%
     add_column(NRMSE = nrmse)
 
+# get predictions
+pred <- predict(model)
+disagg_pred <- df %>% mutate(pred = pred) %>%
+    select(
+        observed = accept_scaled,
+        pred = pred
+    )
+
 # get uncertainty in coefficient for female as draws from sampling distribution 
 uncertainty <- result %>%
     mutate(
@@ -58,8 +66,9 @@ uncertainty <- result %>%
     ) %>%
     unnest(cols = c(".draw", "coef_t")) %>%
     mutate(coef = coef_t * std.error + estimate) %>%    # scale and shift t-scores
-    dplyr::select(term, .draw, coef)
+    dplyr::select(estimate = coef)
 
 # output
 write_csv(result, '../results/estimate_{{_n}}.csv')
-write_csv(result, '../results/uncertainty_{{_n}}.csv')
+write_csv(disagg_pred, '../results/disagg_pred_{{_n}}.csv')
+write_csv(uncertainty, '../results/uncertainty_{{_n}}.csv')
