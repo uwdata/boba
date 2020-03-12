@@ -85,11 +85,6 @@ cross <- function (df, func, fml, folds = 5) {
   return(mse)
 }
 
-# a function to undo data transformations when post-processing model predictions
-untransform <- function(value) {
-    return({{undo_transform}})
-}
-
 # read and process data
 df <- read_csv('../data.csv',
     col_types = cols(
@@ -154,15 +149,16 @@ disagg_pred <- df %>%
     mutate(
         fit = pred$fit,         # add fitted predictions and standard errors to dataframe
         se = pred$se.fit,
-        fit = untransform(fit), # undo transformation of outcome variable (preprocessing)
-        se = untransform(se),
         df = {{df}}             # get degrees of freedom
     )
 
 # aggregate predicted effect of female storm name
 prediction <- disagg_pred %>%
     group_by(female) %>%                            # group by predictor(s) of interest
-    summarize(pred = weighted.mean(fit)) %>%        # marninalize across other predictors
+    summarize(
+        log_pred = weighted.mean(fit),              # marninalize across other predictors
+        pred = untransform(log_pred)                # undo transformation of outcome variable
+    ) %>%        
     compare_levels(pred, by = female) %>%
     ungroup() %>%
     dplyr::select(pred = pred) %>%
@@ -171,22 +167,26 @@ prediction <- disagg_pred %>%
 # propagate uncertainty in fit to model predictions
 uncertainty <- disagg_pred %>%
     mutate(
-        .draw = list(1:200),                        # generate list of draw numbers
-        pred_t = map(df, ~rt(200, .))               # simulate draws as t-scores
+        .draw = list(1:1000),                       # generate list of draw numbers
+        pred_t = map(df, ~rt(1000, .))              # simulate draws as t-scores
     ) %>%
     unnest(cols = c(".draw", "pred_t")) %>%
-    mutate(pred = pred_t * se + fit) %>%            # scale and shift t-scores to create predictive distribution 
+    mutate(log_pred = pred_t * se + fit) %>%        # scale and shift t-scores to create predictive distribution 
     group_by(.draw, female) %>%                     # group by predictor(s) of interest
-    summarize(pred = weighted.mean(pred)) %>%       # marninalize across other predictors
+    summarize(
+        log_pred = weighted.mean(log_pred),         # marninalize across other predictors
+        pred = untransform(log_pred)                # undo transformation of outcome variable
+    ) %>%
     compare_levels(pred, by = female) %>%
     ungroup() %>%
     dplyr::select(pred = pred)
 
 # only output relevant fields in disagg_pred
 disagg_pred <- disagg_pred %>%
+    mutate(pred = untransform(fit)) %>%             # undo transformation of outcome variable
     dplyr::select(
         observed = death,
-        pred = fit
+        pred = pred
     )
 
 # output
