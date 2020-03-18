@@ -51,24 +51,25 @@ result <- tidy(model, conf.int = TRUE) %>%
 
 # get predictions
 pred <- predict(model)
-disagg_pred <- df %>% mutate(pred = pred) %>%
+disagg_fit <- df %>% 
+    mutate(fit = pred) %>%
     select(
         observed = accept_scaled,
-        pred = pred
+        expected = fit
     )
 
 # get uncertainty in coefficient for female as draws from sampling distribution 
 uncertainty <- result %>%
     mutate(
-        df = df.residual(model),                        # get model degrees of freedom
-        .draw = list(1:200),                            # generate list of draw numbers
-        coef_t = map(df, ~rt(200, .))                   # simulate draws as t-scores
+        df = df.residual(model),                # get model degrees of freedom
+        .draw = list(1:5000),                   # generate list of draw numbers
+        t = map(df, ~rt(5000, .))               # simulate draws as t-scores
     ) %>%
-    unnest(cols = c(".draw", "coef_t")) %>%
-    mutate(coef = coef_t * std.error + estimate) %>%    # scale and shift t-scores
+    unnest(cols = c(".draw", "t")) %>%
+    mutate(coef = t * std.error + estimate) %>% # scale and shift t-scores
     dplyr::select(estimate = coef)
 
 # output
 write_csv(result, '../results/estimate_{{_n}}.csv')
-write_csv(disagg_pred, '../results/disagg_pred_{{_n}}.csv')
+write_csv(disagg_fit, '../results/disagg_fit_{{_n}}.csv')
 write_csv(uncertainty, '../results/uncertainty_{{_n}}.csv')

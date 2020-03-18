@@ -20,15 +20,28 @@
         "feminity + damage + z3 + feminity:damage + feminity:z3",
         "feminity + damage + z3"
     ]},
+    {"var": "predictor_list", "options": [
+        "feminity, damage",
+        "feminity, damage, pressure",
+        "feminity, damage, zwin",
+        "feminity, damage, zcat",
+        "feminity, damage, z3",
+        "feminity, damage, z3"
+    ]},
     {"var": "covariates", "options": [
         "",
         "+ year:damage",
         "+ post:damage"
     ]},
-    {"var": "undo_transform", "options": [
-      "exp(value) - 1",
-      "exp(value)",
-      "exp(value) - 1"
+    {"var": "covariate_list", "options": [
+        "",
+        ", year",
+        ", post"
+    ]},
+    {"var": "back_transform", "options": [
+      "exp(mu + sigma^2/2) - 1",
+      "mu",
+      "exp(mu + sigma^2/2) - 1"
     ]},
     {"var": "df", "options": [
         "pred$df",
@@ -37,7 +50,9 @@
     ]}
   ],
   "constraints": [
-    {"link": ["M", "undo_transform", "df"]}
+    {"link": ["M", "back_transform", "df"]},
+    {"link": ["predictors", "predictor_list"]},
+    {"link": ["covariates", "covariate_list"]}
   ],
   "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
 }
@@ -50,9 +65,9 @@ library(tidyverse)
 library(broom.mixed)
 library(tidybayes)
 
-# a function to undo data transformations when post-processing model predictions
-untransform <- function(value) {
-    return({{undo_transform}})
+# a function for post-processing predicted means and standard deviations into expected number of deaths
+pred2expectation <- function(mu, sigma) {
+    return({{back_transform}})
 }
 
 # a custom function for cross validation
@@ -75,10 +90,11 @@ cross <- function (df, func, fml, folds = 5) {
     }
 
     model <- func(fml, data = d_train)
-    pred <- predict(model, d_test)
-    pred <- untransform(pred)
+    mu <- predict(model, d_test)
+    sigma <- sigma(model)
+    expected_deaths <- pred2expectation(mu, sigma)
 
-    mse = mse + sum((d_test$death - pred)^2)
+    mse = mse + sum((d_test$death - expected_deaths)^2)
   }
 
   mse = sqrt(mse / nrow(df))
@@ -144,52 +160,55 @@ fit = cross(df, aov, log_death ~ {{predictors}} {{covariates}}) # cross validati
 nrmse = fit / (max(df$death) - min(df$death))
 
 # get prediction
-pred <- predict(model, se.fit = TRUE) # interval = "prediction"
-disagg_pred <- df %>%
+pred <- predict(model, se.fit = TRUE, type = "response") 
+disagg_fit <- df %>%
     mutate(
-        fit = pred$fit,         # add fitted predictions and standard errors to dataframe
-        se = pred$se.fit,
-        df = {{df}}             # get degrees of freedom
+        fit = pred$fit,             # add fitted predictions and standard errors to dataframe
+        se.fit = pred$se.fit,
+        df = {{df}},                # get degrees of freedom
+        sigma <- sigma(model),      # get residual standard deviation
+        se.residual = rse(model)    # get residual standard errors
     )
 
-# aggregate predicted effect of female storm name
-prediction <- disagg_pred %>%
-    group_by(female) %>%                            # group by predictor(s) of interest
-    summarize(
-        log_pred = weighted.mean(fit),              # marninalize across other predictors
-        pred = untransform(log_pred)                # undo transformation of outcome variable
-    ) %>%        
-    compare_levels(pred, by = female) %>%
+# aggregate fitted effect of female storm name
+expectation <- disagg_fit %>%
+    mutate(expected_deaths = pred2expectation(fit, sigma)) %>% 
+    group_by(female) %>%                                            # group by predictor(s) of interest
+    summarize(expected_deaths = weighted.mean(expected_deaths)) %>% # marninalize across other predictors       
+    compare_levels(expected_deaths, by = female) %>%
     ungroup() %>%
-    dplyr::select(pred = pred) %>%
-    add_column(NRMSE = nrmse)                       # add cross validatation metric
+    dplyr::select(expected_diff = expected_deaths) %>%
+    add_column(NRMSE = nrmse)                                       # add cross validatation metric
 
 # propagate uncertainty in fit to model predictions
-uncertainty <- disagg_pred %>%
+uncertainty <- disagg_fit %>%
+    data_grid({{predictor_list}} {{covariate_list}}) %>%    # generate balanced data grid
     mutate(
-        .draw = list(1:1000),                       # generate list of draw numbers
-        pred_t = map(df, ~rt(1000, .))              # simulate draws as t-scores
+        .draw = list(1:5000),                               # generate list of draw numbers
+        t = map(df, ~rt(5000, .)),                          # simulate draws from t distribution to transform into means
+        x = map(df, ~rchisq(5000, .))                       # simulate draws from chi-squared distribution to transform into sigmas
     ) %>%
-    unnest(cols = c(".draw", "pred_t")) %>%
-    mutate(log_pred = pred_t * se + fit) %>%        # scale and shift t-scores to create predictive distribution 
-    group_by(.draw, female) %>%                     # group by predictor(s) of interest
-    summarize(
-        log_pred = weighted.mean(log_pred),         # marninalize across other predictors
-        pred = untransform(log_pred)                # undo transformation of outcome variable
-    ) %>%
-    compare_levels(pred, by = female) %>%
+    unnest(cols = c(".draw", "t", "x")) %>%
+    mutate(
+        mu = t * se.fit + fit,                              # scale and shift t to get a sampling distribution of means
+        sigma = df * se.residual^2 / x                      # scale and take inverse of x to get a sampling distribution of sigmas
+        expected_deaths = pred2expectation(fit, sigma)
+    ) %>%        
+    group_by(.draw, female) %>%                             # group by predictor(s) of interest
+    summarize(expected_deaths = mean(expected_deaths)) %>%  # marninalize across other predictors
+    compare_levels(expected_deaths, by = female) %>%
     ungroup() %>%
-    dplyr::select(pred = pred)
+    dplyr::select(expected_diff = expected_deaths)
 
-# only output relevant fields in disagg_pred
-disagg_pred <- disagg_pred %>%
-    mutate(pred = untransform(fit)) %>%             # undo transformation of outcome variable
+# only output relevant fields in disagg_fit
+disagg_fit <- disagg_fit %>%
+    mutate(expected_deaths = pred2expectation(fit, sigma)) %>% 
     dplyr::select(
         observed = death,
-        pred = pred
+        expected = expected_deaths
     )
 
 # output
-write_csv(disagg_pred, '../results/disagg_pred_{{_n}}.csv')
-write_csv(prediction, '../results/prediction_{{_n}}.csv')
+write_csv(expectation, '../results/estimate_{{_n}}.csv')
+write_csv(disagg_fit, '../results/disagg_fit_{{_n}}.csv')
 write_csv(uncertainty, '../results/uncertainty_{{_n}}.csv')
