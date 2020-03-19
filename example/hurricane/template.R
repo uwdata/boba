@@ -20,23 +20,10 @@
         "feminity + damage + z3 + feminity:damage + feminity:z3",
         "feminity + damage + z3"
     ]},
-    {"var": "predictor_list", "options": [
-        "feminity, damage",
-        "feminity, damage, pressure",
-        "feminity, damage, zwin",
-        "feminity, damage, zcat",
-        "feminity, damage, z3",
-        "feminity, damage, z3"
-    ]},
     {"var": "covariates", "options": [
         "",
         "+ year:damage",
         "+ post:damage"
-    ]},
-    {"var": "covariate_list", "options": [
-        "",
-        ", year",
-        ", post"
     ]},
     {"var": "back_transform", "options": [
       "exp(mu + sigma^2/2) - 1",
@@ -50,9 +37,7 @@
     ]}
   ],
   "constraints": [
-    {"link": ["M", "back_transform", "df"]},
-    {"link": ["predictors", "predictor_list"]},
-    {"link": ["covariates", "covariate_list"]}
+    {"link": ["M", "back_transform", "df"]}
   ],
   "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
 }
@@ -90,7 +75,7 @@ cross <- function (df, func, fml, folds = 5) {
     }
 
     model <- func(fml, data = d_train)
-    mu <- predict(model, d_test)
+    mu <- predict(model, d_test, type = "response")
     sigma <- sigma(model)
     expected_deaths <- pred2expectation(mu, sigma)
 
@@ -163,11 +148,11 @@ nrmse = fit / (max(df$death) - min(df$death))
 pred <- predict(model, se.fit = TRUE, type = "response") 
 disagg_fit <- df %>%
     mutate(
-        fit = pred$fit,             # add fitted predictions and standard errors to dataframe
+        fit = pred$fit,                                     # add fitted predictions and standard errors to dataframe
         se.fit = pred$se.fit,
-        df = {{df}},                # get degrees of freedom
-        sigma <- sigma(model),      # get residual standard deviation
-        se.residual = rse(model)    # get residual standard errors
+        df = {{df}},                                        # get degrees of freedom
+        sigma = sigma(model),                               # get residual standard deviation
+        se.residual = sqrt(sum(residuals(model)^2) / df)    # get residual standard errors
     )
 
 # aggregate fitted effect of female storm name
@@ -182,7 +167,6 @@ expectation <- disagg_fit %>%
 
 # propagate uncertainty in fit to model predictions
 uncertainty <- disagg_fit %>%
-    data_grid({{predictor_list}} {{covariate_list}}) %>%    # generate balanced data grid
     mutate(
         .draw = list(1:5000),                               # generate list of draw numbers
         t = map(df, ~rt(5000, .)),                          # simulate draws from t distribution to transform into means
@@ -191,8 +175,8 @@ uncertainty <- disagg_fit %>%
     unnest(cols = c(".draw", "t", "x")) %>%
     mutate(
         mu = t * se.fit + fit,                              # scale and shift t to get a sampling distribution of means
-        sigma = df * se.residual^2 / x                      # scale and take inverse of x to get a sampling distribution of sigmas
-        expected_deaths = pred2expectation(fit, sigma)
+        sigma = sqrt(df * se.residual^2 / x),               # scale and take inverse of x to get a sampling distribution of sigmas
+        expected_deaths = pred2expectation(mu, sigma)
     ) %>%        
     group_by(.draw, female) %>%                             # group by predictor(s) of interest
     summarize(expected_deaths = mean(expected_deaths)) %>%  # marninalize across other predictors
