@@ -26,35 +26,20 @@
         "+ year:damage",
         "+ post:damage"
     ]},
-    {"var": "predictor_list", "options": [
-        "damage",
-        "damage, pressure",
-        "damage, zwin",
-        "damage, zcat",
-        "damage, z3",
-        "damage, z3"
-    ]},
-    {"var": "covariate_list", "options": [
-        "",
-        ", year",
-        ", post"
-    ]},
     {"var": "back_transform", "options": [
       "exp(mu + sigma^2/2) - 1",
       "mu",
       "exp(mu + sigma^2/2) - 1"
     ]},
     {"var": "df", "options": [
-        "inference$df",
+        "pred$df",
         "df.residual(model)",
-        "inference$df"
+        "pred$df"
     ]}
   ],
   "constraints": [
     {"link": ["feminity", "feminity_prediction_levels"]},
-    {"link": ["M", "back_transform", "df"]},
-    {"link": ["predictors", "predictor_list"]},
-    {"link": ["covariates", "covariate_list"]}
+    {"link": ["M", "back_transform", "df"]}
   ],
   "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
 }
@@ -161,35 +146,29 @@ fit = cross(df, aov, log_death ~ {{predictors}} {{covariates}}) # cross validati
 # normalize RMSE
 nrmse = fit / (max(df$death) - min(df$death))
 
-# create a balanced data grid for inference
-inference_df <- df %>%
-    group_by({{predictor_list}} {{covariate_list}}) %>%
-    data_grid(feminity = {{feminity_prediction_levels}}) %>%
-    ungroup()
-
-# get inferential fit from model
-inference <- predict(model, inference_df, se.fit = TRUE, type = "response") 
-inference_fit <- inference_df %>%
+# get prediction
+pred <- predict(model, se.fit = TRUE, type = "response")
+disagg_fit <- df  %>%
     mutate(
-        fit = inference$fit,                            # add inferential fits and standard errors to dataframe
-        se.fit = inference$se.fit,
+        fit = pred$fit,                                     # add fitted predictions and standard errors to dataframe
+        se.fit = pred$se.fit,
         df = {{df}},                                        # get degrees of freedom
         sigma = sigma(model),                               # get residual standard deviation
         se.residual = sqrt(sum(residuals(model)^2) / df)    # get residual standard errors
     )
 
 # aggregate fitted effect of female storm name
-expectation <- inference_fit %>%
+expectation <- disagg_fit %>%
     mutate(expected_deaths = pred2expectation(fit, sigma)) %>% 
-    group_by(feminity) %>%                                            # group by predictor(s) of interest
+    group_by(female) %>%                                            # group by predictor(s) of interest
     summarize(expected_deaths = weighted.mean(expected_deaths)) %>% # marninalize across other predictors       
-    compare_levels(expected_deaths, by = feminity) %>%
+    compare_levels(expected_deaths, by = female) %>%
     ungroup() %>%
     dplyr::select(expected_diff = expected_deaths) %>%
     add_column(NRMSE = nrmse)                                       # add cross validatation metric
 
 # propagate uncertainty in fit to model predictions
-uncertainty <- inference_fit %>%
+uncertainty <- disagg_fit %>%
     mutate(
         .draw = list(1:5000),                               # generate list of draw numbers
         t = map(df, ~rt(5000, .)),                          # simulate draws from t distribution to transform into means
@@ -201,23 +180,18 @@ uncertainty <- inference_fit %>%
         sigma = sqrt(df * se.residual^2 / x),               # scale and take inverse of x to get a sampling distribution of sigmas
         expected_deaths = pred2expectation(mu, sigma)
     ) %>%        
-    group_by(.draw, feminity) %>%                             # group by predictor(s) of interest
+    group_by(.draw, female) %>%                             # group by predictor(s) of interest
     summarize(expected_deaths = mean(expected_deaths)) %>%  # marninalize across other predictors
-    compare_levels(expected_deaths, by = feminity) %>%
+    compare_levels(expected_deaths, by = female) %>%
     ungroup() %>%
     dplyr::select(expected_diff = expected_deaths)
 
-# get predictive check for original dataset from model
-pred <- predict(model, df, type = "response") 
-disagg_fit <- df %>%
-    mutate(
-        fit = pred,                                 # get fitted predictions
-        sigma = sigma(model),                       # get residual standard deviation
-        pred_deaths = pred2expectation(fit, sigma)  # transform to deaths
-    ) %>%
+# only output relevant fields in disagg_fit
+disagg_fit <- disagg_fit %>%
+    mutate(expected_deaths = pred2expectation(fit, sigma)) %>%
     dplyr::select(
         observed = death,
-        expected = pred_deaths
+        expected = expected_deaths
     )
 
 # output
