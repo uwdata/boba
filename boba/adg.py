@@ -19,7 +19,7 @@ class ADG:
 
     @staticmethod
     def _add_edge(res, start, end):
-        if start in res:
+        if start in res and end not in res[start]:
             res[start].append(end)
         else:
             res[start] = [end]
@@ -53,11 +53,6 @@ class ADG:
         """ Get the block decision name """
         return name.split('-')[0].split(':')[0]
 
-    @staticmethod
-    def _dn(name):
-        """ Get the placeholder decision name """
-        return name.split('-')[0]
-
     def _merge_one(self, prev, cur):
         groups = ADG._group_by(cur, ADG._bn)
         if prev:
@@ -72,39 +67,37 @@ class ADG:
         src = ADG._get_source(self._graph_nodes, self._graph_edges)
         groups = self._merge_one(None, src)
         nds = list(groups.keys())
-        done = set()
         i = 0
-        while len(nds) and i < 100: #fixme
+        while len(nds):
             nd = nds.pop()
 
-            # skip already processed nodes
-            # fixme
-            # we do not handle the case when a block is used multiple times
-            # or when a placeholder appear in multiple blocks
-            if nd in done:
-                continue
+            # look up the alternatives, then restore the correct node id
+            alts = groups[nd]
+            nd = nd.split('-')[0]
 
-            cur = [self._graph_edges[n] for n in groups[nd] if n in self._graph_edges]
-            # find procedural edges
-            if len(cur):
-                tmp = [set([ADG._dn(n) for n in l]) for l in cur]
-                diff = set.union(*tmp) - set.intersection(*tmp)
-                if len(diff):
-                    gp = ADG._group_by(diff, ADG._bn)
-                    for k in gp.keys():
-                        ADG._add_edge(self.proc_edges, nd, k)
-
-            # flatten
+            # find the children of all alts of this node and perform merge
+            cur = [self._graph_edges[n] for n in alts if n in self._graph_edges]
             cur = [item for sublist in cur for item in sublist]
             print(nd, set(cur))
             gp = self._merge_one(nd, set(cur))
 
+            # if the child node is already in groups, give it a different id
+            for g in gp:
+                val = gp[g]
+                key = '{}-{}'.format(g, i) if g in groups else g
+                i += 1 if g in groups else 0
+                del gp[g]
+                gp[key] = val
+
             # update the loop
             groups.update(gp)
             nds.extend(gp.keys())
-            done.add(nd)
-            i += 1
-        print(self.nodes, self.edges, self.proc_edges)
+
+        # any branch should be a procedural branch
+        for s in self.edges:
+            t = self.edges[s]
+            if len(t) > 1:
+                self.proc_edges[s] = t
 
     def set_graph(self, nodes, edges):
         """ Set code graph """
@@ -113,7 +106,6 @@ class ADG:
 
     def create(self, blocks):
         """ Create the ADG """
-        print(self._graph_edges)
         # add placeholder vars to the code graph
         decs = []
         for bl in blocks:
@@ -138,5 +130,4 @@ class ADG:
                 ADG._add_edge(self._graph_edges, vs[i], vs[i + 1])
 
         self._decs = set(decs)
-        print(self._graph_edges)
         self._merge()

@@ -31,4 +31,4 @@ if __name__ == '__main__':
     b = 3
 
     # --- (C)
-    print(a * b)
+    print(a * {{b}})

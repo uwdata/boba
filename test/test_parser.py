@@ -202,6 +202,8 @@ class TestParser(unittest.TestCase):
         base = abs_path('./specs/')
         ps = Parser(base+'script4-1.py', base)
         ps.adg.create(ps.code_parser.blocks)
+        print(ps.adg._graph_edges)
+        print(ps.adg.nodes, ps.adg.edges, ps.adg.proc_edges)
 
     # --- parse graph ---
     def test_spec_good(self):
