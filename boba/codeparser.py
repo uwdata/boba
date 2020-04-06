@@ -12,7 +12,7 @@ class Block:
     """
     A class for code blocks.
 
-    id: unique identifier.
+    id: unique identifier. For decision block, id is parameter:option.
     parameter: parameter name, if the block is a decision.
     option: option name, if the block is a decision.
     chunks: code broken up at the boundaries of placeholder variables.
@@ -98,7 +98,7 @@ class CodeParser:
     def get_decisions(self):
         """
         Get a dict of all block-level decisions, where the key is the parameter
-        and the value is a list of options.
+        and the value is a list of block ids (namely, parameter:option).
         :return:
         """
         decs = {}

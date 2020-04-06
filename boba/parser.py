@@ -8,12 +8,13 @@ from typing import List
 
 from .baseparser import ParseError
 from .codeparser import CodeParser
-from .graphparser import GraphParser, Edge
+from .graphparser import GraphParser
 from .graphanalyzer import GraphAnalyzer, InvalidGraphError
 from .decisionparser import DecisionParser
 from .constraintparser import ConstraintParser
 from .lang import LangError, Lang
 from .wrangler import Wrangler
+from .adg import ADG
 import boba.util as util
 
 
@@ -53,9 +54,12 @@ class Parser:
         self.history = []
         self.constraints = {}
 
-        # parse
+        # init parser class
         self.code_parser = CodeParser()
         self.dec_parser = DecisionParser()
+        self.adg = ADG()
+
+        # parse
         self._parse_blocks()
         self.spec = self.code_parser.spec
         self._parse_decs()
@@ -125,25 +129,6 @@ class Parser:
             if not nd.startswith('_') and nd not in nodes:
                 util.print_warn('Cannot find matching node "{}" in graph spec'.format(nd))
 
-    def _replace_graph(self, nodes, edges):
-        """ Replace the block-level decision nodes in the graph with option nodes."""
-        decs = self.code_parser.get_decisions()
-
-        # replace nodes
-        nds = []
-        for nd in nodes:
-            tmp = decs[nd] if nd in decs else [nd]
-            nds.extend(tmp)
-
-        # replace edges
-        egs = []
-        for eg in edges:
-            ss = decs[eg.start] if eg.start in decs else [eg.start]
-            es = decs[eg.end] if eg.end in decs else [eg.end]
-            egs.extend([Edge(s, e) for s in ss for e in es])
-
-        return set(nds), set(egs)
-
     def _parse_graph(self):
         graph_spec = self.spec['graph'] if 'graph' in self.spec else []
 
@@ -160,7 +145,7 @@ class Parser:
             # check if any name of nodes collides with variable names
             self.dec_parser.verify_naming(nodes)
             # expand the graph with options
-            nodes, edges = self._replace_graph(nodes, edges)
+            nodes, edges = gp.replace_graph(self.code_parser.get_decisions())
 
             # analyze the graph to get paths
             self.paths = GraphAnalyzer(nodes, edges).analyze()
@@ -170,6 +155,9 @@ class Parser:
                     p.insert(0, '_start')
                 if len(self.paths) == 0:
                     self.paths = [['_start']]
+
+            # save data to adg
+            self.adg.set_graph(nodes, edges)
         except ParseError as e:
             self._throw_spec_error(e.args[0])
         except InvalidGraphError as e:

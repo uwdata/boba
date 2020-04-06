@@ -68,6 +68,25 @@ class GraphParser(BaseParser):
 
         return self.nodes, self.edges
 
+    def replace_graph(self, decs):
+        """ Replace the block-level decision nodes in the graph with option nodes."""
+        # replace nodes
+        nds = []
+        for nd in self.nodes:
+            tmp = decs[nd] if nd in decs else [nd]
+            nds.extend(tmp)
+
+        # replace edges
+        egs = []
+        for eg in self.edges:
+            ss = decs[eg.start] if eg.start in decs else [eg.start]
+            es = decs[eg.end] if eg.end in decs else [eg.end]
+            egs.extend([Edge(s, e) for s in ss for e in es])
+
+        self.nodes = set(nds)
+        self.edges = set(egs)
+        return self.nodes, self.edges
+
     def create_default_graph(self, nodes):
         """
         Create the default graph, which is a linear flow of blocks, with the

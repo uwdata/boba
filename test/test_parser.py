@@ -197,6 +197,12 @@ class TestParser(unittest.TestCase):
         ps.main(verbose=False)
         self.assertEqual(ps.wrangler.counter, 2)
 
+    # --- adg ---
+    def test_adg(self):
+        base = abs_path('./specs/')
+        ps = Parser(base+'script4-1.py', base)
+        ps.adg.create(ps.code_parser.blocks)
+
     # --- parse graph ---
     def test_spec_good(self):
         base = abs_path('../example/simple/')
