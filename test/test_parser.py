@@ -198,12 +198,37 @@ class TestParser(unittest.TestCase):
         self.assertEqual(ps.wrangler.counter, 2)
 
     # --- adg ---
+    @staticmethod
+    def _edge_to_set(edges):
+        res = {}
+        for k in edges:
+            res[k] = set(edges[k])
+        return res
+
     def test_adg(self):
         base = abs_path('./specs/')
         ps = Parser(base+'script4-1.py', base)
         ps.adg.create(ps.code_parser.blocks)
-        print(ps.adg._graph_edges)
-        print(ps.adg.nodes, ps.adg.edges, ps.adg.proc_edges)
+        self.assertSetEqual(ps.adg.nodes, {'b', 'C', 'B', 'A'})
+        expected = {'B': {'b', 'C'}, 'A': {'B'}}
+        self.assertDictEqual(self._edge_to_set(ps.adg.edges), expected)
+
+    def test_adg_code_graph(self):
+        base = abs_path('./specs/')
+        ps = Parser(base+'script4-2.py', base)
+        ps.adg.create(ps.code_parser.blocks)
+        self.assertSetEqual(ps.adg.nodes, {'C', 'B', 'a', 'A', 'b', 'D'})
+        expected = {'b': {'D', 'C'}, 'B': {'D', 'b', 'C'}, 'a': {'B'}, 'A': {'a'}}
+        self.assertDictEqual(self._edge_to_set(ps.adg.edges), expected)
+        expected ={'b': {'D', 'C'}, 'B': {'D', 'b', 'C'}}
+        self.assertDictEqual(self._edge_to_set(ps.adg.proc_edges), expected)
+
+    def test_adg_link(self):
+        base = abs_path('./specs/')
+        ps = Parser(base+'script4-3.py', base)
+        ps.adg.create(ps.code_parser.blocks)
+        self.assertSetEqual(ps.adg.nodes, {'a', 'B'})
+        self.assertDictEqual(ps.adg.edges, {'a': ['B']})
 
     # --- parse graph ---
     def test_spec_good(self):

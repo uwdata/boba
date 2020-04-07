@@ -3,6 +3,7 @@
 import os
 import shutil
 import csv
+import json
 from dataclasses import dataclass
 from .baseparser import ParseError
 
@@ -179,12 +180,18 @@ class Wrangler:
 
         return fn
 
-    def write_csv(self, rows):
+    def write_summary(self, rows):
         """Write the summary CSV file"""
         with open(self.fn, 'w', newline='') as f:
             wrt = csv.writer(f)
             for row in rows:
                 wrt.writerow(row)
+
+    def write_overview_json(self, res):
+        """ Write the overview.json file"""
+        with open(os.path.join(self.out, 'overview.json'), 'w') as f:
+            obj = json.dumps(res, indent=2, sort_keys=True)
+            f.write(obj)
 
     def create_dir(self):
         """Create output directories."""

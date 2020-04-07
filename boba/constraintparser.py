@@ -21,6 +21,10 @@ class ConstraintParser:
         self.spec = spec
         self.constraints = {}
 
+        # useful for inferring ADGs
+        self.links = []
+        self.procedural = set()
+
     @staticmethod
     def _read_required(obj, field):
         if field not in obj:
@@ -127,7 +131,7 @@ class ConstraintParser:
                                 .format(j['name'], j['name'], i)
                         else:
                             cond += ' and {} == {}'.format(j['name'], j['options'][i])
-                cs = {l['type']: l['name'], 'condition': cond[5:]}
+                cs = {l['type']: l['name'], 'condition': cond[5:], '_source': 'link'}
                 if l['type'] == 'block':
                     cs['option'] = l['options'][i]
                 else:
@@ -213,6 +217,16 @@ class ConstraintParser:
 
         return recon
 
+    def _infer_procedural_deps(self, c, block, variable, cond):
+        """ Infer procedural edges from parsed condition """
+        # skip constraints added by us, for example links
+        if '_source' not in c:
+            dec = block if block else variable
+            # current node should depend on all decisions on the LHS
+            for i in range(0, len(cond), 2):
+                v = cond[i].value
+                self.procedural.add('{}-{}'.format(v, dec))
+
     def read_constraints(self, code_parser, dec_parser):
         """ Read the constraints from the JSON spec. """
         cons = ConstraintParser._read_optional(self.spec, 'constraints', [])
@@ -228,6 +242,7 @@ class ConstraintParser:
             link = ConstraintParser._read_optional(c, 'link')
             if link:
                 ConstraintParser._verify_link(link, decs, bl_decs, c)
+                self.links.append(link)
                 pure_cons += ConstraintParser._convert_link(link, decs, bl_decs)
             else:
                 pure_cons.append(c)
@@ -266,6 +281,9 @@ class ConstraintParser:
             if len(parsed_decs) % 2 == 1:
                 ConstraintParser._throw('Binary operator expected', c)
             ConstraintParser._verify_condition_vars(parsed_decs, decs, bls, c)
+
+            # get procedural dependency
+            self._infer_procedural_deps(c, block, param, parsed_decs)
 
             # now transform it into valid python code
             recon = self._recon(code, parsed_decs, cond)

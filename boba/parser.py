@@ -165,8 +165,11 @@ class Parser:
 
     def _parse_constraints(self):
         try:
-            self.constraints = ConstraintParser(self.spec)\
+            cp = ConstraintParser(self.spec)
+            self.constraints = cp\
                 .read_constraints(self.code_parser, self.dec_parser)
+            # save intermediate data for ADG
+            self.adg.set_constraints(cp.links, cp.procedural)
         except ParseError as e:
             self._throw_spec_error(e.args[0])
 
@@ -324,7 +327,27 @@ class Parser:
                 value = mp[d] if d in mp else ''
                 row.append(value)
             rows.append(row)
-        self.wrangler.write_csv(rows)
+        self.wrangler.write_summary(rows)
+
+    def _write_server_config(self):
+        self.adg.create(self.code_parser.blocks)
+        res = self.adg.output()
+
+        # get the options of decision blocks and placeholders
+        lookup = self.code_parser.get_decisions()
+        for d in lookup:
+            lookup[d] = [v.split(':')[1] for v in lookup[d]]
+        decs = self.dec_parser.decisions
+        for d in decs:
+            lookup[d] = decs[d].value
+
+        # now wrangle the decisions
+        decs = self.adg.get_used_decs()
+        decs = [{"var": d, "options": lookup[d]} for d in decs]
+        res["decisions"] = decs
+
+        # save
+        self.wrangler.write_overview_json(res)
 
     def _print_summary(self):
         w = 80
@@ -367,5 +390,6 @@ class Parser:
         self._warn_size()
         self._code_gen()
         self._write_csv()
+        self._write_server_config()
         if verbose:
             self._print_summary()
