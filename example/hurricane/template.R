@@ -39,7 +39,7 @@
   ],
   "constraints": [
     {"link": ["feminity", "feminity_prediction_levels"]},
-    {"link": ["M", "back_transform", "df"]}
+    {"link": ["Model", "back_transform", "df"]}
   ],
   "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
 }
@@ -127,17 +127,17 @@ df <- read_csv('../data.csv',
         damage =  {{damage}}
     )
 
-# --- (M) ols_regression
+# --- (Model) ols_regression
 # OLS regression with log(deaths+1) as the dependent variable 
 model <- lm(log_death ~ {{predictors}} {{covariates}}, data = df)
 fit = cross(df, lm, log_death ~ {{predictors}} {{covariates}}) # cross validation
 
-# --- (M) negative_binomial
+# --- (Model) negative_binomial
 # Negative binomial with deaths as the dependent variable
 model <- glm.nb(death ~ {{predictors}} {{covariates}}, data = df)
 fit = cross(df, glm.nb, death ~ {{predictors}} {{covariates}}) # cross validation
 
-# --- (M) anova
+# --- (Model) anova
 # ANOVA with log(deaths+1) as the dependent variable
 model <- aov(log_death ~ {{predictors}} {{covariates}}, data = df)
 fit = cross(df, aov, log_death ~ {{predictors}} {{covariates}}) # cross validation

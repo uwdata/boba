@@ -312,7 +312,7 @@ class Parser:
     def _write_csv(self):
         rows = []
         decs = self.dec_parser.get_decs() +\
-            ['({})'.format(b) for b in self.code_parser.get_decisions()]
+            [b for b in self.code_parser.get_decisions()]
         ops = self.wrangler.get_outputs()
         rows.append(['Filename', 'Code Path'] + decs + ops)
         for h in self.history:
@@ -322,7 +322,7 @@ class Parser:
             for d in h.decisions:
                 mp[d.parameter] = d.option
             for d in bdecs:
-                mp['({})'.format(d.parameter)] = d.option
+                mp[d.parameter] = d.option
             for d in decs:
                 value = mp[d] if d in mp else ''
                 row.append(value)
