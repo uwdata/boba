@@ -12,7 +12,8 @@
     {"var": "loan_to_value", "options": ["+ loan_to_value", ""]},
     {"var": "denied_PMI", "options": ["+ denied_PMI", ""]}
   ],
-  "before_execute": "cp ../mortgage.csv ./ && rm -rf results && mkdir results"
+  "before_execute": "cp ../mortgage.csv ./ && rm -rf results && mkdir results",
+  "visualizer": "visualizer_config.json"
 }
 # --- (END)
 

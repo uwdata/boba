@@ -189,6 +189,26 @@ class Wrangler:
 
     def write_overview_json(self, res):
         """ Write the overview.json file"""
+        # append visualizer block
+        default_config = {
+            "files": [{"id": "est", "path": "estimates.csv"}],
+            "schema": {"point_estimate": {"file": "est", "field": "estimate"}}
+        }
+        vis = Wrangler._read_optional(self.spec, 'visualizer', None)
+
+        # if it is a string, read config file
+        if isinstance(vis, str):
+            try:
+                with open(vis) as f:
+                    vis = json.load(f)
+            except (IOError, json.JSONDecodeError) as e:
+                print(e)
+                print('Cannot read the visualizer config, using the default')
+                vis = default_config
+        # if user does not specify the config, use the default
+        vis = default_config if vis is None else vis
+        res['visualizer'] = vis
+
         with open(os.path.join(self.out, 'overview.json'), 'w') as f:
             obj = json.dumps(res, indent=2, sort_keys=True)
             f.write(obj)

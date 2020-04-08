@@ -40,7 +40,8 @@
   "constraints": [
     {"link": ["Model", "back_transform", "df"]}
   ],
-  "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results"
+  "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results",
+  "visualizer": "visualizer_config.json"
 }
 # --- (END)
 
