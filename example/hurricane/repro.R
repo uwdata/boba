@@ -31,14 +31,10 @@
     {"var": "back_transform", "options": [
       "exp(mu + sigma^2/2) - 1",
       "mu"
-    ]},
-    {"var": "df", "options": [
-        "pred$df",
-        "df.residual(model)"
     ]}
   ],
   "constraints": [
-    {"link": ["Model", "back_transform", "df"]}
+    {"link": ["Model", "back_transform"]}
   ],
   "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results",
   "visualizer": "visualizer_config.json"
@@ -51,117 +47,108 @@ library(modelr)
 library(tidyverse)
 library(broom.mixed)
 library(tidybayes)
+source('../../boba_util.R')
 
 # a function for post-processing predicted means and standard deviations into expected number of deaths
 pred2expectation <- function(mu, sigma) {
-    return({{back_transform}})
+  return({{back_transform}})
 }
 
-# a custom function for cross validation
-cross <- function (df, func, fml, folds = 5) {
-  l = nrow(df) %/% folds
-  mse = 0
-  for (i in c(1:folds)) {
-    # properly splitting train/test
-    i1 = l*(i-1)+1
-    i2 = l*i
-    d_test = df[i1:i2, ]
-    if (i1 > 1) {
-      if (i2+1 < nrow(df)) {
-        d_train = rbind(df[1:(i1-1), ], df[(i2+1):nrow(df), ])
-      } else {
-        d_train = df[1:(i1-1), ]
-      }
-    } else {
-      d_train = df[(i2+1):nrow(df), ]
-    }
+# get expectation per data point
+compute_exp <- function (model, df) {
+  disagg_fit <- pointwise_predict(model, df) %>%
+    mutate(expected = pred2expectation(fit, sigma))
+  return(disagg_fit)
+}
 
-    model <- func(fml, data = d_train)
-    mu <- predict(model, d_test, type = "response")
-    sigma <- sigma(model)
-    expected_deaths <- pred2expectation(mu, sigma)
+# permutation test to get the null distribution
+permutation_test <- function (df, model, N=200) {
+  # ensure we have the same random samples across universe runs
+  set.seed(3040)
 
-    mse = mse + sum((d_test$death - expected_deaths)^2)
-  }
+  res = lapply(1:N, function (i) {
+    # shuffle
+    pm <- df[sample(nrow(df)), ]
+    df2 = df %>% dplyr::select(-c(female, feminity, masfem)) %>%
+      add_column(female=pm$female, feminity=pm$feminity, masfem=pm$masfem)
 
-  mse = sqrt(mse / nrow(df))
-  return(mse)
+    # fit the model
+    m1 <- update(model, . ~ ., data = df2)
+    exp <- margins(compute_exp(m1, df2), "female", "expected")
+    return(exp$expected)
+  })
+
+  # remove seed because set seed is global
+  rm(.Random.seed, envir=.GlobalEnv)
+
+  return(enframe(unlist(res)))
 }
 
 # read and process data
 df <- read_csv('../data.csv',
-    col_types = cols(
-        Year = col_integer(),
-        Category = col_integer(),
-        Gender_MF = col_integer(),
-        alldeaths = col_integer()
-    )) %>%
-    # rename some variables
-    dplyr::select(
-        year = Year,
-        name = Name,
-        dam = NDAM,
-        death = alldeaths,
-        female = Gender_MF,
-        masfem = MasFem,
-        category = Category,
-        pressure = Minpressure_Updated_2014,
-        wind = HighestWindSpeed
-    ) %>%
-    # create new variables
-    mutate(
-        log_death = log(death + 1),
-        log_dam = log(dam),
-        post = ifelse(year>1979, 1, 0),
-        zdam = scale(dam),
-        zcat = as.numeric(scale(category)),
-        zmin = -scale(pressure),
-        zwin = as.numeric(scale(wind)),
-        z3 = as.numeric((zmin + zcat + zwin) / 3)
-    ) %>%
-    # remove outliers
-    filter(!(name %in% {{outliers}})) %>%
-    filter(!(name %in% {{leverage_points}})) %>%
-    # operationalize feminity
-    mutate(
-        feminity = {{feminity}},
-        damage =  {{damage}}
-    )
+  col_types = cols(
+    Year = col_integer(),
+    Category = col_integer(),
+    Gender_MF = col_integer(),
+    alldeaths = col_integer()
+  )) %>%
+  # rename some variables
+  dplyr::select(
+    year = Year,
+    name = Name,
+    dam = NDAM,
+    death = alldeaths,
+    female = Gender_MF,
+    masfem = MasFem,
+    category = Category,
+    pressure = Minpressure_Updated_2014,
+    wind = HighestWindSpeed
+  ) %>%
+  # create new variables
+  mutate(
+    log_death = log(death + 1),
+    log_dam = log(dam),
+    post = ifelse(year>1979, 1, 0),
+    zdam = scale(dam),
+    zcat = as.numeric(scale(category)),
+    zmin = -scale(pressure),
+    zwin = as.numeric(scale(wind)),
+    z3 = as.numeric((zmin + zcat + zwin) / 3)
+  ) %>%
+  # remove outliers
+  filter(!(name %in% {{outliers}})) %>%
+  filter(!(name %in% {{leverage_points}})) %>%
+  # operationalize feminity
+  mutate(
+    feminity = {{feminity}},
+    damage =  {{damage}}
+  )
 
 # --- (Model) ols_regression
 # OLS regression with log(deaths+1) as the dependent variable 
 model <- lm(log_death ~ {{predictors}} {{covariates}}, data = df)
-fit = cross(df, lm, log_death ~ {{predictors}} {{covariates}}) # cross validation
 
 # --- (Model) negative_binomial
 # Negative binomial with deaths as the dependent variable
 model <- glm.nb(death ~ {{predictors}} {{covariates}}, data = df)
-fit = cross(df, glm.nb, death ~ {{predictors}} {{covariates}}) # cross validation
 
 # --- (O)
-# normalize RMSE
+# cross validation
+fit <- cross_validation(df, model, "death",
+  func = function (m, d) compute_exp(m, d)$expected)
 nrmse = fit / (max(df$death) - min(df$death))
 
+# permutation test
+null.dist <- permutation_test(df, model, 100) %>%
+  dplyr::select(expected_diff = value)
+
 # get prediction
-pred <- predict(model, se.fit = TRUE, type = "response")
-disagg_fit <- df  %>%
-    mutate(
-        fit = pred$fit,                            # add inferential fits and standard errors to dataframe
-        se.fit = pred$se.fit,
-        df = {{df}},                                        # get degrees of freedom
-        sigma = sigma(model),                               # get residual standard deviation
-        se.residual = sqrt(sum(residuals(model)^2) / df)    # get residual standard errors
-    )
+disagg_fit <- compute_exp(model, df)
 
 # aggregate fitted effect of female storm name
-expectation <- disagg_fit %>%
-    mutate(expected_deaths = pred2expectation(fit, sigma)) %>%
-    group_by(female) %>%                                            # group by predictor(s) of interest
-    summarize(expected_deaths = weighted.mean(expected_deaths)) %>% # marninalize across other predictors
-    compare_levels(expected_deaths, by = female) %>%
-    ungroup() %>%
-    dplyr::select(expected_diff = expected_deaths) %>%
-    add_column(NRMSE = nrmse)                                       # add cross validatation metric
+expectation <- margins(disagg_fit, "female", "expected") %>%
+  dplyr::select(expected_diff = expected) %>%
+  add_column(NRMSE = nrmse)  # add cross validation metric
 
 # propagate uncertainty in fit to model predictions
 uncertainty <- disagg_fit %>%
@@ -184,13 +171,14 @@ uncertainty <- disagg_fit %>%
 
 # only output relevant fields in disagg_fit
 disagg_fit <- disagg_fit %>%
-    mutate(expected_deaths = pred2expectation(fit, sigma)) %>%
-    dplyr::select(
-        observed = death,
-        expected = expected_deaths
-    )
+  mutate(expected_deaths = pred2expectation(fit, sigma)) %>%
+  dplyr::select(
+    observed = death,
+    expected = expected_deaths
+  )
 
 # output
 write_csv(expectation, '../results/estimate_{{_n}}.csv')
 write_csv(disagg_fit, '../results/disagg_fit_{{_n}}.csv')
 write_csv(uncertainty, '../results/uncertainty_{{_n}}.csv')
+write_csv(null.dist, '../results/null_{{_n}}.csv')
