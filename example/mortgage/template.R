@@ -2,7 +2,6 @@
 # --- (BOBA_CONFIG)
 {
   "decisions": [
-    {"var": "female", "options": ["female", ""]},
     {"var": "black", "options": ["+ black", ""]},
     {"var": "housing_expense_ratio", "options": ["+ housing_expense_ratio", ""]},
     {"var": "self_employed", "options": ["+ self_employed", ""]},
@@ -20,7 +19,7 @@
 library(readr)
 library(tidyverse)
 library(broom.mixed)
-library(caret)
+source('../../../hurricane/boba_util.R') #fixme
 
 # read data
 df <- read_csv('../mortgage.csv', 
@@ -38,12 +37,9 @@ model <- lm(accept_scaled ~ female {{black}} {{housing_expense_ratio}}
     {{loan_to_value}} {{denied_PMI}}, data = df)
 
 # cross validation
-cv <- train(accept_scaled ~ female {{black}} {{housing_expense_ratio}}
-    {{self_employed}} {{married}} {{bad_history}} {{PI_ratio}}
-    {{loan_to_value}} {{denied_PMI}}, data = df, method='lm',
-    trControl=trainControl(method='cv', number=5))
+fit <- cross_validation(df, model, 'accept_scaled')
 # normalize using max - min, because IQR is zero
-nrmse = cv$results$RMSE / (max(df$accept_scaled) - min(df$accept_scaled))
+nrmse = fit / (max(df$accept_scaled) - min(df$accept_scaled))
 
 # wrangle results
 result <- tidy(model, conf.int = TRUE) %>%
@@ -51,23 +47,14 @@ result <- tidy(model, conf.int = TRUE) %>%
     add_column(NRMSE = nrmse)
 
 # get predictions
-pred <- predict(model)
-disagg_fit <- df %>% 
-    mutate(fit = pred) %>%
+disagg_fit <- pointwise_predict(model, df) %>%
     select(
         observed = accept_scaled,
         expected = fit
     )
 
 # get uncertainty in coefficient for female as draws from sampling distribution 
-uncertainty <- result %>%
-    mutate(
-        df = df.residual(model),                # get model degrees of freedom
-        .draw = list(1:5000),                   # generate list of draw numbers
-        t = map(df, ~rt(5000, .))               # simulate draws as t-scores
-    ) %>%
-    unnest(cols = c(".draw", "t")) %>%
-    mutate(coef = t * std.error + estimate) %>% # scale and shift t-scores
+uncertainty <- sampling_distribution(model, 'female') %>%
     dplyr::select(estimate = coef)
 
 # output

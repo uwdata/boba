@@ -1,7 +1,7 @@
 # check if we support the model type
 # @param model The fitted model object
 is_supported <- function (model) {
-  ms <- c('lm', 'negbin', 'aov')
+  ms <- c('lm', 'lmerMod', 'negbin', 'aov')
   return(class(model)[1] %in% ms)
 }
 
@@ -13,6 +13,7 @@ pointwise_predict <- function (model, df) {
     stop(paste('Unsupported model type', class(model)[1]))
   }
 
+  # fixme: lmerMod does not have se.fit
   pred <- predict(model, df, se.fit = TRUE, type = "response")
   disagg_fit <- df  %>%
     mutate(
@@ -53,7 +54,8 @@ cross_validation <- function (df, model, y, folds = 5, func = NULL) {
     if (!is.null(func)) {
         expected <- func(m1, d_test)
     } else {
-        expected <- compute_pred(m1, d_test)$fit
+        # fixme: lmerMod need to set allow.new.levels = TRUE
+        expected <- pointwise_predict(m1, d_test)$fit
     }
 
     mse = mse + sum((d_test[[y]] - expected)^2)
@@ -74,4 +76,37 @@ margins <- function (df, term, y = "fit") {
     compare_levels(expected, by = !! sym(term)) %>%
     ungroup()
   return(expectation)
+}
+
+# get the sampling distribution
+# @param model The fitted model
+# @param term The predictor of interest
+# @param type Type of result (response or model coefficient)
+# @param draws The number of draws
+sampling_distribution <- function (model, term, type="coef", draws=200) {
+  if (!is_supported(model)) {
+    stop(paste('Unsupported model type', class(model)[1]))
+  }
+  ts = c('coef', 'coefficient', 'resp', 'response')
+  if (!(type %in% ts)) {
+    stop(paste('Unsupported type', type))
+  }
+
+  if (type == "coef" || type == "coefficient") {
+    uncertainty <- tidy(model, conf.int = TRUE) %>%
+      filter(term == !! term) %>%
+      mutate(
+        df = df.residual(model),                # get model degrees of freedom
+        .draw = list(1:draws),                  # generate list of draw numbers
+        t = map(df, ~rt(draws, .))              # simulate draws as t-scores
+      ) %>%
+      unnest(cols = c(".draw", "t")) %>%
+      mutate(coef = t * std.error + estimate)
+  }
+
+  if (type == "resp" || type == "response") {
+    # todo
+  }
+
+  return(uncertainty)
 }

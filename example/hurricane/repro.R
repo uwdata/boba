@@ -47,7 +47,7 @@ library(modelr)
 library(tidyverse)
 library(broom.mixed)
 library(tidybayes)
-source('../../boba_util.R')
+source('../../boba_util.R') #fixme
 
 # a function for post-processing predicted means and standard deviations into expected number of deaths
 pred2expectation <- function(mu, sigma) {
@@ -171,7 +171,6 @@ uncertainty <- disagg_fit %>%
 
 # only output relevant fields in disagg_fit
 disagg_fit <- disagg_fit %>%
-  mutate(expected_deaths = pred2expectation(fit, sigma)) %>%
   dplyr::select(
     observed = death,
     expected = expected_deaths
