@@ -26,6 +26,39 @@ pointwise_predict <- function (model, df) {
   return(disagg_fit)
 }
 
+# split the train/test set in a k-fold cross validation
+# returns a dataframe with k rows (k is the num of folds) and two columns
+#   - train: a list of training indices for the k-th fold
+#   - test: a list of testing indices for the k-th fold
+# @param n The total number of rows
+cv_split <- function (n, folds = 5) {
+  l = n %/% folds
+  rest = n - folds * l
+  
+  lengths <- ifelse(1:folds <= rest, l + 1, l)
+  f_sum <- function(x, n) sum(head(x,n))
+  indices <- lapply(1:folds, function (i) {
+    i1 = f_sum(lengths, i - 1) + 1
+    i2 = i1 + lengths[i] - 1
+    
+    if (i1 > 1) {
+      if (i2+1 < n) {
+        i_train = c(1:(i1-1), (i2+1):n)
+      } else {
+        i_train = 1:(i1-1)
+      }
+    } else {
+      i_train = (i2+1):n
+    }
+    i_test = c(i1:i2)
+    return(list(i_train, i_test))
+  })
+  
+  indices <- as.data.frame(do.call(rbind, indices))
+  colnames(indices) <- c("train", "test")
+  return(indices)
+}
+
 # perform k-fold cross validation
 # @param df The dataframe
 # @param model The fitted model
@@ -33,22 +66,11 @@ pointwise_predict <- function (model, df) {
 # @param folds The number of folds
 # @param func A function returning the fitted y vector from a model and a dataset
 cross_validation <- function (df, model, y, folds = 5, func = NULL) {
-  l = nrow(df) %/% folds
   mse = 0
-  for (i in c(1:folds)) {
-    # properly splitting train/test
-    i1 = l*(i-1)+1
-    i2 = l*i
-    d_test = df[i1:i2, ]
-    if (i1 > 1) {
-      if (i2+1 < nrow(df)) {
-        d_train = rbind(df[1:(i1-1), ], df[(i2+1):nrow(df), ])
-      } else {
-        d_train = df[1:(i1-1), ]
-      }
-    } else {
-      d_train = df[(i2+1):nrow(df), ]
-    }
+  indices = cv_split(nrow(df), folds = folds)
+  for (i in c(1:nrow(indices))) {
+    d_train = df[indices$train[[i]], ]
+    d_test = df[indices$test[[i]], ]
 
     m1 <- update(model, . ~ ., data = d_train)
     if (!is.null(func)) {
