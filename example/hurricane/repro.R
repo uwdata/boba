@@ -61,6 +61,30 @@ compute_exp <- function (model, df) {
   return(disagg_fit)
 }
 
+# get the pointwise log likelihood for stacking
+# df is the dataset without outliers, full is the original dataset
+stacking <- function (model, df, full) {
+  indices = cv_split(nrow(df), folds = 5)
+  pointwise_density <- c()
+
+  for (i in c(1:nrow(indices))) {
+    d_train = df[indices$train[[i]], ]
+    d_test = df[indices$test[[i]], ]
+
+    m1 <- update(model, . ~ ., data = d_train)
+    mu <- predict(m1, d_test, type = "response")
+    sigma <- sigma(m1)
+    pointwise_density <- append(pointwise_density,
+      log(dnorm(d_test$death, mu, sigma)+1e-307))
+  }
+
+  if (nrow(df) != nrow(full)) {
+    # todo
+  }
+
+  return(pointwise_density)
+}
+
 # permutation test to get the null distribution
 permutation_test <- function (df, model, N=200) {
   # ensure we have the same random samples across universe runs

@@ -2,13 +2,15 @@
   "files": [
     {"id": "est", "path": "estimate.csv"},
     {"id": "unc", "path": "uncertainty.csv"},
-    {"id": "fit", "path": "raw/disagg_fit_{}.csv", "multi": true}
+    {"id": "nul", "path": "null.csv"},
+    {"id": "fit", "path": "results/disagg_fit_{}.csv", "multi": true}
   ],
   "schema": {
     "point_estimate": {"file": "est", "field": "expected_diff"},
     "fit": {"file": "est", "field": "NRMSE"},
     "uncertainty": {"file": "unc", "field": "expected_diff"},
-    "prediction": {"file": "fit", "transform": "math.log2({} + 1)"}
+    "prediction": {"file": "fit", "transform": "math.log2({} + 1)"},
+    "null_point": {"field": "expected_diff", "file": "nul"}
   },
   "labels": {
     "dataset": "hurricane",
