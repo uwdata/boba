@@ -61,9 +61,15 @@ compute_exp <- function (model, df) {
   return(disagg_fit)
 }
 
+# get the pointwise log likelihood
+compute_loglik <- function (model, d_test) {
+  mu <- predict(model, d_test, type = "response")
+  sigma <- sigma(model)
+  return(log(dnorm(d_test$death, mu, sigma)+1e-307))
+}
+
 # get the pointwise log likelihood for stacking
-# df is the dataset without outliers, full is the original dataset
-stacking <- function (model, df, full) {
+stacking <- function (df, model) {
   indices = cv_split(nrow(df), folds = 5)
   pointwise_density <- c()
 
@@ -72,14 +78,7 @@ stacking <- function (model, df, full) {
     d_test = df[indices$test[[i]], ]
 
     m1 <- update(model, . ~ ., data = d_train)
-    mu <- predict(m1, d_test, type = "response")
-    sigma <- sigma(m1)
-    pointwise_density <- append(pointwise_density,
-      log(dnorm(d_test$death, mu, sigma)+1e-307))
-  }
-
-  if (nrow(df) != nrow(full)) {
-    # todo
+    pointwise_density <- append(pointwise_density, compute_loglik(m1, d_test))
   }
 
   return(pointwise_density)
@@ -109,7 +108,7 @@ permutation_test <- function (df, model, N=200) {
 }
 
 # read and process data
-df <- read_csv('../data.csv',
+full <- read_csv('../data.csv',
   col_types = cols(
     Year = col_integer(),
     Category = col_integer(),
@@ -130,6 +129,7 @@ df <- read_csv('../data.csv',
   ) %>%
   # create new variables
   mutate(
+    id = row_number(),
     log_death = log(death + 1),
     log_dam = log(dam),
     post = ifelse(year>1979, 1, 0),
@@ -139,14 +139,16 @@ df <- read_csv('../data.csv',
     zwin = as.numeric(scale(wind)),
     z3 = as.numeric((zmin + zcat + zwin) / 3)
   ) %>%
-  # remove outliers
-  filter(!(name %in% {{outliers}})) %>%
-  filter(!(name %in% {{leverage_points}})) %>%
   # operationalize feminity
   mutate(
     feminity = {{feminity}},
     damage =  {{damage}}
   )
+
+df <- full %>%
+  # remove outliers
+  filter(!(name %in% {{outliers}})) %>%
+  filter(!(name %in% {{leverage_points}}))
 
 # --- (Model) ols_regression
 # OLS regression with log(deaths+1) as the dependent variable 
@@ -161,6 +163,18 @@ model <- glm.nb(death ~ {{predictors}} {{covariates}}, data = df)
 fit <- cross_validation(df, model, "death",
   func = function (m, d) compute_exp(m, d)$expected)
 nrmse = fit / (max(df$death) - min(df$death))
+
+# stacking
+loglik <- df %>%
+  add_column(loglik = stacking(df, model)) %>%
+  dplyr::select(id, loglik) %>%
+  right_join(full, by='id')
+# add missing log likelihood
+if (nrow(loglik) != nrow(df)) {
+  idx <- filter(loglik, is.na(loglik))
+  loglik$loglik[idx$id] <- compute_loglik(model, idx)
+}
+loglik <- dplyr::select(loglik, loglik)
 
 # permutation test
 null.dist <- permutation_test(df, model, 100) %>%
@@ -197,7 +211,7 @@ uncertainty <- disagg_fit %>%
 disagg_fit <- disagg_fit %>%
   dplyr::select(
     observed = death,
-    expected = expected_deaths
+    expected = expected
   )
 
 # output
@@ -205,3 +219,4 @@ write_csv(expectation, '../results/estimate_{{_n}}.csv')
 write_csv(disagg_fit, '../results/disagg_fit_{{_n}}.csv')
 write_csv(uncertainty, '../results/uncertainty_{{_n}}.csv')
 write_csv(null.dist, '../results/null_{{_n}}.csv')
+write_csv(loglik, '../results/loglik_{{_n}}.csv')
