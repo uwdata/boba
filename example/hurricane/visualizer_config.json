@@ -3,6 +3,7 @@
     {"id": "est", "path": "estimate.csv"},
     {"id": "unc", "path": "uncertainty.csv"},
     {"id": "nul", "path": "null.csv"},
+    {"id": "wei", "path": "weights.csv"},
     {"id": "fit", "path": "results/disagg_fit_{}.csv", "multi": true}
   ],
   "schema": {
@@ -10,7 +11,8 @@
     "fit": {"file": "est", "field": "NRMSE"},
     "uncertainty": {"file": "unc", "field": "expected_diff"},
     "prediction": {"file": "fit", "transform": "math.log2({} + 1)"},
-    "null_point": {"field": "expected_diff", "file": "nul"}
+    "null_distribution": {"field": "expected_diff", "file": "nul"},
+    "stacking_weight": {"field": "weights", "file": "wei"}
   },
   "labels": {
     "dataset": "hurricane",

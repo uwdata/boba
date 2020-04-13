@@ -37,6 +37,7 @@
     {"link": ["Model", "back_transform"]}
   ],
   "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results",
+  "after_execute": "cd .. && cp ../stacking_weights.R ./ && cp ../after_execute.sh ./",
   "visualizer": "visualizer_config.json"
 }
 # --- (END)
