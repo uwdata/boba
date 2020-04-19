@@ -62,29 +62,6 @@ compute_exp <- function (model, df) {
   return(disagg_fit)
 }
 
-# get the pointwise log likelihood
-compute_loglik <- function (model, d_test) {
-  mu <- predict(model, d_test, type = "response")
-  sigma <- sigma(model)
-  return(log(dnorm(d_test$death, mu, sigma)+1e-307))
-}
-
-# get the pointwise log likelihood for stacking
-stacking <- function (df, model) {
-  indices = cv_split(nrow(df), folds = 5)
-  pointwise_density <- c()
-
-  for (i in c(1:nrow(indices))) {
-    d_train = df[indices$train[[i]], ]
-    d_test = df[indices$test[[i]], ]
-
-    m1 <- update(model, . ~ ., data = d_train)
-    pointwise_density <- append(pointwise_density, compute_loglik(m1, d_test))
-  }
-
-  return(pointwise_density)
-}
-
 # read and process data
 full <- read_csv('../data.csv',
   col_types = cols(

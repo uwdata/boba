@@ -170,3 +170,32 @@ permutation_test <- function (df, model, terms, func = NULL, N=200) {
 
   return(enframe(unlist(res)))
 }
+
+# get the pointwise log likelihood
+# @param model The fitted model
+# @param d_test The dataframe
+# @private
+compute_loglik <- function (model, d_test) {
+  mu <- predict(model, d_test, type = "response")
+  sigma <- sigma(model)
+  y <- as.list(attr(terms(model), "variables"))[[2]]
+  return(log(dnorm(d_test[[y]], mu, sigma)+1e-307))
+}
+
+# get the pointwise log likelihood for stacking
+# @param df The dataframe
+# @param model The fitted model
+stacking <- function (df, model) {
+  indices = cv_split(nrow(df), folds = 5)
+  pointwise_density <- c()
+
+  for (i in c(1:nrow(indices))) {
+    d_train = df[indices$train[[i]], ]
+    d_test = df[indices$test[[i]], ]
+
+    m1 <- update(model, . ~ ., data = d_train)
+    pointwise_density <- append(pointwise_density, compute_loglik(m1, d_test))
+  }
+
+  return(pointwise_density)
+}
