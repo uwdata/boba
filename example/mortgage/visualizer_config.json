@@ -1,6 +1,6 @@
 {
   "files": [
-    {"id": "est", "path": "estimates.csv"},
+    {"id": "est", "path": "estimate.csv"},
     {"id": "unc", "path": "uncertainty.csv"},
     {"id": "fit", "path": "raw/disagg_pred_{}.csv", "multi": true}
   ],
