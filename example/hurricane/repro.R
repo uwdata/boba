@@ -85,29 +85,6 @@ stacking <- function (df, model) {
   return(pointwise_density)
 }
 
-# permutation test to get the null distribution
-permutation_test <- function (df, model, N=200) {
-  # ensure we have the same random samples across universe runs
-  set.seed(3040)
-
-  res = lapply(1:N, function (i) {
-    # shuffle
-    pm <- df[sample(nrow(df)), ]
-    df2 = df %>% dplyr::select(-c(female, feminity, masfem)) %>%
-      add_column(female=pm$female, feminity=pm$feminity, masfem=pm$masfem)
-
-    # fit the model
-    m1 <- update(model, . ~ ., data = df2)
-    exp <- margins(compute_exp(m1, df2), "female", "expected")
-    return(exp$expected)
-  })
-
-  # remove seed because set seed is global
-  rm(.Random.seed, envir=.GlobalEnv)
-
-  return(enframe(unlist(res)))
-}
-
 # read and process data
 full <- read_csv('../data.csv',
   col_types = cols(
@@ -178,7 +155,8 @@ if (nrow(loglik) != nrow(df)) {
 loglik <- dplyr::select(loglik, loglik)
 
 # permutation test
-null.dist <- permutation_test(df, model, 100) %>%
+null.dist <- permutation_test(df, model, c("female", "masfem", "feminity"), N = 100,
+  func = function (m, d) margins(compute_exp(m, d), "female", "expected")$expected) %>%
   dplyr::select(expected_diff = value)
 
 # get prediction

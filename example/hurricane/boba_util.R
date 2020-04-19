@@ -132,3 +132,41 @@ sampling_distribution <- function (model, term, type="coef", draws=200) {
 
   return(uncertainty)
 }
+
+# permutation test to get the null distribution
+# @param df The dataframe
+# @param model The fitted model
+# @param terms A character vector of terms to be shuffled
+# @param func A function returning the point estimate from a model and a dataset
+# @param N The number of iterations
+permutation_test <- function (df, model, terms, func = NULL, N=200) {
+  # ensure we have the same random samples across universe runs
+  set.seed(3040)
+
+  res = lapply(1:N, function (i) {
+    # shuffle
+    pm <- df[sample(nrow(df)), ] %>%
+      dplyr::select(any_of(terms))
+
+    df2 = df %>% dplyr::select(-any_of(terms)) %>%
+      bind_cols(pm)
+
+    # fit the model
+    m1 <- update(model, . ~ ., data = df2)
+
+    # point estimate
+    if (!is.null(func)) {
+      expected <- func(m1, df2)
+    } else {
+      # fixme: lmerMod need to set allow.new.levels = TRUE
+      expected <- margins(pointwise_predict(m1, df2), terms[1])$expected
+    }
+
+    return(expected)
+  })
+
+  # remove seed because set seed is global
+  rm(.Random.seed, envir=.GlobalEnv)
+
+  return(enframe(unlist(res)))
+}
