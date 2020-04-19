@@ -50,8 +50,7 @@ ones. We will show how you could express such dependencies in boba.
 
 We expanded the analysis of study 1 in Steegen's R script into a multiverse
 specification (
-[template](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility_r/template.R),
-[JSON](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility_r/spec.json)).
+[template](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility_r/template.R)).
 
 Recall that in boba, we have basically two ways to specify a decision: via a
 template variable ``{{var_name}}``, or via a code block. In our multiverse, we
@@ -89,18 +88,13 @@ one variable instead of two, because we do not want boba to take a cross
 product of the two cutoffs. Here, the two cutoffs belong to a list in a single
 placeholder variable, so they are paired.
 
-After specifying two more decisions (`ECL` and `EC`) as code blocks, we now
-tell boba the relationship between the blocks:
-```json
-{ "graph": ["NMO->ECL->A->EC->B"] }
-```
-
+We then specify two more decisions (`ECL` and `EC`) as code blocks.
 If we stop here, boba will take a cross product of all five decisions and
 produce 180 universes. But as we described earlier, some paths are not reasonable.
 Specifically, when we compute NMO using *computed* cycle length, we do not want
 to filter data based on *reported* cycle length, and vice versa. To tell
 boba that a decision depends on the choices made in another decision, we could
-use `constraints` in the JSON spec:
+use `constraints` in Boba config:
 
 ```json
 {
@@ -126,8 +120,7 @@ linear, but can be any valid DAGs.
 
 To illustrate advanced usage of the graph, we built another multiverse, this
 time using a python version of the analysis (
-[template](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility/template.py),
-[JSON](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility/spec.json)).
+[template](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility/template.py)).
 
 We now describe how you might specify a decision in different ways.
 One of the decision point, ECL, has the following options:

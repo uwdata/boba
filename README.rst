@@ -38,7 +38,7 @@ Here is a `simple example`_ to get you started!
 To parse your specification and generate actual scripts, invoke boba and pass
 in the path to your template script and your JSON spec::
 
-  boba compile --script template.py -- json spec.json
+  boba compile --script template.py
 
 To execute the multiverse, namely running all the generated scripts, use::
 

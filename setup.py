@@ -9,7 +9,7 @@ with open("README.rst", "r") as fh:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=6.0', 'dataclasses>=0.6']
+requirements = ['Click>=6.0', 'dataclasses>=0.6', 'pandas>=0.24.2']
 
 setup_requirements = []
 
@@ -39,11 +39,11 @@ setup(
     include_package_data=True,
     keywords='multiverse analysis',
     name='boba',
-    packages=find_packages(include=['boba']),
+    packages=find_packages(include=['boba', 'boba.*']),
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/uwdata/multiverse-spec',
-    version='0.1.3',
+    version='0.1.4',
     zip_safe=False,
 )

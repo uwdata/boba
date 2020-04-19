@@ -22,8 +22,15 @@ of letter, number and the special character `_` (we will reuse this rule
 for all identifiers). Between the curly braces and
 the variable name, no space is allowed.
 
-The alternative values are defined in JSON spec. The variable name must match
-one in the JSON, otherwise an error will be raised.
+The alternative values might be defined in Boba config. The variable name must
+match one in the config block, otherwise an error will be raised. You might
+also define the alternative values inline, for example:
+```
+{{variable_name = 1, 2, 3}}
+{{variable_name = "option1", "option2", "option3"}}
+```
+An option must be either a number or a string in double quotes. Currently,
+Boba do not support inline definition that spans multiple lines.
 
 Any valid pattern will be recognized as a template variable, even if you do not
 intend to. Any non-valid pattern will be dropped silently, even if you intend
@@ -31,7 +38,7 @@ it to be a template variable. All recognized variable will be in `summary.csv`.
 
 Boba also has a few reserved variables, all starting with an underscore. These
 variables represent predefined values and you do not need to supply options for
-them in the JSON file:
+them in the Boba config:
 1. `{{_n}}` represents the universe number, namely the number attached to the
 generated universe file. It's useful for creating a separate filename for
 outputting a separate file in each universe.
@@ -52,8 +59,8 @@ identifier naming rule. If you provide an option, the block will act like a
 decision point, namely boba will substitute different options in different
 universes and properly cross with other decisions.
 
-The block identifier will be used to denote a node in the graph in JSON spec.
-If the JSON spec cannot find a corresponding block in the script template, an
+The block identifier will be used to denote a node in the graph in Boba config.
+If the Boba config cannot find a corresponding block in the script template, an
 error will be raised. However, if the script template contains a block that
 does not appear in the graph, only a warning will be raised and the block will
 not appear in any generated universes.
@@ -68,8 +75,9 @@ It adds a constraint on this block and option (option is optional).
 For more information on how procedural dependecy works, see 
 [this section](#procedural-dependencies).
 
-## JSON Spec
-JSON spec is a JSON file containing a number of fields: a graph indicating the
+## Boba Config
+Boba config is code block written in JSON, which contains a number of fields: 
+a graph indicating the
 relationship between code blocks, the options of all placeholder variables,
 constraints for procedural dependencies, etc.
 
@@ -114,7 +122,7 @@ and it still represents the same graph.
 
 Another top-level array, `decisions`, contains possible values of placeholder
 variables. It is also optional, as long as you do not use any placeholder
-variables in your script template. The syntax is:
+variables or provide inline definitions. The syntax is:
 
 ```json
 {

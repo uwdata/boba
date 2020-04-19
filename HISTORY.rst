@@ -2,6 +2,17 @@
 History
 =======
 
+0.1.4 (2020-04-19)
+==================
+
+* Combine JSON spec with the template
+* Support inline definition for placeholder variables
+* Support inline constraint at block declaration
+* Support linked decisions
+* Infer ADG from specification
+* Update examples
+* Various bug fixes
+
 0.1.3 (2019-11-30)
 ==================
 

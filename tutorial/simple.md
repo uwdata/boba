@@ -194,12 +194,10 @@ advanced usage of the graph in a later tutorial.)
 
 ### Executing the multiverse
 After you are happy with the generated scripts, you might want to execute them
-all to compute the results. We generate a helper script `execute.sh` for you.
-To invoke the script, simply run the following commands in a terminal:
+all to compute the results. Boba has a command for executing universes:
 
 ```bash
-cd your_output_dir/multiverse
-sh execute.sh
+boba run --all
 ```
 It will run **all** the scripts for you! Before you do this, you might want
 to run one script, or simply look at a few scripts, to ensure that
@@ -207,7 +205,7 @@ the generated code does not have syntax errors, etc. To run a selected range
 of universes, for example universe number 1 through 3, do:
 
 ```bash
-sh execute.sh 1 3
+boba run 1 --thru 3
 ```
 
 ### Try it yourself!
