@@ -6,6 +6,9 @@ import os
 import subprocess
 from .parser import Parser
 from .output.csvmerger import CSVMerger
+import multiprocessing as mp
+import pandas as pd
+from shutil import copyfile
 
 
 @click.command()
@@ -47,15 +50,21 @@ def print_help(err=''):
         click.echo('\n' + err)
     ctx.exit()
 
+def run_universe(args):
+    if(args[1].split('.')[1] == "py"):
+        subprocess.run(["python", "-W", "ignore", args[1]], cwd=args[0] + "/code/")
+    else:
+        subprocess.run(["Rscript", args[1]], cwd=args[0] + "/code/")
 
 @click.command()
 @click.argument('num', nargs=1, default=-1)
 @click.option('--all', '-a', 'run_all', is_flag=True,
               help='Execute all universes')
 @click.option('--thru', default=-1, help='Run until this universe number')
+@click.option('--proc', default=mp.cpu_count(), help='number of universes that can be running at a time')
 @click.option('--dir', 'folder', help='Multiverse directory',
               default='./multiverse', show_default=True)
-def run(folder, run_all, num, thru):
+def run(folder, run_all, num, thru, proc):
     """ Execute the generated universe scripts.
 
     Run all universes: boba run --all
@@ -64,19 +73,36 @@ def run(folder, run_all, num, thru):
 
     Run a range of universes for example 1 through 5: boba run 1 --thru 5
     """
-
+    
     check_path(folder)
+    # copy all the files in the current directory to the code directory
+    # (in case there are data files we need)
+    parent = os.path.abspath(os.path.join(folder, os.pardir)) + "/"
+    
+    files = [f for f in os.listdir(parent) if os.path.isfile(os.path.join(parent, f))]
+    for f in files:
+        copyfile(parent + f, folder + "/code/" + os.path.basename(f))
 
-    if num < 0 and not run_all:
-        print_help('Error: Missing argument "NUM".')
+    # get the names of all the universes we want to run
+    universes = []
+    data = pd.read_csv(folder + "/summary.csv")
+    vals = data['Filename'].values
+    file_extension = vals[0].split('.')[1]
+    if run_all:
+        for universe in vals:
+            universes.append([folder, universe])
+    else:
+        if thru == -1:
+            thru = num
 
-    cmd = ['sh', 'execute.sh']
-    if not run_all:
-        cmd.append(str(num))
-        if thru > 0:
-            cmd.append(str(thru))
+        for i in range(num, thru + 1):
+            universe = "universe_" + str(i) + "." + file_extension
+            universes.append([folder, universe])
 
-    subprocess.run(cmd, cwd=folder)
+    # run all of the universes
+    # the number of universes we can run at a time is equal to proc
+    pool = mp.Pool(proc)
+    pool.map(run_universe, universes)
 
 
 @click.command()

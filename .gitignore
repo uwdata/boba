@@ -1,5 +1,6 @@
 .idea/
 __pycache__
+*.pyc
 multiverse/
 durante_etal_2013_study2.txt
 MTurk_ratings_femeninity_of_hurricanes.csv
