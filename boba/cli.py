@@ -50,21 +50,45 @@ def print_help(err=''):
         click.echo('\n' + err)
     ctx.exit()
 
-def run_universe(args):
-    if(args[1].split('.')[1] == "py"):
-        subprocess.run(["python", "-W", "ignore", args[1]], cwd=args[0] + "/code/")
+
+def run_batch_of_universes(folder, universes):
+    batch = []
+    for universe in universes:
+        batch.append(run_universe(folder, universe))
+
+    return batch
+
+def run_universe(folder, script):
+    out = None
+    # choose python or R based on file extension of provided universe
+    if(script.split('.')[1] == "py"):
+        out = subprocess.Popen(["python", "-W", "ignore", script], cwd=folder + "/code/")
     else:
-        subprocess.run(["Rscript", args[1]], cwd=args[0] + "/code/")
+        out = subprocess.Popen(["Rscript", script], cwd=folder + "/code/")
+    # it's ok to block here because this function will be running as a seperate process
+    out.communicate()
+
+    return (script.split('.')[0], out.returncode)
+
+
+def run_commands_in_folder(folder, file_with_commands):
+    cwd = os.getcwd()
+    os.chdir(folder)
+    with open(file_with_commands) as f:
+        for line in f.readlines():
+            os.system(line)
+    os.chdir(cwd)
 
 @click.command()
 @click.argument('num', nargs=1, default=-1)
 @click.option('--all', '-a', 'run_all', is_flag=True,
               help='Execute all universes')
 @click.option('--thru', default=-1, help='Run until this universe number')
-@click.option('--proc', default=mp.cpu_count(), help='number of universes that can be running at a time')
+@click.option('--jobs', default=1, help='number of universes that can be running at a time. Set to 0 to make this the number of cores on the computer.')
+@click.option('--batch_size', default=0, help='the approximate number of universes a processor will run in a row. Has no effect if the number of jobs is 1.')
 @click.option('--dir', 'folder', help='Multiverse directory',
               default='./multiverse', show_default=True)
-def run(folder, run_all, num, thru, proc):
+def run(folder, run_all, num, thru, jobs, batch_size):
     """ Execute the generated universe scripts.
 
     Run all universes: boba run --all
@@ -75,13 +99,6 @@ def run(folder, run_all, num, thru, proc):
     """
     
     check_path(folder)
-    # copy all the files in the current directory to the code directory
-    # (in case there are data files we need)
-    parent = os.path.abspath(os.path.join(folder, os.pardir)) + "/"
-    
-    files = [f for f in os.listdir(parent) if os.path.isfile(os.path.join(parent, f))]
-    for f in files:
-        copyfile(parent + f, folder + "/code/" + os.path.basename(f))
 
     # get the names of all the universes we want to run
     universes = []
@@ -90,19 +107,55 @@ def run(folder, run_all, num, thru, proc):
     file_extension = vals[0].split('.')[1]
     if run_all:
         for universe in vals:
-            universes.append([folder, universe])
+            universes.append(universe)
     else:
         if thru == -1:
             thru = num
 
         for i in range(num, thru + 1):
             universe = "universe_" + str(i) + "." + file_extension
-            universes.append([folder, universe])
+            universes.append(universe)
 
-    # run all of the universes
-    # the number of universes we can run at a time is equal to proc
-    pool = mp.Pool(proc)
-    pool.map(run_universe, universes)
+    run_commands_in_folder(folder, "pre_exe")
+
+    if jobs == 0:
+        jobs = mp.cpu_count()
+
+    if batch_size == 0:
+        batch_size = min(int(len(universes)**(0.5)), int(len(universes)/mp.cpu_count()) + 1)
+
+    pool = mp.Pool(jobs)
+
+    results = []
+
+    # callback that is run for each retrieved result.
+    def check_result(r):
+        results.extend(r)
+        for res in r:
+            if res[1] != 0:
+                pool.terminate() # end computation if one of the processes broke
+    
+    # run each batch of universes as a seperate task
+    while universes:
+        batch = []
+        while universes and len(batch) < batch_size:
+            batch.append(universes.pop(0))
+
+        pool.apply_async(run_batch_of_universes, args=(folder, batch), callback=check_result)
+    
+    # collect all the results
+    pool.close()
+    pool.join()
+
+    # write the results to our logs
+    if not os.path.exists(folder + "/boba_logs/"):
+        os.makedirs(folder + "/boba_logs/")
+
+    with open(folder + "/boba_logs/logs", 'w') as log:
+        for result in results:
+            log.write(result[0] + " " + str(result[1]) + "\n")
+            
+    run_commands_in_folder(folder, "post_exe")
 
 
 @click.command()

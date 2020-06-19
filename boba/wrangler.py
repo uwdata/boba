@@ -161,6 +161,16 @@ class Wrangler:
         st = os.stat(fn_exec)
         os.chmod(fn_exec, st.st_mode | 0o0111)
 
+    def write_pre_exe(self):
+        fn_pre_exec = os.path.join(self.out, 'pre_exe')
+        with open(fn_pre_exec, 'w') as f:
+            f.write(self.pre_exe)
+    
+    def write_post_exe(self):
+        fn_post_exec = os.path.join(self.out, 'post_exe')
+        with open(fn_post_exec, 'w') as f:
+            f.write(self.post_exe)
+
     def write_universe(self, code):
         """Write the generated code to a universe file."""
 
