@@ -293,8 +293,9 @@ class Parser:
         for idx, p in enumerate(paths):
             self._code_gen_recur(p, 0, '', History(idx))
 
-        # output a script to execute all universes
-        self.wrangler.write_sh()
+        # write the pre and post execs to a file.
+        self.wrangler.write_pre_exe()
+        self.wrangler.write_post_exe()
 
     @staticmethod
     def _nice_path(path):
