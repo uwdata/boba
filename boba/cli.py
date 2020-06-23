@@ -4,6 +4,7 @@
 import click
 import os
 import subprocess
+from subprocess import PIPE
 from .parser import Parser
 from .output.csvmerger import CSVMerger
 import multiprocessing as mp
@@ -62,11 +63,13 @@ def run_universe(folder, script):
     out = None
     # choose python or R based on file extension of provided universe
     if(script.split('.')[1] == "py"):
-        out = subprocess.Popen(["python", "-W", "ignore", script], cwd=folder + "/code/")
+        out = subprocess.Popen(["python", "-W", "ignore", script], cwd=folder + "/code/", stdout = PIPE, stderr = PIPE)
     else:
         out = subprocess.Popen(["Rscript", script], cwd=folder + "/code/")
     # it's ok to block here because this function will be running as a seperate process
-    out.communicate()
+    output, err = out.communicate()
+    
+    print(script + "\n" + output.decode("utf-8"))
 
     return (script.split('.')[0], out.returncode)
 
