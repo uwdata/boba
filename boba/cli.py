@@ -59,18 +59,18 @@ def run_batch_of_universes(folder, universes):
 
     return batch
 
+
 def run_universe(folder, script):
     out = None
     # choose python or R based on file extension of provided universe
     if(script.split('.')[1] == "py"):
         out = subprocess.Popen(["python", "-W", "ignore", script], cwd=folder + "/code/", stdout = PIPE, stderr = PIPE)
     else:
-        out = subprocess.Popen(["Rscript", script], cwd=folder + "/code/")
+        out = subprocess.Popen(["Rscript", script], cwd=folder + "/code/", stdout = PIPE, stderr = PIPE)
     # it's ok to block here because this function will be running as a seperate process
     output, err = out.communicate()
-    
+    print(err.decode("utf-8"))
     print(script + "\n" + output.decode("utf-8"))
-
     return (script.split('.')[0], out.returncode)
 
 
@@ -136,7 +136,7 @@ def run(folder, run_all, num, thru, jobs, batch_size):
         results.extend(r)
         for res in r:
             if res[1] != 0:
-                pool.terminate() # end computation if one of the processes broke
+                pool.terminate() # end computation if one of the processes was unsuccessful
     
     # run each batch of universes as a seperate task
     while universes:
