@@ -125,7 +125,7 @@ def run(folder, run_all, num, thru, jobs, batch_size):
         jobs = mp.cpu_count()
 
     if batch_size == 0:
-        batch_size = min(int(len(universes)**(0.5)), int(len(universes)/mp.cpu_count()) + 1)
+        batch_size = min(int(len(universes)**(0.5)), int(len(universes)/jobs) + 1)
 
     pool = mp.Pool(jobs)
 
