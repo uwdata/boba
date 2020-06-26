@@ -162,12 +162,12 @@ class Wrangler:
         os.chmod(fn_exec, st.st_mode | 0o0111)
 
     def write_pre_exe(self):
-        fn_pre_exec = os.path.join(self.out, 'pre_exe')
+        fn_pre_exec = os.path.join(self.out, 'pre_exe.sh')
         with open(fn_pre_exec, 'w') as f:
             f.write(self.pre_exe)
     
     def write_post_exe(self):
-        fn_post_exec = os.path.join(self.out, 'post_exe')
+        fn_post_exec = os.path.join(self.out, 'post_exe.sh')
         with open(fn_post_exec, 'w') as f:
             f.write(self.post_exe)
 
