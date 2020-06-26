@@ -120,10 +120,6 @@ def run(folder, run_all, num, thru, jobs, batch_size):
             for res in r:
                 f_log.write(res[0] + ',' + str(res[1]) + '\n')
 
-        for res in r:
-            if res[1] != 0:
-                # end computation if one of the processes was unsuccessful
-                pool.terminate()
 
     # run each batch of universes as a separate task
     while universes:
