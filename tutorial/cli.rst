@@ -59,3 +59,15 @@ example, if you want to run universe_1.py, use::
 To run a range of universes, for example universe_1 through universe_5, use::
 
   boba run 1 --thru 5
+
+The following two parameters are for multiprocessing:
+
+``--jobs``
+  **default: 1 (optional)**
+
+  Determines the number of processes that can run at a time. If *jobs* is set to 0, it becomes the number of cores on the machine.
+
+``--batch_size``
+  **default: see below (optional)**
+
+  Determines the number of universes that will be run in a sequence in each process. Let :math:`N` denotes the number of universes, the default is :math:`sqrt(N)` or :math:`N/jobs + 1`, whichever is smaller.

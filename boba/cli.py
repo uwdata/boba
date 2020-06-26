@@ -2,15 +2,10 @@
 
 """Console script."""
 import click
-import os
-import subprocess
-from subprocess import PIPE
 from .parser import Parser
 from .output.csvmerger import CSVMerger
 import multiprocessing as mp
 import pandas as pd
-from shutil import copyfile
-from .lang import Lang
 from .bobarun import *
 
 
@@ -79,20 +74,18 @@ def run(folder, run_all, num, thru, jobs, batch_size):
     universes = []
     data = pd.read_csv(folder + '/summary.csv')
     vals = data['Filename'].to_list()
-    extension = Lang("", vals[0]).get_ext()
+    extension = Lang('', vals[0]).get_ext()
     if run_all:
         universes = vals
     else:
         if thru == -1:
             thru = num
-        
+        if num < 1:
+            print_help()
         if thru < num:
-            print('The thru parameter cannot be less than the num parameter.')
-            return
-        
+            print_help('The thru parameter cannot be less than the num parameter.')
         if num >= len(vals) or thru >= len(vals):
-            print('There are only ' + str(len(vals)) + ' universes.')
-            return
+            print_help('There are only ' + str(len(vals)) + ' universes.')
 
         for i in range(num, thru + 1):
             universe = get_universe_script(i, extension)
@@ -115,7 +108,7 @@ def run(folder, run_all, num, thru, jobs, batch_size):
         os.makedirs(folder + '/boba_logs/')
 
     with open(folder + '/boba_logs/logs.csv', 'w') as log:
-        log.write("universe,exit_code\n")
+        log.write('universe,exit_code\n')
 
     # callback that is run for each retrieved result.
     def check_result(r):
@@ -129,7 +122,7 @@ def run(folder, run_all, num, thru, jobs, batch_size):
             if res[1] != 0:
                 pool.terminate() # end computation if one of the processes was unsuccessful
     
-    # run each batch of universes as a seperate task
+    # run each batch of universes as a separate task
     while universes:
         batch = []
         while universes and len(batch) < batch_size:
