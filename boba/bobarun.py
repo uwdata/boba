@@ -12,12 +12,12 @@ def run_batch_of_universes(folder, universes):
 
 
 def run_universe(folder, script):
-    cmd = Lang("", script).get_cmd()
-    out = subprocess.Popen([cmd, script], cwd=folder + "/code/", stdout = PIPE, stderr = PIPE)
+    cmd = Lang('', script).get_cmd()
+    out = subprocess.Popen([cmd, script], cwd=folder + '/code/', stdout = PIPE, stderr = PIPE)
     # it's ok to block here because this function will be running as a seperate process
     output, err = out.communicate()
-    print(err.decode("utf-8"), end = '')
-    print(script + "\n" + output.decode("utf-8"), end='')
+    print(err.decode('utf-8'), end = '')
+    print(script + '\n' + output.decode('utf-8'), end='')
     return (script.split('.')[0], out.returncode)
 
 

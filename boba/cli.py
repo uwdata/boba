@@ -77,7 +77,7 @@ def run(folder, run_all, num, thru, jobs, batch_size):
 
     # get the names of all the universes we want to run
     universes = []
-    data = pd.read_csv(folder + "/summary.csv")
+    data = pd.read_csv(folder + '/summary.csv')
     vals = data['Filename'].to_list()
     extension = Lang("", vals[0]).get_ext()
     if run_all:
@@ -87,11 +87,11 @@ def run(folder, run_all, num, thru, jobs, batch_size):
             thru = num
         
         if thru < num:
-            print("The thru parameter cannot be less than the num parameter.")
+            print('The thru parameter cannot be less than the num parameter.')
             return
         
         if num >= len(vals) or thru >= len(vals):
-            print("There are only " + str(len(vals)) + " universes.")
+            print('There are only ' + str(len(vals)) + ' universes.')
             return
 
         for i in range(num, thru + 1):
@@ -99,7 +99,7 @@ def run(folder, run_all, num, thru, jobs, batch_size):
             print(universe)
             universes.append(universe)
 
-    run_commands_in_folder(folder, "pre_exe.sh")
+    run_commands_in_folder(folder, 'pre_exe.sh')
 
     if jobs == 0:
         jobs = mp.cpu_count()
@@ -111,19 +111,19 @@ def run(folder, run_all, num, thru, jobs, batch_size):
 
     results = []
 
-    if not os.path.exists(folder + "/boba_logs/"):
-        os.makedirs(folder + "/boba_logs/")
+    if not os.path.exists(folder + '/boba_logs/'):
+        os.makedirs(folder + '/boba_logs/')
 
-    with open(folder + "/boba_logs/logs.csv", "w") as log:
+    with open(folder + '/boba_logs/logs.csv', 'w') as log:
         log.write("universe,exit_code\n")
 
     # callback that is run for each retrieved result.
     def check_result(r):
         results.extend(r)
         # write the results to our logs
-        with open(folder + "/boba_logs/logs.csv", "a") as log:
+        with open(folder + '/boba_logs/logs.csv', 'a') as log:
             for res in r:
-                log.write(res[0] + "," + str(res[1]) + "\n")
+                log.write(res[0] + ',' + str(res[1]) + '\n')
 
         for res in r:
             if res[1] != 0:
@@ -141,7 +141,7 @@ def run(folder, run_all, num, thru, jobs, batch_size):
     pool.close()
     pool.join()
     
-    run_commands_in_folder(folder, "post_exe.sh")
+    run_commands_in_folder(folder, 'post_exe.sh')
 
 
 @click.command()
