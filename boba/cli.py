@@ -10,6 +10,8 @@ from .output.csvmerger import CSVMerger
 import multiprocessing as mp
 import pandas as pd
 from shutil import copyfile
+from .lang import Lang
+from .bobarun import *
 
 
 @click.command()
@@ -52,43 +54,13 @@ def print_help(err=''):
     ctx.exit()
 
 
-def run_batch_of_universes(folder, universes):
-    batch = []
-    for universe in universes:
-        batch.append(run_universe(folder, universe))
-
-    return batch
-
-
-def run_universe(folder, script):
-    out = None
-    # choose python or R based on file extension of provided universe
-    if(script.split('.')[1] == "py"):
-        out = subprocess.Popen(["python", "-W", "ignore", script], cwd=folder + "/code/", stdout = PIPE, stderr = PIPE)
-    else:
-        out = subprocess.Popen(["Rscript", script], cwd=folder + "/code/", stdout = PIPE, stderr = PIPE)
-    # it's ok to block here because this function will be running as a seperate process
-    output, err = out.communicate()
-    print(err.decode("utf-8"))
-    print(script + "\n" + output.decode("utf-8"))
-    return (script.split('.')[0], out.returncode)
-
-
-def run_commands_in_folder(folder, file_with_commands):
-    cwd = os.getcwd()
-    os.chdir(folder)
-    with open(file_with_commands) as f:
-        for line in f.readlines():
-            os.system(line)
-    os.chdir(cwd)
-
 @click.command()
 @click.argument('num', nargs=1, default=-1)
 @click.option('--all', '-a', 'run_all', is_flag=True,
               help='Execute all universes')
 @click.option('--thru', default=-1, help='Run until this universe number')
-@click.option('--jobs', default=1, help='number of universes that can be running at a time. Set to 0 to make this the number of cores on the computer.')
-@click.option('--batch_size', default=0, help='the approximate number of universes a processor will run in a row. Has no effect if the number of jobs is 1.')
+@click.option('--jobs', default=1, help='The number of universes that can be running at a time.')
+@click.option('--batch_size', default=0, help='The approximate number of universes a processor will run in a row.')
 @click.option('--dir', 'folder', help='Multiverse directory',
               default='./multiverse', show_default=True)
 def run(folder, run_all, num, thru, jobs, batch_size):
@@ -100,26 +72,34 @@ def run(folder, run_all, num, thru, jobs, batch_size):
 
     Run a range of universes for example 1 through 5: boba run 1 --thru 5
     """
-    
+
     check_path(folder)
 
     # get the names of all the universes we want to run
     universes = []
     data = pd.read_csv(folder + "/summary.csv")
-    vals = data['Filename'].values
-    file_extension = vals[0].split('.')[1]
+    vals = data['Filename'].to_list()
+    extension = Lang("", vals[0]).get_ext()
     if run_all:
-        for universe in vals:
-            universes.append(universe)
+        universes = vals
     else:
         if thru == -1:
             thru = num
+        
+        if thru < num:
+            print("The thru parameter cannot be less than the num parameter.")
+            return
+        
+        if num >= len(vals) or thru >= len(vals):
+            print("There are only " + str(len(vals)) + " universes.")
+            return
 
         for i in range(num, thru + 1):
-            universe = "universe_" + str(i) + "." + file_extension
+            universe = get_universe_script(i, extension)
+            print(universe)
             universes.append(universe)
 
-    run_commands_in_folder(folder, "pre_exe")
+    run_commands_in_folder(folder, "pre_exe.sh")
 
     if jobs == 0:
         jobs = mp.cpu_count()
@@ -131,9 +111,20 @@ def run(folder, run_all, num, thru, jobs, batch_size):
 
     results = []
 
+    if not os.path.exists(folder + "/boba_logs/"):
+        os.makedirs(folder + "/boba_logs/")
+
+    with open(folder + "/boba_logs/logs.csv", "w") as log:
+        log.write("universe,exit_code\n")
+
     # callback that is run for each retrieved result.
     def check_result(r):
         results.extend(r)
+        # write the results to our logs
+        with open(folder + "/boba_logs/logs.csv", "a") as log:
+            for res in r:
+                log.write(res[0] + "," + str(res[1]) + "\n")
+
         for res in r:
             if res[1] != 0:
                 pool.terminate() # end computation if one of the processes was unsuccessful
@@ -149,16 +140,8 @@ def run(folder, run_all, num, thru, jobs, batch_size):
     # collect all the results
     pool.close()
     pool.join()
-
-    # write the results to our logs
-    if not os.path.exists(folder + "/boba_logs/"):
-        os.makedirs(folder + "/boba_logs/")
-
-    with open(folder + "/boba_logs/logs", 'w') as log:
-        for result in results:
-            log.write(result[0] + " " + str(result[1]) + "\n")
-            
-    run_commands_in_folder(folder, "post_exe")
+    
+    run_commands_in_folder(folder, "post_exe.sh")
 
 
 @click.command()
