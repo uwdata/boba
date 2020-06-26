@@ -1,9 +1,8 @@
 import subprocess
 import os
 from .lang import Lang
-from .wrangler import DIR_SCRIPT
+from .wrangler import DIR_SCRIPT, DIR_LOG, get_universe_id_from_script, get_universe_log
 from subprocess import PIPE
-
 
 def run_batch_of_universes(folder, universes):
     """ Run a batch of universes """
@@ -21,8 +20,19 @@ def run_universe(folder, script):
                            stdout=PIPE, stderr=PIPE)
     # it's ok to block here because this function will be running as a separate process
     output, err = out.communicate()
-    print(err.decode('utf-8'), end='')
-    print(script + '\n' + output.decode('utf-8'), end='')
+    out_decoded = output.decode('utf-8')
+    err_decoded = err.decode('utf-8')
+    universe_id = get_universe_id_from_script(script)
+    log_dir = os.path.join(folder, DIR_LOG)
+    
+    with open(os.path.join(log_dir, get_universe_log(universe_id)), 'w') as log:
+        log.write("stdout:\n")
+        log.write(out_decoded)
+        log.write("stderr:\n")
+        log.write(err_decoded)
+
+    print(script + '\n' + out_decoded, end='')
+    print(err_decoded, end='')
     return script.split('.')[0], out.returncode
 
 
