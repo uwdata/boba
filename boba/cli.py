@@ -7,6 +7,7 @@ from .output.csvmerger import CSVMerger
 import multiprocessing as mp
 import pandas as pd
 from .bobarun import *
+from .wrangler import get_universe_script, DIR_LOG
 
 
 @click.command()
@@ -98,30 +99,32 @@ def run(folder, run_all, num, thru, jobs, batch_size):
         jobs = mp.cpu_count()
 
     if batch_size == 0:
-        batch_size = min(int(len(universes)**(0.5)), int(len(universes)/jobs) + 1)
+        batch_size = min(int(len(universes)**0.5), int(len(universes)/jobs) + 1)
 
     pool = mp.Pool(jobs)
 
     results = []
 
-    if not os.path.exists(folder + '/boba_logs/'):
-        os.makedirs(folder + '/boba_logs/')
+    p_log = os.path.join(folder, DIR_LOG)
+    if not os.path.exists(p_log):
+        os.makedirs(p_log)
 
-    with open(folder + '/boba_logs/logs.csv', 'w') as log:
+    with open(os.path.join(p_log, 'logs.csv'), 'w') as log:
         log.write('universe,exit_code\n')
 
     # callback that is run for each retrieved result.
     def check_result(r):
         results.extend(r)
         # write the results to our logs
-        with open(folder + '/boba_logs/logs.csv', 'a') as log:
+        with open(os.path.join(p_log, 'logs.csv'), 'a') as f_log:
             for res in r:
-                log.write(res[0] + ',' + str(res[1]) + '\n')
+                f_log.write(res[0] + ',' + str(res[1]) + '\n')
 
         for res in r:
             if res[1] != 0:
-                pool.terminate() # end computation if one of the processes was unsuccessful
-    
+                # end computation if one of the processes was unsuccessful
+                pool.terminate()
+
     # run each batch of universes as a separate task
     while universes:
         batch = []
@@ -129,11 +132,11 @@ def run(folder, run_all, num, thru, jobs, batch_size):
             batch.append(universes.pop(0))
 
         pool.apply_async(run_batch_of_universes, args=(folder, batch), callback=check_result)
-    
+
     # collect all the results
     pool.close()
     pool.join()
-    
+
     run_commands_in_folder(folder, 'post_exe.sh')
 
 

@@ -70,6 +70,12 @@ merge_log
 """
 
 DIR_SCRIPT = 'code/'
+DIR_LOG = 'boba_logs/'
+
+
+def get_universe_script(universe_id, lang_extension):
+    """ Get the file name of a universe script """
+    return 'universe_' + str(universe_id) + lang_extension
 
 
 class Wrangler:
@@ -175,7 +181,7 @@ class Wrangler:
         """Write the generated code to a universe file."""
 
         self.counter += 1
-        fn = 'universe_{}{}'.format(self.counter, self.lang.get_ext())
+        fn = get_universe_script(self.counter, self.lang.get_ext())
 
         # replace the reserved keyword _n
         code = code.replace('{{_n}}', str(self.counter))

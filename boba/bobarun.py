@@ -1,6 +1,7 @@
 import subprocess
 import os
 from .lang import Lang
+from .wrangler import DIR_SCRIPT
 from subprocess import PIPE
 
 
@@ -16,7 +17,8 @@ def run_batch_of_universes(folder, universes):
 def run_universe(folder, script):
     """ Run one universe """
     cmd = Lang('', script).get_cmd()
-    out = subprocess.Popen([cmd, script], cwd=folder + '/code/', stdout=PIPE, stderr=PIPE)
+    out = subprocess.Popen([cmd, script], cwd=os.path.join(folder, DIR_SCRIPT),
+                           stdout=PIPE, stderr=PIPE)
     # it's ok to block here because this function will be running as a separate process
     output, err = out.communicate()
     print(err.decode('utf-8'), end='')
@@ -32,8 +34,3 @@ def run_commands_in_folder(folder, file_with_commands):
         for line in f.readlines():
             os.system(line)
     os.chdir(cwd)
-
-
-def get_universe_script(universe_id, lang_extension):
-    """ Get the file name of a universe script """
-    return 'universe_' + str(universe_id) + lang_extension
