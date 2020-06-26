@@ -78,6 +78,16 @@ def get_universe_script(universe_id, lang_extension):
     return 'universe_' + str(universe_id) + lang_extension
 
 
+def get_universe_id_from_script(universe_script):
+    """ Get the id of a universe given the universe script """
+    return int(universe_script.split('.')[0].split('_')[1])
+
+
+def get_universe_log(universe_id):
+    """ Get the file name of a universe log """
+    return "log_" + str(universe_id) + ".txt"
+
+
 class Wrangler:
     """Handles outputs."""
     def __init__(self, spec, lang, out):
