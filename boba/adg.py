@@ -84,7 +84,7 @@ class ADG:
             gp = self._merge_one(nd, set(cur))
 
             # if the child node is already in groups, give it a different id
-            for g in gp:
+            for g in gp.copy():
                 val = gp[g]
                 key = '{}-{}'.format(g, i) if g in groups else g
                 i += 1 if g in groups else 0
