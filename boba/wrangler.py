@@ -71,11 +71,16 @@ merge_log
 
 DIR_SCRIPT = 'code/'
 DIR_LOG = 'boba_logs/'
+LOG_EXT = '.txt'
+
+def get_universe_name(universe_id):
+    """ Get the name of a universe """
+    return 'universe_' + str(universe_id)
 
 
 def get_universe_script(universe_id, lang_extension):
     """ Get the file name of a universe script """
-    return 'universe_' + str(universe_id) + lang_extension
+    return get_universe_name(universe_id) + lang_extension
 
 
 def get_universe_id_from_script(universe_script):
@@ -85,7 +90,12 @@ def get_universe_id_from_script(universe_script):
 
 def get_universe_log(universe_id):
     """ Get the file name of a universe log """
-    return "log_" + str(universe_id) + ".txt"
+    return 'log_' + str(universe_id) + LOG_EXT
+
+
+def get_universe_error_log(universe_id):
+    """ get the file name of a universe error log """
+    return 'error_' + str(universe_id) + LOG_EXT
 
 
 class Wrangler:
