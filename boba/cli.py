@@ -2,6 +2,7 @@
 
 """Console script."""
 import click
+import shutil
 from .parser import Parser
 from .output.csvmerger import CSVMerger
 import multiprocessing as mp
@@ -106,8 +107,9 @@ def run(folder, run_all, num, thru, jobs, batch_size):
     results = []
 
     p_log = os.path.join(folder, DIR_LOG)
-    if not os.path.exists(p_log):
-        os.makedirs(p_log)
+    if os.path.exists(p_log):
+        shutil.rmtree(p_log)
+    os.makedirs(p_log)
 
     with open(os.path.join(p_log, 'logs.csv'), 'w') as log:
         log.write('universe,exit_code\n')
