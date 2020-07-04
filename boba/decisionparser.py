@@ -69,9 +69,9 @@ class DecisionParser(BaseParser):
                     sample_size = int(DecisionParser._read_json_safe(val, "sample_size"))
                     generated_res.extend(DecisionParser.sample_options(val, sampling_method, sample_size))
                 except (ParseError, TypeError):
-                    try:
+                    if isinstance(val, list):
                         generated_res.append(DecisionParser._read_options(val))
-                    except (ValueError, TypeError):
+                    else:
                         generated_res.append(val)
 
         except ValueError:
