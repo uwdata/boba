@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 
 import json
+import random
 from dataclasses import dataclass
 from .baseparser import ParseError, BaseParser
 
@@ -11,6 +12,8 @@ class Decision:
     value: list
     desc: str = ''
 
+class SamplingError(SyntaxError):
+    pass
 
 class DecisionParser(BaseParser):
     def __init__(self):
@@ -33,17 +36,54 @@ class DecisionParser(BaseParser):
         return True
 
     @staticmethod
-    def _read_value(s):
+    def sample_options(obj, sampling_method, sample_size):
+        samples = []
+        for i in range(sample_size):
+            sample = None
+            if sampling_method == 'uniform':
+                min_val = float(DecisionParser._read_json_safe(obj, 'min'))
+                max_val = float(DecisionParser._read_json_safe(obj, 'max'))
+                sample = random.uniform(min_val, max_val)
+            elif sampling_method == 'lognormal':
+                mean = float(DecisionParser._read_json_safe(obj, 'mean'))
+                std_dev = float(DecisionParser._read_json_safe(obj, 'std_dev'))
+                sample = random.lognormvariate(mean, std_dev)
+            elif sampling_method == 'normal':
+                mean = float(DecisionParser._read_json_safe(obj, 'mean'))
+                std_dev = float(DecisionParser._read_json_safe(obj, 'std_dev'))
+                sample = random.normvariate(mean, std_dev)
+            else:
+                raise SamplingError('Cannot handle sampling method ' + sampling_method)
+
+            samples.append(sample)
+
+        return samples
+
+    @staticmethod
+    def _read_options(s):
         try:
+            generated_res = []
             res = list(s)
+            for val in res:
+                try:
+                    sampling_method = str(DecisionParser._read_json_safe(val, "sampling_method"))
+                    sample_size = int(DecisionParser._read_json_safe(val, "sample_size"))
+                    generated_res.extend(DecisionParser.sample_options(val, sampling_method, sample_size))
+                except (ParseError, TypeError):
+                    try:
+                        generated_res.append(DecisionParser._read_options(val))
+                    except (ValueError, TypeError):
+                        generated_res.append(val)
+
         except ValueError:
             raise ParseError('Cannot handle value "{}"'.format(s))
 
         if len(s) == 0:
             raise ParseError('Cannot handle decision value "[]"')
-        return res
+        return generated_res
 
-    def _read_json_safe(self, obj, field):
+    @staticmethod
+    def _read_json_safe(obj, field):
         if field not in obj:
             raise ParseError('Cannot find "{}" in json'.format(field))
         return obj[field]
@@ -72,9 +112,9 @@ class DecisionParser(BaseParser):
         for d in dec_spec:
             desc = d['desc'] if 'desc' in d else 'Decision {}'.format(d['var'])
 
-            var = self._check_type(self._read_json_safe(d, 'var'),
+            var = self._check_type(DecisionParser._read_json_safe(d, 'var'),
                                    DecisionParser._is_id_token, 'id')
-            value = self._read_value(self._read_json_safe(d, 'options'))
+            value = DecisionParser._read_options(DecisionParser._read_json_safe(d, 'options'))
 
             # check if two variables have the same name
             if var in self.decisions:
