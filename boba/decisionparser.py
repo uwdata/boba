@@ -70,7 +70,10 @@ class DecisionParser(BaseParser):
                     generated_res.extend(DecisionParser.sample_options(val, sampling_method, sample_size))
                 except (ParseError, TypeError):
                     if isinstance(val, list):
-                        generated_res.append(DecisionParser._read_options(val))
+                        try:
+                            generated_res.append(DecisionParser._read_options(val))
+                        except (ValueError, ParseError):
+                            pass
                     else:
                         generated_res.append(val)
 
