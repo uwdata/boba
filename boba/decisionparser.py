@@ -38,24 +38,23 @@ class DecisionParser(BaseParser):
     @staticmethod
     def sample_options(obj, sampling_method, sample_size):
         samples = []
-        for i in range(sample_size):
-            sample = None
-            if sampling_method == 'uniform':
-                min_val = float(DecisionParser._read_json_safe(obj, 'min'))
-                max_val = float(DecisionParser._read_json_safe(obj, 'max'))
-                sample = random.uniform(min_val, max_val)
-            elif sampling_method == 'lognormal':
-                mean = float(DecisionParser._read_json_safe(obj, 'mean'))
-                std_dev = float(DecisionParser._read_json_safe(obj, 'std_dev'))
-                sample = random.lognormvariate(mean, std_dev)
-            elif sampling_method == 'normal':
-                mean = float(DecisionParser._read_json_safe(obj, 'mean'))
-                std_dev = float(DecisionParser._read_json_safe(obj, 'std_dev'))
-                sample = random.normvariate(mean, std_dev)
-            else:
-                raise SamplingError('Cannot handle sampling method ' + sampling_method)
+        sampling_methods = {
+            'uniform': (['min', 'max'], random.uniform), 
+            'lognormal': (['mean', 'std_dev'], random.lognormvariate), 
+            'normal' : (['mean', 'std_dev'], random.normalvariate)
+        }
 
-            samples.append(sample)
+        if not sampling_method in sampling_methods:
+            raise SamplingError('the sampling method ' + sampling_method + ' is not supported.')
+
+        param_names = sampling_methods[sampling_method][0]
+        sampling_function = sampling_methods[sampling_method][1]
+        param_values = []
+        for param_name in param_names:
+            param_values.append(float(DecisionParser._read_json_safe(obj, param_name)))
+
+        for i in range(sample_size):
+            samples.append(sampling_function(*param_values))
 
         return samples
 
