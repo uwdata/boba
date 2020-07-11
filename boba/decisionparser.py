@@ -125,10 +125,10 @@ class DecisionParser(BaseParser):
         return samples
 
     @staticmethod
-    def _read_discrete_options(s):
+    def _read_discrete_options(s, allow_empty_list=False):
         """reads an option, converting all continuous values into discrete ones"""
         generated_res = []
-        res = DecisionParser._read_options(s)
+        res = DecisionParser._read_options(s, allow_empty_list)
         for val in res:
             if isinstance(val, dict):
                 try:
@@ -138,21 +138,21 @@ class DecisionParser(BaseParser):
                 except (ParseError, TypeError):
                     raise ParseError('expected "sample" and "count" to be defined as string and int respectively in object:\n' + str(s))
             elif isinstance(val, list):
-                generated_res.append(DecisionParser._read_discrete_options(val))
+                generated_res.append(DecisionParser._read_discrete_options(val, True))
             else:
                 generated_res.append(val)
 
         return generated_res
 
     @staticmethod
-    def _read_options(s):
+    def _read_options(s, allow_empty_list=False):
         """reads an option"""
         try:
             res = list(s)
         except ValueError:
             raise ParseError('Cannot handle value "{}"'.format(s))
         
-        if len(s) == 0:
+        if len(s) == 0 and not allow_empty_list:
             raise ParseError('Cannot handle decision value "[]"')
         return res
         
