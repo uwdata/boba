@@ -4,6 +4,7 @@
     {"var": "cutoff",
       "options": [
         {
+            "seed" : 0,
             "sample" : "uniform",
             "count" : 50,
             "min" : 1.0,

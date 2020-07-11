@@ -134,6 +134,12 @@ class DecisionParser(BaseParser):
                 try:
                     sampling_method = str(DecisionParser._read_json_safe(val, "sample"))
                     count = int(DecisionParser._read_json_safe(val, "count"))
+                    try:
+                        seed = int(DecisionParser._read_json_safe(val, "seed"))
+                        random.seed(seed)
+                    except (ParseError, TypeError):
+                        pass
+
                     generated_res.extend(DecisionParser.discretize(val, sampling_method, count))
                 except (ParseError, TypeError):
                     raise ParseError('expected "sample" and "count" to be defined as string and int respectively in object:\n' + str(s))
