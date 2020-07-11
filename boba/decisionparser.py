@@ -15,10 +15,20 @@ class Decision:
 class SamplingError(SyntaxError):
     pass
 
+class DiscretizationError(SyntaxError):
+    pass
+
+class DiscretizationFn:
+    def __init__(self, function, required_params, optional_params):
+        self.function = function
+        self.required_params = required_params
+        self.optional_params = optional_params
+
 class DecisionParser(BaseParser):
     def __init__(self):
         super(DecisionParser, self).__init__('')
         self.decisions = {}
+        self.discrete_decisions = {}
 
     @staticmethod
     def _is_syntax_start(ch):
@@ -36,53 +46,116 @@ class DecisionParser(BaseParser):
         return True
 
     @staticmethod
-    def sample_options(obj, sampling_method, sample_size):
-        samples = []
-        sampling_methods = {
-            'uniform': (['min', 'max'], random.uniform), 
-            'lognormal': (['mean', 'std_dev'], random.lognormvariate), 
-            'normal' : (['mean', 'std_dev'], random.normalvariate)
+    def get_within_range(function, args, distribution_range, exclusive):
+        """bind the output of the provided function within the provided range"""
+        if distribution_range[1] < distribution_range[0]:
+            raise ValueError('max value ' + distribution_range[1] + ' is less than min value ' + distribution_range[0])
+        
+        val = function(*args)
+        while (val < distribution_range[0] or val > distribution_range[1] or
+              ((val == distribution_range[0] or val == distribution_range[1]) and exclusive)):
+            val = function(*args)
+
+        return val
+
+    @staticmethod
+    def random_uniform(minimum, maximum, args):
+        """randomly sample a number from a uniform distribution"""
+        exclusive = args.get('exclusive', False)
+        distr_range = [minimum, maximum]
+        return DecisionParser.get_within_range(random.uniform, distr_range, distr_range, exclusive)
+
+    @staticmethod
+    def rand_x_normal(function, args):
+        """randomly sample a number from any type of normal distribution"""
+        mean = args.get('mean', 0.0)
+        std_dev = args.get('std_dev', 1.0)
+        exclusive = args.get('exclusive', False)
+        distribution_range = args.get('range', None)
+        if distribution_range:
+            return DecisionParser.get_within_range(function, [mean, stdev], distribution_range)
+        else:
+            return function(mean, stdev)
+
+    @staticmethod
+    def random_lognormal(args):
+        """randomly sample a number from a lognormal distribution"""
+        return DecisionParser.rand_x_normal(random.lognormvariate, args)
+
+    @staticmethod
+    def random_normal(args):
+        """randomly sample a number from a normal distribution"""
+        return DecisionParser.rand_x_normal(radom.normvariate, args)
+
+    @staticmethod
+    def discretize(obj, discretization_method, count):
+        """discretizes a continuous variable into 'count' descrete options."""
+        discretization_methods = {
+            'uniform': DiscretizationFn(DecisionParser.random_uniform, ['min', 'max'], ['exclusive']), 
+            'lognormal': DiscretizationFn(DecisionParser.random_lognormal, [], ['mean', 'std_dev', 'exclusive', 'range']), 
+            'normal' : DiscretizationFn(DecisionParser.random_normal, [], ['mean', 'std_dev', 'exclusive', 'range'])
         }
 
-        if not sampling_method in sampling_methods:
-            raise SamplingError('the sampling method ' + sampling_method + ' is not supported.')
+        if not discretization_method in discretization_methods:
+            raise SamplingError('the discretization method ' + discretization_method + ' is not supported.')
 
-        param_names = sampling_methods[sampling_method][0]
-        sampling_function = sampling_methods[sampling_method][1]
+        method = discretization_methods[discretization_method]
+        required_param_names = method.required_params
         param_values = []
-        for param_name in param_names:
-            param_values.append(float(DecisionParser._read_json_safe(obj, param_name)))
+        for param_name in required_param_names:
+            try:
+                param_values.append(DecisionParser._read_json_safe(obj, param_name))
+            except ParseError:
+                raise DiscretizationError('expected ' + param_name + ' to be defined in ' + str(obj))
 
-        for i in range(sample_size):
-            samples.append(sampling_function(*param_values))
+        optional_param_names = method.optional_params
+        optional_params = {}
+        for param_name in optional_param_names:
+            try:
+                optional_params[param_name] = DecisionParser._read_json_safe(obj, param_name)
+            except ParseError:
+                continue
+
+        param_values.append(optional_params)
+        fn = method.function
+        samples = []
+        for i in range(count):
+            samples.append(fn(*param_values))
 
         return samples
 
     @staticmethod
-    def _read_options(s):
-        try:
-            generated_res = []
-            res = list(s)
-            for val in res:
+    def _read_discrete_options(s):
+        """reads an option, converting all continuous values into discrete ones"""
+        generated_res = []
+        res = DecisionParser._read_options(s)
+        for val in res:
+            if isinstance(val, dict):
                 try:
-                    sampling_method = str(DecisionParser._read_json_safe(val, "sampling_method"))
-                    sample_size = int(DecisionParser._read_json_safe(val, "sample_size"))
-                    generated_res.extend(DecisionParser.sample_options(val, sampling_method, sample_size))
+                    sampling_method = str(DecisionParser._read_json_safe(val, "sample"))
+                    count = int(DecisionParser._read_json_safe(val, "count"))
+                    generated_res.extend(DecisionParser.discretize(val, sampling_method, count))
                 except (ParseError, TypeError):
-                    if isinstance(val, list):
-                        try:
-                            generated_res.append(DecisionParser._read_options(val))
-                        except (ValueError, ParseError):
-                            pass
-                    else:
-                        generated_res.append(val)
+                    raise ParseError('expected "sample" and "count" to be defined as string and int respectively in object:\n' + str(s))
+            elif isinstance(val, list):
+                generated_res.append(DecisionParser._read_discrete_options(val))
+            else:
+                generated_res.append(val)
 
+        return generated_res
+
+    @staticmethod
+    def _read_options(s):
+        """reads an option"""
+        try:
+            res = list(s)
         except ValueError:
             raise ParseError('Cannot handle value "{}"'.format(s))
-
+        
         if len(s) == 0:
             raise ParseError('Cannot handle decision value "[]"')
-        return generated_res
+        return res
+        
 
     @staticmethod
     def _read_json_safe(obj, field):
@@ -108,7 +181,7 @@ class DecisionParser(BaseParser):
     def read_decisions(self, spec):
         """
         Read decisions from the JSON spec.
-        :return: a dict of decisions
+        :return:
         """
         dec_spec = spec['decisions'] if 'decisions' in spec else []
         for d in dec_spec:
@@ -117,26 +190,27 @@ class DecisionParser(BaseParser):
             var = self._check_type(DecisionParser._read_json_safe(d, 'var'),
                                    DecisionParser._is_id_token, 'id')
             value = DecisionParser._read_options(DecisionParser._read_json_safe(d, 'options'))
+            discrete_value = DecisionParser._read_discrete_options(DecisionParser._read_json_safe(d, 'options'))
 
             # check if two variables have the same name
             if var in self.decisions:
                 raise ParseError('Duplicate variable name "{}"'.format(var))
 
             decision = Decision(var, value, desc)
+            discrete_decision = Decision(var, discrete_value, desc)
             self.decisions[var] = decision
+            self.discrete_decisions[var] = discrete_decision
 
-        return self.decisions
-
-    def get_num_alt(self, dec):
+    def get_num_alt_discrete(self, dec):
         """
         Return the number of possible alternatives.
         For discrete type, it's the number of options.
         :param dec: variable ID of a decision
         :return: number
         """
-        return len(self.decisions[dec].value)
+        return len(self.discrete_decisions[dec].value)
 
-    def get_alt(self, dec, i_alt):
+    def get_alt_discrete(self, dec, i_alt):
         """
         Return the i-th alternative. For discrete type, it's simply the i-th
         option specified.
@@ -144,17 +218,17 @@ class DecisionParser(BaseParser):
         :param i_alt: which alternative
         :return: value of the option
         """
-        return self.decisions[dec].value[i_alt]
+        return self.discrete_decisions[dec].value[i_alt]
 
-    def get_cross_prod(self):
+    def get_cross_prod_discrete(self):
         """
         Get the maximum possible cardinality of options, computed as a cross
         product of all decisions.
         :return: number
         """
         ret = 1
-        for dec in self.decisions:
-            ret *= self.get_num_alt(dec)
+        for dec in self.discrete_decisions:
+            ret *= self.get_num_alt_discrete(dec)
         return ret
 
     def get_decs(self):
@@ -169,7 +243,7 @@ class DecisionParser(BaseParser):
         :param i_alt: which alternative
         :return: {string, string} replaced code and the value at this parameter
         """
-        v = self.get_alt(dec_id, i_alt)
+        v = self.get_alt_discrete(dec_id, i_alt)
 
         # assuming the placeholder var is always at the end
         # which is true given how we chop up the chunks
@@ -230,6 +304,7 @@ class DecisionParser(BaseParser):
                             msg = 'Duplicate variable definition "{}"'
                             raise ParseError(msg.format(val))
                         self.decisions[val] = decision
+                        self.discrete_decisions[val] = decision
                     except ValueError:
                         msg = 'Cannot parse variable definition:\n{}'
                         raise ParseError(msg.format(df))

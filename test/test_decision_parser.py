@@ -31,7 +31,8 @@ class TestDecisionParser(unittest.TestCase):
         with open(abs_path('./specs/spec-good.json'), 'rb') as f:
             spec = json.load(f)
         dp = DecisionParser()
-        ds = dp.read_decisions(spec)
+        dp.read_decisions(spec)
+        ds = dp.discrete_decisions
         self.assertListEqual(list(ds.keys()), ['a', 'b'])
         self.assertEqual(ds['a'].desc, 'outlier')
         self.assertEqual(ds['b'].desc, 'Decision b')

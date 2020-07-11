@@ -260,7 +260,7 @@ class Parser:
                     self._code_gen_recur(path, i+1, code+snippet, history)
                 else:
                     # expand the decision
-                    num_alt = self.dec_parser.get_num_alt(chunk.variable)
+                    num_alt = self.dec_parser.get_num_alt_discrete(chunk.variable)
                     for k in range(num_alt):
                         # check if the option has constraints attached to it
                         # always check by index, rather than actual value
@@ -379,7 +379,7 @@ class Parser:
                 break
 
     def _warn_size(self):
-        cap = self.dec_parser.get_cross_prod() * len(self.paths)
+        cap = self.dec_parser.get_cross_prod_discrete() * len(self.paths)
         if cap > 1024:
             rs = input('\nBoba may create as many as {} scripts. '
                        'Proceed (y/n)?\n'.format(cap))
