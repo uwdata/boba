@@ -141,7 +141,7 @@ class TestDecisionParser(unittest.TestCase):
         with open(abs_path(path), 'rb') as f:
             spec = json.load(f)
         
-        errs = {
+        expected_errs = {
             "0" : ParseError,
             "1" : ParseError,
             "2" : ParseError,
@@ -159,7 +159,7 @@ class TestDecisionParser(unittest.TestCase):
             "14" : ValueError
         }
 
-        for name, error in errs.items():
+        for name, error in expected_errs.items():
             dp = DecisionParser()
             msg = 'failed at test ' + name + ' in ' + path + ', description: ' + spec[name]['decisions'][0]['desc']
             thrown = False

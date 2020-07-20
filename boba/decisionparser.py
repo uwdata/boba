@@ -180,7 +180,7 @@ class DecisionParser(BaseParser):
             res = list(s)
         except ValueError:
             raise ParseError('Cannot handle value "{}"'.format(s))
-        
+
         if len(s) == 0 and not allow_empty_list:
             raise ParseError('Cannot handle decision value "[]"')
         return res
