@@ -45,11 +45,18 @@ class DecisionParser(BaseParser):
 
         return True
 
+    @staticmethod 
+    def check_var_types(args, types, names):
+        for i in range(0, len(args)):
+            if not isinstance(args[i], types[i]):
+                raise ValueError(names[i] + ' must be of type ' + str(types[i]))
+
+
     @staticmethod
     def get_within_range(function, args, distribution_range, exclusive):
         """bind the output of the provided function within the provided range"""
-        if distribution_range[1] < distribution_range[0]:
-            raise ValueError('max value ' + distribution_range[1] + ' is less than min value ' + distribution_range[0])
+        if distribution_range[1] <= distribution_range[0]:
+            raise ValueError('max value: ' + str(distribution_range[1]) + ' is less than min value: ' + str(distribution_range[0]))
         
         val = function(*args)
         while (val < distribution_range[0] or val > distribution_range[1] or
@@ -62,6 +69,10 @@ class DecisionParser(BaseParser):
     def random_uniform(minimum, maximum, args):
         """randomly sample a number from a uniform distribution"""
         exclusive = args.get('exclusive', False)
+        DecisionParser.check_var_types([minimum, maximum, exclusive], 
+                        [float, float, bool], 
+                        ['min', 'max', 'exclusive'])
+
         distr_range = [minimum, maximum]
         return DecisionParser.get_within_range(random.uniform, distr_range, distr_range, exclusive)
 
@@ -71,11 +82,23 @@ class DecisionParser(BaseParser):
         mean = args.get('mean', 0.0)
         std_dev = args.get('std_dev', 1.0)
         exclusive = args.get('exclusive', False)
-        distribution_range = args.get('range', None)
+        distribution_range = args.get('range', [])
+        DecisionParser.check_var_types([mean, std_dev, exclusive, distribution_range], 
+                        [float, float, bool, list], 
+                        ['mean', 'std_dev', 'exclusive', 'range'])
+
+        if len(distribution_range) == 0:
+            distribution_range = None
+
+        if distribution_range and len(distribution_range) != 2:
+            raise ValueError('expected two items in range list')
+        elif distribution_range and len(distribution_range) == 2:
+            DecisionParser.check_var_types(distribution_range, [float, float], ['range[0]', 'range[1]'])
+
         if distribution_range:
-            return DecisionParser.get_within_range(function, [mean, stdev], distribution_range)
+            return DecisionParser.get_within_range(function, [mean, std_dev], distribution_range, exclusive)
         else:
-            return function(mean, stdev)
+            return function(mean, std_dev)
 
     @staticmethod
     def random_lognormal(args):
@@ -85,7 +108,7 @@ class DecisionParser(BaseParser):
     @staticmethod
     def random_normal(args):
         """randomly sample a number from a normal distribution"""
-        return DecisionParser.rand_x_normal(radom.normvariate, args)
+        return DecisionParser.rand_x_normal(random.normalvariate, args)
 
     @staticmethod
     def discretize(obj, discretization_method, count):

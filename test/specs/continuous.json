@@ -1,0 +1,47 @@
+{
+    "decisions": [
+      {"var": "A", "options": [{"sample" : "uniform", "count" : 10, "seed" : 0, "min" : 0.0, "max" : 5.0}] , 
+                   "desc" : "uniform continuous variable expansion"},
+
+      {"var": "B", "options": [{"sample" : "lognormal", "count" : 10, "seed" : 0, "mean" : 0.0, "std_dev" : 5.0}] , 
+                   "desc" : "lognormal continuous variable expansion"},
+
+      {"var": "C", "options": [{"sample" : "normal", "count" : 10, "seed" : 0, "mean" : 0.0, "std_dev" : 5.0}] , 
+                   "desc" : "normal continuous variable expansion"},
+      
+      {"var": "D", "options": [{"sample" : "uniform", "count" : 10, "seed" : 0, "min" : 0.0, "max" : 5.0}, 17.0] , 
+                   "desc" : "uniform continuous variable expansion with additional constants"},
+      
+      {"var": "E", "options": [{"sample" : "lognormal", "count" : 10, "seed" : 0, "mean" : 0.0, "std_dev" : 5.0}, 0.0, 1.0, 2.0] , 
+                   "desc" : "lognormal continuous variable expansion with additional constants"},
+
+      {"var": "F", "options": [{"sample" : "normal", "count" : 10, "seed" : 0, "mean" : 0.0, "std_dev" : 5.0}, 0.0, 1.0, 2.0, 3.0, 4.0] , 
+                   "desc" : "normal continuous variable expansion with additional constants"},
+      
+      {"var": "G", "options": [{"sample" : "uniform", "count" : 3, "seed" : 0, "min" : 0.0, "max" : 5.0}, 
+                               {"sample" : "lognormal", "count" : 3, "seed" : 0, "mean" : 0.0, "std_dev" : 5.0},
+                               {"sample" : "normal", "count" : 3, "seed" : 0, "mean" : 0.0, "std_dev" : 5.0}] , 
+                   "desc" : "multiple continuous variable expansions"},
+
+      {"var": "H", "options": [{"sample" : "uniform", "count" : 4, "seed" : 0, "min": 0.0, "max": 5.0},
+                               {"sample" : "uniform", "count" : 4, "seed" : 1, "min": 10.0, "max": 15.0}] , 
+                   "desc" : "multiple continuous variable expansions"},
+
+      {"var": "I", "options": [{"sample" : "uniform", "count" : 3, "seed" : 0, "min": 0.0, "max": 5.0}, -1.1,
+                               {"sample" : "uniform", "count" : 3, "seed" : 1, "min": 10.0, "max": 15.0},
+                               0.0, 1.0, 2.0, 3.1415] , 
+                   "desc" : "multiple continuous variable expansions with additional constants"},
+
+      {"var": "J", "options": [{"sample" : "normal", "count" : 5, "seed" : 0, "mean" : 0.0, "std_dev" : 5.0, "range" : [0.0, 2.5]},
+                               {"sample" : "lognormal", "count" : 5, "seed" : 0, "mean" : 0.0, "std_dev" : 5.0, "range" : [0.0, 2.5]}] , 
+                   "desc" : "check range"},
+      
+      {"var": "K", "options": [{"sample" : "lognormal", "count" : 5, "seed" : 0}, 
+                                {"sample" : "lognormal", "count" : 5, "seed" : 0, "mean" : 0.0, "std_dev" : 1.0}] , 
+                    "desc" : "check unrequired variable omission"},
+                
+      {"var": "L", "options": [{"sample" : "normal", "count" : 5, "seed" : 0}, 
+                                {"sample" : "normal", "count" : 5, "seed" : 0, "mean" : 0.0, "std_dev" : 1.0}] , 
+                    "desc" : "check unrequired variable omission"}
+    ]
+}
