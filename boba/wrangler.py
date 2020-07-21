@@ -13,62 +13,6 @@ class Output:
     name: str
     value: str
 
-
-exec_template = """\
-#!/bin/sh
-
-cleanup ()
-{{
-echo "kill -s TERM $!"
-kill -s TERM $!
-exit 0
-}}
-
-merge_log ()
-{{
-boba merge exit_status_{{}}.csv -b $DLOG --out $DLOG/exit_status.csv
-rm $DLOG/exit_status_*.csv
-}}
-
-{}
-
-DIR="$( cd "$( dirname "${{BASH_SOURCE[0]}}" )" >/dev/null 2>&1 && pwd )"
-DLOG=$DIR/boba_logs
-suffix={}
-num={}
-i=1
-
-# create a folder for logs
-rm -rf $DLOG
-mkdir $DLOG
-
-# if specified, change the range of universes to execute
-if [ "$1" != "" ]; then i=$1; num=$1; fi
-if [ "$2" != "" ]; then num=$2; fi
-
-cd $DIR/code
-
-trap cleanup SIGINT SIGTERM
-
-while [ $i -le $num ]
-do
-  # execute the universe
-  f="universe_$i$suffix"
-  echo "{} $f"
-  (set -o pipefail; {} $f 2>&1 | tee $DLOG/log_$i.txt)
-
-  # collect exit status
-  printf "%s\\n%d" exit_status $? > $DLOG/exit_status_$i.csv
-
-  # increment
-  i=$(( i+1 ))
-  wait $!
-done
-
-merge_log
-{}
-"""
-
 DIR_SCRIPT = 'code/'
 DIR_LOG = 'boba_logs/'
 LOG_EXT = '.txt'
@@ -174,18 +118,6 @@ class Wrangler:
             return self._codegen_r()
         if self.lang.is_python():
             return self._codegen_python()
-
-    def write_sh(self):
-        """Write a shell script for executing all universes."""
-        cmd = self.lang.get_cmd()
-        sh = exec_template.format(self.pre_exe,
-                                  self.lang.get_ext(), self.counter, cmd, cmd,
-                                  self.post_exe)
-        fn_exec = os.path.join(self.out, 'execute.sh')
-        with open(fn_exec, 'w') as f:
-            f.write(sh)
-        st = os.stat(fn_exec)
-        os.chmod(fn_exec, st.st_mode | 0o0111)
 
     def write_pre_exe(self):
         fn_pre_exec = os.path.join(self.out, 'pre_exe.sh')
