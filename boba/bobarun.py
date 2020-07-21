@@ -1,5 +1,7 @@
 import subprocess
 import os
+import click
+import ast;
 from .lang import Lang
 from .wrangler import DIR_SCRIPT, DIR_LOG, get_universe_id_from_script, get_universe_log, get_universe_error_log, get_universe_name
 from subprocess import PIPE
@@ -52,3 +54,17 @@ def run_commands_in_folder(folder, file_with_commands):
         for line in f.readlines():
             os.system(line)
     os.chdir(cwd)
+
+class PythonIntList(click.Option):
+    """parses command line argument as if it was a string version of a python list of ints."""
+    def type_cast_value(self, ctx, value):
+        try:
+            ret = list(ast.literal_eval(value))
+        except:
+            raise click.BadParameter('"' + value + '" is not a list!')
+        
+        for i in ret:
+            if not isinstance(i, int):
+                raise click.BadParameter('"' + str(i) + '" is not an int!')
+            
+        return ret

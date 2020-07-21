@@ -60,7 +60,8 @@ def print_help(err=''):
 @click.option('--batch_size', default=0, help='The approximate number of universes a processor will run in a row.')
 @click.option('--dir', 'folder', help='Multiverse directory',
               default='./multiverse', show_default=True)
-def run(folder, run_all, num, thru, jobs, batch_size):
+@click.option('--universes', 'unv', cls=PythonIntList, default='[]')
+def run(folder, run_all, num, thru, jobs, batch_size, unv):
     """ Execute the generated universe scripts.
 
     Run all universes: boba run --all
@@ -79,7 +80,7 @@ def run(folder, run_all, num, thru, jobs, batch_size):
     extension = Lang('', vals[0]).get_ext()
     if run_all:
         universes = vals
-    else:
+    elif not unv:
         if thru == -1:
             thru = num
         if num < 1:
@@ -91,6 +92,14 @@ def run(folder, run_all, num, thru, jobs, batch_size):
 
         for i in range(num, thru + 1):
             universe = get_universe_script(i, extension)
+            print(universe)
+            universes.append(universe)
+    else:
+        for n in unv:
+            if n > len(vals) or n < 0:
+                print_help('There are only ' + str(len(vals)) + ' universes.')
+
+            universe = get_universe_script(n, extension)
             print(universe)
             universes.append(universe)
 
@@ -159,6 +168,14 @@ def merge(pattern, base, out, delimiter):
     CSVMerger(pattern, base, out, delimiter).main()
 
 
+@click.command()
+@click.option('--dir', 'folder', help='Multiverse directory',
+              default='./multiverse', show_default=True)
+def universecount(folder):
+    data = pd.read_csv(folder + '/summary.csv')
+    print(len(data['Filename'].to_list()))
+
+
 @click.group()
 @click.version_option()
 def main():
@@ -168,6 +185,7 @@ def main():
 main.add_command(compile)
 main.add_command(run)
 main.add_command(merge)
+main.add_command(universecount)
 
 if __name__ == "__main__":
     main()
