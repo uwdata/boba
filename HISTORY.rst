@@ -2,7 +2,7 @@
 History
 =======
 
-0.2.0 (2020-07-31)
+1.0.0 (2020-07-31)
 ==================
 
 * Support continuous placeholder variable
