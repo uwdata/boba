@@ -64,3 +64,19 @@ Examples
 .. _specification curve paper: https://papers.ssrn.com/sol3/papers.cfm?abstract_id=2694998
 .. _Steegen's multiverse analysis: https://journals.sagepub.com/doi/pdf/10.1177/1745691616658637
 .. _Durante's fertility dataset: https://osf.io/zj68b/
+
+Citation
+========
+
+If you are interested in this work, please see our research paper_ and consider citing our work::
+
+  @misc{liu2020boba,
+    title={Boba: Authoring and visualizing multiverse analyses},
+    author={Yang Liu and Alex Kale and Tim Althoff and Jeffrey Heer},
+    year={2020},
+    eprint={2007.05551},
+    archivePrefix={arXiv},
+    primaryClass={cs.HC}
+  }
+
+.. _paper: https://arxiv.org/abs/2007.05551

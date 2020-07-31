@@ -2,6 +2,14 @@
 History
 =======
 
+0.2.0 (2020-07-31)
+==================
+
+* Support continuous placeholder variable
+* Support running the multiverse across multiple processes
+* Improve boba run, such that it is not dependent on the OS
+* Various bug fixes
+
 0.1.4 (2020-04-19)
 ==================
 
