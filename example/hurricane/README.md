@@ -37,9 +37,9 @@ Jung et al: http://www.icatdamageestimator.com/commonsearch
 
 ### Notes
 
-1. Simonsohn generated 1728 universes, while we created only 864 universes.
-We wrote our multiverse specification according to the definition in page 4 of Simonsohn's appendix.
-But in their actual implementation, Simonsohn separated the first decision (of size 6)
+1. The multiverse specification has two versions: `template.py`, which follows the decision definitions 
+in page 4 of Simonsohn's appendix and creates 864 universes, and `repro.R`, which replicates Simonsohn's
+code implementation to create 1728 universes. The difference is due to separating the first decision (of size 6)
 into a cross product of two decisions (3x4), thus doubling the size of the final multiverse.
 
 2. As we used a slightly different dataset than the one used by Jung et al., we did not obtain the same result when using the original specification in Jung's study.
