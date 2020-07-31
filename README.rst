@@ -2,16 +2,19 @@
 boba
 ====
 
-Author and execute multiverse analysis with ease.
+Author and visualize multiverse analysis with ease.
 
-Boba is a simple domain specific language for specifying multiverse analysis.
-It comes with a command line tool to parse your specification and generate
-universe scripts, allows you to execute all scripts with a single command, and
-wrangles outputs into a single table.
+Boba has a domain specific language (Boba DSL) for writing multiverse specifications,
+and a visual analysis interface (`Boba Visualizer`_) for exploring multiverse outcomes.
+Boba comes with a command line tool to parse your DSL specification and generate
+universe scripts, execute all scripts with a single command,
+merges outputs into a table, and invoke the visualizer.
 
-- works with both python and R
+- works with both python and R, and other scripting languages to come
 - handles simple parameter substitution as well as complex code flow dependency
+- offers interactive visualizations for exploring consequential decisions, uncertainty, model fit, and more
 
+.. _Boba Visualizer: https://github.com/uwdata/boba-visualizer
 .. image:: https://badge.fury.io/py/boba.svg
   :target: https://badge.fury.io/py/boba
 .. image:: https://travis-ci.org/uwdata/boba.svg?branch=master
@@ -44,12 +47,18 @@ To execute the multiverse, namely running all the generated scripts, use::
 
   boba run --all
 
+To start the Boba Visualizer after getting the intermediate output files, use::
+
+  boba-server
+
 For more command line options, see `CLI`_.
+For more information about the Boba Visualizer, see this project_.
 
 .. _rules: https://github.com/uwdata/boba/blob/master/tutorial/rules.md
 .. _simple example: https://github.com/uwdata/boba/blob/master/tutorial/simple.md
 .. _more complex example: https://github.com/uwdata/boba/blob/master/tutorial/fertility.md
 .. _CLI: https://github.com/uwdata/boba/blob/master/tutorial/cli.rst
+.. _project: https://github.com/uwdata/boba-visualizer
 
 Examples
 ========

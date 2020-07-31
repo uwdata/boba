@@ -9,6 +9,7 @@ History
 * Support running the multiverse across multiple processes
 * Improve boba run, such that it is not dependent on the OS
 * Various bug fixes
+* Integrate boba visualizer
 
 0.1.4 (2020-04-19)
 ==================
