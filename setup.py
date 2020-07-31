@@ -43,7 +43,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/uwdata/multiverse-spec',
+    url='https://github.com/uwdata/boba',
     version='0.1.5',
     zip_safe=False,
 )
