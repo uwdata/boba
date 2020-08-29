@@ -7,8 +7,7 @@
             "seed" : 0,
             "sample" : "uniform",
             "count" : 50,
-            "min" : 1.0,
-            "max" : 3.0
+            "range" : [1.0, 3.0]
         }
       ]
     }

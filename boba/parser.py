@@ -249,14 +249,14 @@ class Parser:
 
             if chunk.variable != '':
                 # check if we have already encountered the placeholder variable
-                prev_idx = None
+                prev_option = None
                 for d in history.decisions:
                     if d.parameter == chunk.variable:
-                        prev_idx = d.idx
+                        prev_option = d.option
 
-                if prev_idx is not None:
+                if prev_option is not None:
                     # use the previous value
-                    snippet, opt = self.dec_parser.gen_code(chunk.code, chunk.variable, prev_idx)
+                    snippet, opt = self.dec_parser.gen_code(chunk.code, option=prev_option)
                     self._code_gen_recur(path, i+1, code+snippet, history)
                 else:
                     # expand the decision
@@ -272,7 +272,7 @@ class Parser:
                             continue
 
                         # code gen
-                        snippet, opt = self.dec_parser.gen_code(chunk.code, chunk.variable, k)
+                        snippet, opt = self.dec_parser.gen_code(chunk.code, dec_id=chunk.variable, i_alt=k)
                         decs = [a for a in history.decisions]
                         decs.append(DecRecord(chunk.variable, opt, k))
                         self._code_gen_recur(path, i+1, code + snippet,
@@ -281,7 +281,7 @@ class Parser:
                 code += chunk.code
                 self._code_gen_recur(path, i+1, code, history)
 
-    def _code_gen(self):
+    def _code_gen(self, decrecords=None, path_filter=None):
         paths = self._get_code_paths()
 
         self.wrangler.counter = 0  # keep track of file name
@@ -290,8 +290,46 @@ class Parser:
             + len(self.code_parser.get_decisions())
 
         self.wrangler.create_dir()
-        for idx, p in enumerate(paths):
-            self._code_gen_recur(p, 0, '', History(idx))
+
+        if decrecords is None:
+            for idx, p in enumerate(paths):
+                self._code_gen_recur(p, 0, '', History(idx))
+        elif path_filter is None:
+            for idx, p in enumerate(paths):
+                self._code_gen_recur(p, 0, '',  History(idx, '', decrecords, []))
+        else:
+            valid_paths = []
+            for idx, p in enumerate(paths):
+                run_path = True
+                filtered_nodes = set()
+                for node in p:
+                    if ':' in node[0]:
+                        split = node[0].split(':')
+                        name = split[0]
+                        value = split[1]
+
+                        if name not in path_filter:
+                            continue
+                    
+                        if path_filter[name] != value:
+                            run_path = False
+                            break
+                        else:
+                            filtered_nodes.add(name)
+
+                for node in path_filter:
+                    if node not in filtered_nodes:
+                        run_path = False
+                        break
+
+                if run_path:
+                    valid_paths.append((idx, p))
+
+            if not valid_paths:
+                raise ValueError('bad input to path_filter!')
+            
+            for path in valid_paths:
+                self._code_gen_recur(path[1], 0, '', History(path[0], '', decrecords, []))
 
         # write the pre and post execs to a file.
         self.wrangler.write_pre_exe()
@@ -387,9 +425,37 @@ class Parser:
                 print('Aborted.')
                 exit(0)
 
-    def main(self, verbose=True):
+    def main(self, decisions=None, verbose=True):
         self._warn_size()
-        self._code_gen()
+
+        if decisions is not None:
+            decrecords = []
+            code_path = 'path_filter'
+            if code_path in decisions:
+                path_filter = decisions[code_path]
+            else:
+                path_filter = None
+
+            for key, value in decisions.items():
+                if key == code_path:
+                    continue
+
+                dec_exist = False
+                for decname, dec in self.dec_parser.decisions.items():
+                    if decname == key:
+                        if not dec.check_value(value):
+                            raise ValueError('The decision "' + key + '" cannot have the value "' + str(value) + '"')
+                        dec_exist = True
+
+                if not dec_exist:
+                    raise ValueError('The decision "' + key + '" does not exist')
+
+                decrecords.append(DecRecord(key, value, 0))
+
+            self._code_gen(decrecords, path_filter)
+        else:
+            self._code_gen()
+
         self._write_csv()
         self._write_server_config()
         if verbose:

@@ -6,6 +6,7 @@ import os
 sys.path.insert(0, os.path.abspath('..'))
 
 import unittest
+import pandas
 from unittest.mock import patch
 import io
 from boba.parser import Parser
@@ -23,6 +24,32 @@ def _print_code(ps):
 
 def abs_path(rel_path):
     return os.path.join(os.path.dirname(__file__), rel_path)
+
+
+def verify_summary_csv(summary, expected_values):
+    data = pandas.read_csv(summary)
+    for key, val in expected_values.items():
+        if key not in data:
+            return False
+
+        values = data[key].to_list()
+        if not all(elem == val for elem in values):
+            return False
+
+    return True
+
+
+class FilterTestCase:
+    def __init__(self, folder, script):
+        self.folder = folder
+        self.script = script
+        self.cases = []
+
+    def add_case(self, filt, expected=None):
+        if expected is None:
+            self.cases.append((filt, filt))
+        else:
+            self.cases.append((filt, expected))
 
 
 class TestParser(unittest.TestCase):
@@ -256,6 +283,79 @@ class TestParser(unittest.TestCase):
         with self.assertRaises(SystemExit):
             Parser(base + 'script1-cyclic-graph.py')
         self.assertRegex(stdout.getvalue(), 'Cannot find any starting node')
+
+    def test_decision_filter(self):
+        base = abs_path('../example')
+
+        filts = []
+
+        filt = FilterTestCase('simple', 'template.py')
+        filt.add_case({'path_filter' : {'A' : 'iqr'}}, {'A' : 'iqr'})
+        filt.add_case({'cutoff' : 2.5})
+        filt.add_case({'cutoff' : 3})
+        filt.add_case({'path_filter' : {'A' : 'std'}, 'cutoff' : 2}, {'A' : 'std', 'cutoff' : 2})
+        filts.append(filt)
+
+        filt = FilterTestCase('simple_cont', 'template.py')
+        filt.add_case({'path_filter' : {'A' : 'iqr'}}, {'A' : 'iqr'})
+        filt.add_case({'cutoff' : 1.0})
+        filt.add_case({'cutoff' : 1.5})
+        filt.add_case({'cutoff' : 2.0})
+        filt.add_case({'cutoff' : 2.5})
+        filt.add_case({'cutoff' : 3.0})
+        filt.add_case({'path_filter' : {'A' : 'std'}, 'cutoff' : 2.25}, {'A' : 'std', 'cutoff' : 2.25})
+        filt.add_case({'path_filter' : {'A' : 'iqr'}, 'cutoff' : 1.0}, {'A' : 'iqr', 'cutoff' : 1.0})
+        filt.add_case({'path_filter' : {'A' : 'iqr'}, 'cutoff' : 3.0}, {'A' : 'iqr', 'cutoff' : 3.0})
+        filts.append(filt)
+
+        for filt in filts:
+            ps = Parser(base + '/' + filt.folder + '/' + filt.script, base + '/' + filt.folder)
+            for i in range(0, len(filt.cases)):
+                f = filt.cases[i]
+                ps.main(f[0], verbose=False)
+                csv = base + '/' + filt.folder + '/multiverse/summary.csv'
+                if not verify_summary_csv(csv, f[1]):
+                    msg = 'failed on test case ' + str(i) + ' of ' + filt.folder + '\n'
+                    msg += 'filter was: ' + str(f[0]) + ', expected ' + str(f[1]) + '\n'
+                    self.fail(msg)
+
+    def test_decision_filter_err(self):
+        base = abs_path('../example')
+
+        filts = []
+
+        filt = FilterTestCase('simple', 'template.py')
+        filt.add_case({'path_filter' : {'C' : 'iqr'}}, ValueError)
+        filt.add_case({'path_filter' : {'A' : 'bad'}}, ValueError)
+        filt.add_case({'cutoff' : 'bad data'}, ValueError)
+        filt.add_case({'cutoff' : 1}, ValueError)
+        filts.append(filt)
+
+        filt = FilterTestCase('simple_cont', 'template.py')
+        filt.add_case({'path_filter' : {'C' : 'iqr'}}, ValueError)
+        filt.add_case({'path_filter' : {'A' : 'bad'}}, ValueError)
+        filt.add_case({'cutoff' : 'bad data'}, ValueError)
+        filt.add_case({'cutoff' : 5.0}, ValueError)
+        filts.append(filt)
+
+        for filt in filts:
+            ps = Parser(base + '/' + filt.folder + '/' + filt.script, base + '/' + filt.folder)
+            for i in range(0, len(filt.cases)):
+                f = filt.cases[i]
+                thrown = False
+                msg = 'failed on test case ' + str(i) + ' of ' + filt.folder + '\n'
+                try:
+                    ps.main(f[0], verbose=False)
+                except Exception as e:
+                    msg += 'filter was: ' + str(f[0]) + ', expected ' + str(f[1]) + ', recieved ' + str(e) + '\n'
+                    if not isinstance(e, f[1]):
+                        self.fail(msg)
+
+                    thrown = True
+                
+                if not thrown:
+                    msg += 'no exception was thrown'
+                    self.fail(msg)
 
 
 if __name__ == '__main__':
