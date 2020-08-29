@@ -50,7 +50,7 @@ ones. We will show how you could express such dependencies in boba.
 
 We expanded the analysis of study 1 in Steegen's R script into a multiverse
 specification (
-[template](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility_r/template.R)).
+[template](https://github.com/uwdata/boba/blob/master/example/fertility_r/template.R)).
 
 Recall that in boba, we have basically two ways to specify a decision: via a
 template variable ``{{var_name}}``, or via a code block. In our multiverse, we
@@ -120,7 +120,7 @@ linear, but can be any valid DAGs.
 
 To illustrate advanced usage of the graph, we built another multiverse, this
 time using a python version of the analysis (
-[template](https://github.com/uwdata/multiverse-spec/blob/master/example/fertility/template.py)).
+[template](https://github.com/uwdata/boba/blob/master/example/fertility/template.py)).
 
 We now describe how you might specify a decision in different ways.
 One of the decision point, ECL, has the following options:
@@ -239,10 +239,10 @@ the number after excluding inconsistent analyses.
 # Try it yourself!
 
 The complete code and data are here (
-[R](https://github.com/uwdata/multiverse-spec/tree/master/example/fertility_r),
-[python](https://github.com/uwdata/multiverse-spec/tree/master/example/fertility)).
+[R](https://github.com/uwdata/boba/tree/master/example/fertility_r),
+[python](https://github.com/uwdata/boba/tree/master/example/fertility)).
 We do not include the output scripts because there will be 120 of them. But
-you are welcome to invoke the parser, take a look at the generated scripts, 
+we encourage you to invoke the parser, take a look at the generated scripts, 
 and execute the multiverse to inspect the results.
 
 To run the R example, clone this repository and run the following commands:

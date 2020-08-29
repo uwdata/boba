@@ -185,7 +185,7 @@ We will get 6 universes:
 |universe_6.py|_start->A->B|3     |std|
 
 Take a look at the generated python scripts
-[here](https://github.com/uwdata/multiverse-spec/tree/master/example/simple/output/code).
+[here](https://github.com/uwdata/boba/tree/master/example/simple/output/code).
 
 (You may notice that all code paths in the above table are the same. In a more
 complex analysis, we might produce differing code paths, by creating
@@ -210,7 +210,7 @@ boba run 1 --thru 3
 
 ### Try it yourself!
 
-The code and data of this example is available [here](https://github.com/uwdata/multiverse-spec/tree/master/example/simple).
+The code and data of this example is available [here](https://github.com/uwdata/boba/tree/master/example/simple).
 To run the example, clone this repository and run the following commands:
 
 ```bash

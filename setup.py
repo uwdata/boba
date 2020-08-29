@@ -9,7 +9,8 @@ with open("README.rst", "r") as fh:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=6.0', 'dataclasses>=0.6', 'pandas>=0.24.2']
+requirements = ['Click>=6.0', 'dataclasses>=0.6', 'pandas>=0.24.2',
+                'boba-visualizer>=1.0.0']
 
 setup_requirements = []
 
@@ -19,8 +20,8 @@ setup(
     author="Yang Liu",
     author_email='yliu0@uw.edu',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
+        'Development Status :: 3 - Alpha',
+        'Intended Audience :: Science/Research',
         'License :: OSI Approved :: BSD License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
@@ -43,7 +44,7 @@ setup(
     setup_requires=setup_requirements,
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/uwdata/multiverse-spec',
-    version='0.1.5',
+    url='https://github.com/uwdata/boba',
+    version='1.0.0',
     zip_safe=False,
 )
