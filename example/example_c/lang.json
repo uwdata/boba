@@ -1,0 +1,7 @@
+{
+    "c" : {
+        "ext" : ["c"],
+        "compile" : ["gcc", "-o", "{{compiled}}", "{{script}}"],
+        "run" : ["./{{compiled}}"]
+    }
+}

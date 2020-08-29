@@ -46,7 +46,7 @@ class Parser:
 
     """ Parse everything """
 
-    def __init__(self, f1, out='.', lang=''):
+    def __init__(self, f1, out='.', lang=None, supported_langs=None):
         self.fn_script = f1
         self.out = os.path.join(out, 'multiverse/')
 
@@ -68,7 +68,7 @@ class Parser:
 
         # init helper class
         try:
-            self.lang = Lang(lang, f1)
+            self.lang = Lang(f1, lang=lang, supported_langs=supported_langs)
             self.wrangler = Wrangler(self.spec, self.lang, self.out)
         except LangError as e:
             self._throw(e.args[0])
