@@ -62,3 +62,4 @@ class PythonDict(click.Option):
             return dict(ast.literal_eval(value))
         except:
             raise click.BadParameter(value)
+            
