@@ -3,6 +3,7 @@
 """Console script."""
 import click
 import shutil
+import json
 from .parser import Parser
 from .output.csvmerger import CSVMerger
 import multiprocessing as mp
@@ -16,15 +17,23 @@ from .wrangler import get_universe_script, DIR_LOG
               default='./template.py', show_default=True)
 @click.option('--out', help='Output directory',
               default='.', show_default=True)
-@click.option('--lang', help='Language, can be python/R [default: inferred from file extension]',
+@click.option('--lang', help='Language [default: inferred from file extension]',
               default='')
-def compile(script, out, lang):
+@click.option('--supported_langs', '-sl', 'supp_langs', help='json file with supported languages',
+              default=None)
+def compile(script, out, lang, supp_langs):
     """Generate multiverse analysis from specifications."""
 
     check_path(script)
 
     click.echo('Creating multiverse from {}'.format(script))
-    ps = Parser(script, out, lang)
+    
+    supported_langs = None
+    if supp_langs:
+        with open(supp_langs, 'r') as l:
+            supported_langs = json.load(l)
+
+    ps = Parser(script, out, lang, supported_langs)
     ps.main()
 
     ex = """To execute the multiverse, run the following commands:
@@ -60,7 +69,9 @@ def print_help(err=''):
 @click.option('--batch_size', default=0, help='The approximate number of universes a processor will run in a row.')
 @click.option('--dir', 'folder', help='Multiverse directory',
               default='./multiverse', show_default=True)
-def run(folder, run_all, num, thru, jobs, batch_size):
+@click.option('--supported_langs', '-sl', 'langs', help='json file with supported languages',
+              default=None)
+def run(folder, run_all, num, thru, jobs, batch_size, langs):
     """ Execute the generated universe scripts.
 
     Run all universes: boba run --all
@@ -72,11 +83,16 @@ def run(folder, run_all, num, thru, jobs, batch_size):
 
     check_path(folder)
 
+    supported_langs = None
+    if langs:
+        with open(langs, 'r') as l:
+            supported_langs = json.load(l)
+
     # get the names of all the universes we want to run
     universes = []
     data = pd.read_csv(folder + '/summary.csv')
     vals = data['Filename'].to_list()
-    extension = Lang('', vals[0]).get_ext()
+    extension = Lang(vals[0], supported_langs=supported_langs).get_ext()
     if run_all:
         universes = vals
     else:
@@ -129,7 +145,7 @@ def run(folder, run_all, num, thru, jobs, batch_size):
         while universes and len(batch) < batch_size:
             batch.append(universes.pop(0))
 
-        pool.apply_async(run_batch_of_universes, args=(folder, batch), callback=check_result)
+        pool.apply_async(run_batch_of_universes, args=(folder, batch, supported_langs), callback=check_result)
 
     # collect all the results
     pool.close()

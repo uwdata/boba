@@ -117,7 +117,8 @@ class Wrangler:
         if self.lang.is_r():
             return self._codegen_r()
         if self.lang.is_python():
-            return self._codegen_python()
+            return self._codegen_python()      
+        return ''
 
     def write_pre_exe(self):
         fn_pre_exec = os.path.join(self.out, 'pre_exe.sh')
