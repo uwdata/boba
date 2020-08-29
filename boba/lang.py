@@ -23,10 +23,14 @@ class LangError(NameError):
 
 
 class Lang:
-    def __init__(self, script, lang=None, supported_langs=DEFAULT_LANGS):
+    def __init__(self, script, lang=None, supported_langs=None):
+        if supported_langs:
+            self.supported_langs = supported_langs
+        else:
+            self.supported_langs = DEFAULT_LANGS
+            
         self.script = script
         self.name, self.ext = os.path.splitext(script)
-        self.supported_langs = supported_langs
         self.lang = self._infer_lang(lang)
 
     def _infer_lang(self, lang):
