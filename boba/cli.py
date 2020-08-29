@@ -18,14 +18,19 @@ from .wrangler import get_universe_script, DIR_LOG
               default='.', show_default=True)
 @click.option('--lang', help='Language, can be python/R [default: inferred from file extension]',
               default='')
-def compile(script, out, lang):
+@click.option('--decisions', '-d', cls=PythonDict, default='{}')
+def compile(script, out, lang, decisions):
     """Generate multiverse analysis from specifications."""
 
     check_path(script)
 
     click.echo('Creating multiverse from {}'.format(script))
     ps = Parser(script, out, lang)
-    ps.main()
+
+    if decisions:
+        ps.main(decisions)
+    else:
+        ps.main()
 
     ex = """To execute the multiverse, run the following commands:
     boba run --all

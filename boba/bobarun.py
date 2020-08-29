@@ -1,5 +1,7 @@
 import subprocess
 import os
+import ast
+import click
 from .lang import Lang
 from .wrangler import DIR_SCRIPT, DIR_LOG, get_universe_id_from_script, get_universe_log, get_universe_error_log, get_universe_name
 from subprocess import PIPE
@@ -52,3 +54,12 @@ def run_commands_in_folder(folder, file_with_commands):
         for line in f.readlines():
             os.system(line)
     os.chdir(cwd)
+
+class PythonDict(click.Option):
+
+    def type_cast_value(self, ctx, value):
+        try:
+            return dict(ast.literal_eval(value))
+        except:
+            raise click.BadParameter(value)
+            

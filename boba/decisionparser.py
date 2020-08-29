@@ -12,6 +12,22 @@ class Decision:
     value: list
     desc: str = ''
 
+    def check_value(self, val):
+        """ Check if a value can be contained by this decision """
+        for option in self.value:
+            if val == option:
+                return True
+            elif isinstance(option, dict) and isinstance(val, float):
+                if 'range' in option:
+                    if val > option['range'][0] and val < option['range'][1]:
+                        return True
+                    if (('exclusive' in option and not option['exclusive']) or 'exclusive' not in option) and\
+                        (val == option['range'][0] or val == option['range'][1]):
+                        return True
+                else:
+                    return True
+        return False
+
 class SamplingError(SyntaxError):
     pass
 
@@ -47,7 +63,10 @@ class DecisionParser(BaseParser):
 
     @staticmethod 
     def check_var_types(args, types, names):
-        for i in range(0, len(args)):
+        if len(args) != len(names):
+            raise ValueError('expected ' + str(len(names)) + ' arguments')
+
+        for i in range(0, len(names)):
             if not isinstance(args[i], types[i]):
                 raise ValueError(names[i] + ' must be of type ' + str(types[i]))
 
@@ -66,14 +85,14 @@ class DecisionParser(BaseParser):
         return val
 
     @staticmethod
-    def random_uniform(minimum, maximum, args):
+    def random_uniform(distr_range, args):
         """randomly sample a number from a uniform distribution"""
         exclusive = args.get('exclusive', False)
-        DecisionParser.check_var_types([minimum, maximum, exclusive], 
-                        [float, float, bool], 
-                        ['min', 'max', 'exclusive'])
+        DecisionParser.check_var_types([distr_range, exclusive], 
+                        [list, bool], 
+                        ['range', 'exclusive'])
 
-        distr_range = [minimum, maximum]
+        DecisionParser.check_var_types(distr_range, [float, float], ['range[0]', 'range[1]'])
         return DecisionParser.get_within_range(random.uniform, distr_range, distr_range, exclusive)
 
     @staticmethod
@@ -82,21 +101,17 @@ class DecisionParser(BaseParser):
         mean = args.get('mean', 0.0)
         std_dev = args.get('std_dev', 1.0)
         exclusive = args.get('exclusive', False)
-        distribution_range = args.get('range', [])
-        DecisionParser.check_var_types([mean, std_dev, exclusive, distribution_range], 
+        distr_range = args.get('range', [])
+        DecisionParser.check_var_types([mean, std_dev, exclusive, distr_range], 
                         [float, float, bool, list], 
                         ['mean', 'std_dev', 'exclusive', 'range'])
 
-        if len(distribution_range) == 0:
-            distribution_range = None
-
-        if distribution_range and len(distribution_range) != 2:
-            raise ValueError('expected two items in range list')
-        elif distribution_range and len(distribution_range) == 2:
-            DecisionParser.check_var_types(distribution_range, [float, float], ['range[0]', 'range[1]'])
-
-        if distribution_range:
-            return DecisionParser.get_within_range(function, [mean, std_dev], distribution_range, exclusive)
+        if len(distr_range) == 0:
+            distr_range = None
+            
+        if distr_range:
+            DecisionParser.check_var_types(distr_range, [float, float], ['range[0]', 'range[1]'])
+            return DecisionParser.get_within_range(function, [mean, std_dev], distr_range, exclusive)
         else:
             return function(mean, std_dev)
 
@@ -114,7 +129,7 @@ class DecisionParser(BaseParser):
     def discretize(obj, discretization_method, count):
         """discretizes a continuous variable into 'count' descrete options."""
         discretization_methods = {
-            'uniform': DiscretizationFn(DecisionParser.random_uniform, ['min', 'max'], ['exclusive']), 
+            'uniform': DiscretizationFn(DecisionParser.random_uniform, ['range'], ['exclusive']), 
             'lognormal': DiscretizationFn(DecisionParser.random_lognormal, [], ['mean', 'std_dev', 'exclusive', 'range']), 
             'normal' : DiscretizationFn(DecisionParser.random_normal, [], ['mean', 'std_dev', 'exclusive', 'range'])
         }
@@ -264,7 +279,7 @@ class DecisionParser(BaseParser):
         """Get a list of decision names."""
         return [i for i in self.decisions.keys()]
 
-    def gen_code(self, template, dec_id, i_alt):
+    def gen_code(self, template, dec_id=None, i_alt=None, option=None):
         """
         Replace the placeholder variable in a template chunk.
         :param template: a chunk of code with only one placeholder
@@ -272,7 +287,12 @@ class DecisionParser(BaseParser):
         :param i_alt: which alternative
         :return: {string, string} replaced code and the value at this parameter
         """
-        v = self.get_alt_discrete(dec_id, i_alt)
+        if dec_id is not None and i_alt is not None:
+            v = self.get_alt_discrete(dec_id, i_alt)
+        elif option is not None:
+            v = option
+        else:
+            raise ValueError("either dec_id and i_alt must not be None, or option must not be None")
 
         # assuming the placeholder var is always at the end
         # which is true given how we chop up the chunks

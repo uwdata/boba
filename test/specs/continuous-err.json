@@ -21,55 +21,45 @@
     },
     "4" : {
         "decisions": [
-            {"var": "err", "options": [{"sample" : "uniform", "count" : 5, "min" : 0.0}] , "desc" : "check required variable omission"}
+            {"var": "err", "options": [{"sample" : "uniform", "count" : 5, "range" : [true, 1.0]}] , "desc" : "check bad type for variables"}
         ]
     },
     "5" : {
         "decisions": [
-            {"var": "err", "options": [{"sample" : "uniform", "count" : 5, "max" : 0.0}] , "desc" : "check required variable omission"}
+            {"var": "err", "options": [{"sample" : "uniform", "count" : 5, "range" : [1.0, "bad"]}] , "desc" : "check bad type for variables"}
         ]
     },
     "6" : {
         "decisions": [
-            {"var": "err", "options": [{"sample" : "uniform", "count" : 5, "min" : true, "max" : 5.0}] , "desc" : "check bad type for variables"}
+            {"var": "err", "options": [{"sample" : "lognormal", "count" : 5, "exclusive" : 1.0}] , "desc" : "check bad type for variables"}
         ]
     },
     "7" : {
         "decisions": [
-            {"var": "err", "options": [{"sample" : "uniform", "count" : 5, "min" : 1.0, "max" : true}] , "desc" : "check bad type for variables"}
+            {"var": "err", "options": [{"sample" : "lognormal", "count" : 5, "mean" : "mean"}] , "desc" : "check bad type for variables"}
         ]
     },
     "8" : {
         "decisions": [
-            {"var": "err", "options": [{"sample" : "lognormal", "count" : 5, "exclusive" : 1.0}] , "desc" : "check bad type for variables"}
+            {"var": "err", "options": [{"sample" : "normal", "count" : 5, "range" : "range"}] , "desc" : "check bad type for variables"}
         ]
     },
     "9" : {
         "decisions": [
-            {"var": "err", "options": [{"sample" : "lognormal", "count" : 5, "mean" : "mean"}] , "desc" : "check bad type for variables"}
+            {"var": "err", "options": [{"sample" : "normal", "count" : 5, "range" : ["range", "range"]}] , "desc" : "check bad type for variables"}
         ]
     },
     "10" : {
         "decisions": [
-            {"var": "err", "options": [{"sample" : "normal", "count" : 5, "range" : "range"}] , "desc" : "check bad type for variables"}
+            {"var": "err", "options": [{"sample" : "normal", "count" : 5, "range" : [0.0, 1.0, 2.0]}] , "desc" : "check bad type for variables"}
         ]
     },
     "11" : {
         "decisions": [
-            {"var": "err", "options": [{"sample" : "normal", "count" : 5, "range" : ["range", "range"]}] , "desc" : "check bad type for variables"}
-        ]
-    },
-    "12" : {
-        "decisions": [
-            {"var": "err", "options": [{"sample" : "normal", "count" : 5, "range" : [0.0, 1.0, 2.0]}] , "desc" : "check bad type for variables"}
-        ]
-    },
-    "13" : {
-        "decisions": [
             {"var": "err", "options": [{"sample" : "normal", "count" : 5, "range" : [1.0, 0.0]}] , "desc" : "check bad type for variables"}
         ]
     },
-    "14" : {
+    "12" : {
         "decisions": [
             {"var": "err", "options": [{"sample" : "normal", "count" : 5, "std_dev" : 1.0, "range" : [1.0, 0.0]}] , "desc" : "check bad type for variables"}
         ]

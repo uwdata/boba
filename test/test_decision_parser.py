@@ -146,17 +146,15 @@ class TestDecisionParser(unittest.TestCase):
             "1" : ParseError,
             "2" : ParseError,
             "3" : DiscretizationError,
-            "4" : DiscretizationError,
-            "5" : DiscretizationError,
+            "4" : ValueError,
+            "5" : ValueError,
             "6" : ValueError,
             "7" : ValueError,
             "8" : ValueError,
             "9" : ValueError,
             "10" : ValueError,
             "11" : ValueError,
-            "12" : ValueError,
-            "13" : ValueError,
-            "14" : ValueError
+            "12" : ValueError
         }
 
         for name, error in expected_errs.items():
