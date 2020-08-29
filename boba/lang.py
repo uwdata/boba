@@ -4,8 +4,8 @@ import os
 PY = 'python'
 R = 'r'
 
-script = '{{script}}'
-compiled = '{{compiled}}'
+script = '{{script_name}}'
+compiled = '{{universe_name}}'
 
 DEFAULT_LANGS = {
     'python' : {

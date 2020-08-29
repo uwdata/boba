@@ -1,7 +1,7 @@
 {
     "c" : {
         "ext" : ["c"],
-        "compile" : ["gcc", "-o", "{{compiled}}", "{{script}}"],
-        "run" : ["./{{compiled}}"]
+        "compile" : ["gcc", "-o", "{{universe_name}}", "{{script_name}}"],
+        "run" : ["./{{universe_name}}"]
     }
 }
