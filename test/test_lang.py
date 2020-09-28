@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # Ugly hack to allow import from the root folder
-import click
+import shutil
 import sys
 import os
 sys.path.insert(0, os.path.abspath('..'))
@@ -20,8 +20,8 @@ def run_click(fn, args):
     stdout = sys.stdout
     null = open(os.devnull, 'w')
     sys.stdout = null
-
     try:
+        print('here')
         fn(args)
     except SystemExit as e:
         if e.code != 0:
@@ -32,21 +32,23 @@ def run_click(fn, args):
 
 class TestLang(unittest.TestCase):
     def test_c(self):
-        folder = 'test_c/'
-        script = folder + 'template.c'
+        folder = 'test/test_c'
+        script = os.path.join(folder, 'template.c')
         out = folder
+        multiverse = os.path.join(folder, 'multiverse')
 
         run_click(compile, ['-s', script, '--out', folder])
 
-        file_base = out + 'multiverse/code/universe_'
+        file_base = os.path.join(out, 'multiverse/code/universe_')
         ext = '.c'
         for i in range(1, 4):
+            f = file_base + str(i) + ext
             if not os.path.isfile(file_base + str(i) + ext):
-                self.fail('did not generate universe ' + str(i))
+                self.fail('did not generate universe ' + f)
 
-        run_click(run, ['--dir', folder + 'multiverse/', '--all'])
+        run_click(run, ['--dir', multiverse, '-a'])
         
-        file_base = out + 'multiverse/boba_logs/log_'
+        file_base = os.path.join(out, 'multiverse/boba_logs/log_')
         ext = '.txt'
         for i in range(1, 4):
             fn = file_base + str(i) + ext
@@ -57,3 +59,5 @@ class TestLang(unittest.TestCase):
                 read = f.read()
                 if read != 'hello from universe ' + str(i) + '\n':
                     self.fail('universe generated unexpected output "' + read + '"')
+
+        shutil.rmtree(multiverse)
