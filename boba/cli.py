@@ -86,7 +86,7 @@ def run(folder, run_all, num, thru, jobs, batch_size):
             print_help()
         if thru < num:
             print_help('The thru parameter cannot be less than the num parameter.')
-        if num >= len(vals) or thru >= len(vals):
+        if num > len(vals) or thru > len(vals):
             print_help('There are only ' + str(len(vals)) + ' universes.')
 
         for i in range(num, thru + 1):
