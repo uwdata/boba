@@ -48,6 +48,7 @@ class Parser:
 
     def __init__(self, f1, out='.', lang=None):
         self.fn_script = f1
+        self.parent_dir = out
         self.out = os.path.join(out, 'multiverse/')
 
         self.paths = []
@@ -70,7 +71,7 @@ class Parser:
         try:
             supported_langs = None
             try:
-                with open(self.out + '/' + self.spec['lang'], 'r') as l:
+                with open(os.path.join(self.parent_dir, self.spec['lang']), 'r') as l:
                     supported_langs = json.load(l)
             except KeyError:
                 pass
