@@ -4,7 +4,7 @@ from .lang import Lang
 from .wrangler import DIR_SCRIPT, DIR_LOG, get_universe_id_from_script, get_universe_log, get_universe_error_log, get_universe_name
 from subprocess import PIPE
 
-def run_batch_of_universes(folder, universes, supported_langs=None):
+def run_batch_of_universes(folder, universes, supported_langs):
     """ Run a batch of universes """
     batch = []
     for universe in universes:
@@ -15,10 +15,7 @@ def run_batch_of_universes(folder, universes, supported_langs=None):
 
 def run_universe(folder, script, supported_langs):
     """ Run one universe """
-    if supported_langs:
-        cmds = Lang(script, supported_langs=supported_langs).get_cmd()
-    else:
-        cmds = Lang(script).get_cmd()
+    cmds = Lang(script, supported_langs=supported_langs).get_cmd()
 
     universe_id = get_universe_id_from_script(script)
     universe_name_fmt = "[" + get_universe_name(universe_id) + "]"

@@ -130,6 +130,12 @@ class Wrangler:
         with open(fn_post_exec, 'w') as f:
             f.write(self.post_exe)
 
+    def write_lang(self):
+        lang = os.path.join(self.out, 'lang.json')
+        with open(lang, 'w') as f:
+            json.dump(self.lang.supported_langs, f)
+
+
     def write_universe(self, code):
         """Write the generated code to a universe file."""
 

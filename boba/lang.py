@@ -13,7 +13,7 @@ DEFAULT_LANGS = {
         'run' : ['python', script]
     },
     'r' : {
-        'ext' : ['R', 'r', 'rmd'],
+        'ext' : ['R', 'r'],
         'run' : ['Rscript', script]
     }
 }
@@ -24,10 +24,10 @@ class LangError(NameError):
 
 class Lang:
     def __init__(self, script, lang=None, supported_langs=None):
+        self.supported_langs = DEFAULT_LANGS
         if supported_langs:
-            self.supported_langs = supported_langs
-        else:
-            self.supported_langs = DEFAULT_LANGS
+            for l in supported_langs:
+                self.supported_langs[l] = supported_langs[l]
             
         self.script = script
         self.name, self.ext = os.path.splitext(script)
@@ -39,7 +39,7 @@ class Lang:
             if not lang in self.supported_langs:
                 raise LangError('Error: language "{}" is not supported'.format(lang))
 
-            return lang, supported_langs[lang]
+            return lang, self.supported_langs[lang]
         else:
             for lang, lang_properties in self.supported_langs.items():
                 if self.ext[1:] in lang_properties['ext']:

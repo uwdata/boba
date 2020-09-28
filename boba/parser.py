@@ -46,7 +46,7 @@ class Parser:
 
     """ Parse everything """
 
-    def __init__(self, f1, out='.', lang=None, supported_langs=None):
+    def __init__(self, f1, out='.', lang=None):
         self.fn_script = f1
         self.out = os.path.join(out, 'multiverse/')
 
@@ -68,6 +68,13 @@ class Parser:
 
         # init helper class
         try:
+            supported_langs = None
+            try:
+                with open(self.out + '/' + self.spec['lang'], 'r') as l:
+                    supported_langs = json.load(l)
+            except KeyError:
+                pass
+
             self.lang = Lang(f1, lang=lang, supported_langs=supported_langs)
             self.wrangler = Wrangler(self.spec, self.lang, self.out)
         except LangError as e:
@@ -296,6 +303,7 @@ class Parser:
         # write the pre and post execs to a file.
         self.wrangler.write_pre_exe()
         self.wrangler.write_post_exe()
+        self.wrangler.write_lang()
 
     @staticmethod
     def _nice_path(path):

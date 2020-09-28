@@ -1,3 +1,9 @@
+# --- (BOBA_CONFIG)
+{
+  "lang": "lang.json"
+}
+# --- (END)
+
 #include <stdio.h>
 int main() {
     printf("hello from universe ");
