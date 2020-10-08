@@ -10,7 +10,7 @@ with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
 requirements = ['Click>=6.0', 'dataclasses>=0.6', 'pandas>=0.24.2',
-                'boba-visualizer>=1.0.0']
+                'boba-visualizer>=1.0.2']
 
 setup_requirements = []
 
@@ -45,6 +45,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/uwdata/boba',
-    version='1.0.0',
+    version='1.1.0',
     zip_safe=False,
 )

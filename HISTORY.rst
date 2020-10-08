@@ -2,6 +2,12 @@
 History
 =======
 
+1.1.0 (2020-10-07)
+==================
+
+* Add support for arbitrary language
+* Various bug fixes
+
 1.0.0 (2020-07-31)
 ==================
 
