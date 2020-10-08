@@ -8,6 +8,7 @@ You might invoke the command line tool via::
 Available commands:
  - compile
  - run
+ - merge
 
 General options:
 
@@ -24,11 +25,6 @@ executable universe scripts. It has the following options:
 
   The path to your template script.
 
-``--json, -j``
-  **default: ./spec.json** (optional)
-
-  The path to your JSON specification.
-
 ``--out``
   **default: .** (optional)
 
@@ -37,7 +33,8 @@ executable universe scripts. It has the following options:
 ``--lang``
   (optional)
 
-  Language of your analysis script; we support python and R at the moment.
+  Language of your analysis script. We support python and R, and require a
+  configuration file for any other languages.
   If not specified, we will infer it from the file extension.
 
 ``--help``
@@ -60,14 +57,51 @@ To run a range of universes, for example universe_1 through universe_5, use::
 
   boba run 1 --thru 5
 
-The following two parameters are for multiprocessing:
+In addition, the run command accepts the following options:
+
+``--dir``
+  **default: ./multiverse (optional)**
+
+  Determines the path to the multiverse directory. It should point to a directory
+  that contains the *summary.csv* file and the *code* subfolder.
 
 ``--jobs``
   **default: 1 (optional)**
 
-  Determines the number of processes that can run at a time. If *jobs* is set to 0, it becomes the number of cores on the machine.
+  Determines the number of processes that can run at a time. If *jobs* is set
+  to 0, it becomes the number of cores on the machine.
 
 ``--batch_size``
   **default: see below (optional)**
 
-  Determines the number of universes that will be run in a sequence in each process. Let :math:`N` denotes the number of universes, the default is :math:`sqrt(N)` or :math:`N/jobs + 1`, whichever is smaller.
+  Determines the number of universes that will be run in a sequence in each
+  process. Let :math:`N` denotes the number of universes, the default is
+  :math:`sqrt(N)` or :math:`N/jobs + 1`, whichever is smaller.
+
+Merge
+=====
+The merge command combines CSV outputs from individual universes into one file.
+This command works well if you used the built-in `{{_n}}` variable to output
+a separate CSV per universe.
+
+The command has a required argument: the filename pattern of individual outputs
+where the universe id is replaced by {}. For example, if your output
+files are output_1.csv, output_2.csv, output_3.csv, and so on, your pattern
+should be `output_{}.csv`.
+
+In addition, the command has the following options:
+
+``--base, -b``
+  **default: ./multiverse/results (optional)**
+
+  Path to the directory containing the universe outputs.
+
+``--out``
+  **default: ./multiverse/merged.csv (optional)**
+
+  Path to the merged file that will be created by this command.
+
+``--delimiter``
+  **default: , (optional)**
+
+  CSV delimiter.
