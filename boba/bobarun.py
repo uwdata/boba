@@ -44,14 +44,14 @@ def run_multiverse(folder, run_all, num, thru, jobs, batch_size):
     os.makedirs(p_log)
 
     with open(os.path.join(p_log, 'logs.csv'), 'w') as log:
-        log.write('universe,exit_code\n')
+        log.write('uid,exit_code\n')
 
     # callback that is run for each retrieved result.
     def check_result(r):
         # write the results to our logs
         with open(os.path.join(p_log, 'logs.csv'), 'a') as f_log:
             for res in r:
-                f_log.write(res[0] + ',' + str(res[1]) + '\n')
+                f_log.write(f'{res[0]},{res[1]}\n')
 
     # initialize process pool
     if jobs == 0:
@@ -119,7 +119,7 @@ def run_universe(folder, script, supported_langs):
             print(universe_name_fmt + " error:\n" + err_decoded, end='')
             break
 
-    return get_universe_name(universe_id), out.returncode
+    return universe_id, out.returncode
 
 
 def run_commands_in_folder(folder, file_with_commands):
