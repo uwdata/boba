@@ -9,7 +9,7 @@ with open("README.rst", "r") as fh:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=6.0', 'dataclasses>=0.6', 'pandas>=0.24.2',
+requirements = ['Click>=6.0', 'dataclasses>=0.6', 'pandas>=1.0.1',
                 'boba-visualizer>=1.0.2']
 
 setup_requirements = []
