@@ -1,0 +1,52 @@
+{
+  "decisions": [
+    {
+      "options": [
+        2,
+        2.5,
+        3
+      ],
+      "var": "cutoff"
+    },
+    {
+      "options": [
+        "std",
+        "iqr"
+      ],
+      "var": "A"
+    }
+  ],
+  "graph": {
+    "edges": [
+      {
+        "source": 1,
+        "target": 0,
+        "type": "order"
+      }
+    ],
+    "nodes": [
+      {
+        "id": 0,
+        "name": "cutoff"
+      },
+      {
+        "id": 1,
+        "name": "A"
+      }
+    ]
+  },
+  "visualizer": {
+    "files": [
+      {
+        "id": "est",
+        "path": "estimates.csv"
+      }
+    ],
+    "schema": {
+      "point_estimate": {
+        "field": "estimate",
+        "file": "est"
+      }
+    }
+  }
+}

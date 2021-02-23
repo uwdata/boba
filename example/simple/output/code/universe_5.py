@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 
 if __name__ == '__main__':
     # read data file
-    df = pd.read_csv('../data.csv')
+    df = pd.read_csv('data.csv')
 
+    # remove outliers based on std
     df = df[np.abs(df.y - df.y.mean()) <= (2.5 * df.y.std())]
 
     # fit a simple ordinary least squares model

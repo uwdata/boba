@@ -1,0 +1,1 @@
+{"python": {"ext": ["py"], "run": ["python", "{{script_name}}"]}, "r": {"ext": ["R", "r"], "run": ["Rscript", "{{script_name}}"]}}

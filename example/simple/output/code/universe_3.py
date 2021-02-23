@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
 
 if __name__ == '__main__':
     # read data file
-    df = pd.read_csv('../data.csv')
+    df = pd.read_csv('data.csv')
 
+    # remove outliers based on iqr
     iqr = np.subtract(*np.percentile(df.y, [75, 25]))
     median = np.median(df.y)
     df = df[abs(df.y - median) <= 3 * iqr]
