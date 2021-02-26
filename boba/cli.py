@@ -7,7 +7,7 @@ import os
 import pandas as pd
 from .parser import Parser
 from .output.csvmerger import CSVMerger
-from .bobarun import run_multiverse
+from .bobarun import BobaRun
 
 
 @click.command()
@@ -84,7 +84,8 @@ def run(folder, run_all, num, thru, jobs, batch_size):
         if num > num_universes or thru > num_universes:
             print_help(f'There are only {num_universes} universes.')
 
-    run_multiverse(folder, run_all, num, thru, jobs, batch_size)
+    br = BobaRun(folder, jobs)
+    br.run_from_cli(run_all, num, thru, batch_size)
 
 
 @click.command()
