@@ -84,8 +84,8 @@ def run(folder, run_all, num, thru, jobs, batch_size):
         if num > num_universes or thru > num_universes:
             print_help(f'There are only {num_universes} universes.')
 
-    br = BobaRun(folder, jobs)
-    br.run_from_cli(run_all, num, thru, batch_size)
+    br = BobaRun(folder, jobs, batch_size)
+    br.run_from_cli(run_all, num, thru)
 
 
 @click.command()

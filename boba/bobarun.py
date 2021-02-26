@@ -9,19 +9,22 @@ from .wrangler import *
 
 
 class BobaRun:
-    def __init__(self, folder, jobs=1):
-        # path
+    def __init__(self, folder, jobs=1, batch_size=0):
+        # attributes
         self.folder = folder
-
-        # initialize process pool
-        if jobs == 0:
-            jobs = mp.cpu_count()
-        self.jobs = jobs
-        self.pool = mp.Pool(jobs)
+        self.pool = None
 
         # read summary
         data = pd.read_csv(self.folder + '/summary.csv')
         self.size = data.shape[0]
+
+        # multiprocessing attributes
+        if jobs == 0:
+            jobs = mp.cpu_count()
+        if batch_size == 0:
+            batch_size = min(int(self.size**0.5), int(self.size / jobs) + 1)
+        self.jobs = jobs
+        self.batch_size = batch_size
 
         # language
         fn = data['Filename'].to_list()[0]
@@ -32,7 +35,7 @@ class BobaRun:
             self.lang = Lang(fn)
 
 
-    def run_multiverse(self, universes=[], batch_size=0):
+    def run_multiverse(self, universes=[]):
         """
         Run the multiverse.
         
@@ -40,6 +43,11 @@ class BobaRun:
          - universes: a list of universe filenames to run
          - batch size: the number of universes a processor will run in a row
         """
+        # TODO: pass in a list of uids instead of filenames
+
+        # stop previous run
+        self.stop()
+
         # by default, run all universes
         if not len(universes):
             universes = [get_universe_script(i + 1, self.lang.get_ext()) \
@@ -64,14 +72,13 @@ class BobaRun:
                 for res in r:
                     f_log.write(f'{res[0]},{res[1]}\n')
 
-        # run each batch of universes as a separate task
-        if batch_size == 0:
-            batch_size = min(int(len(universes)**0.5),
-                int(len(universes) / self.jobs) + 1)
+        # initialize process pool
+        self.pool = mp.Pool(self.jobs)
 
+        # run each batch of universes as a separate task
         while universes:
             batch = []
-            while universes and len(batch) < batch_size:
+            while universes and len(batch) < self.batch_size:
                 batch.append(universes.pop(0))
 
             self.pool.apply_async(run_batch_of_universes,
@@ -88,12 +95,14 @@ class BobaRun:
 
     def stop(self):
         """ Stop all outstanding work in the pool """
-        print('Terminating')
-        self.pool.terminate()
-        self.pool.join()
+        if self.pool is not None:
+            print('Terminating')
+            self.pool.terminate()
+            self.pool.join()
+            self.pool = None
 
 
-    def run_from_cli(self, run_all=True, num=1, thru=-1, batch_size=0):
+    def run_from_cli(self, run_all=True, num=1, thru=-1):
         """ Entry point of boba run CLI """
         # get the names of all the universes we want to run
         universes = []
