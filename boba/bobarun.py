@@ -12,6 +12,8 @@ class BobaRun:
     def __init__(self, folder, jobs=1, batch_size=0):
         # attributes
         self.folder = folder
+        self.dir_log = os.path.join(folder, DIR_LOG)
+        self.file_log = os.path.join(self.dir_log, 'logs.csv')
         self.pool = None
 
         # read summary
@@ -45,8 +47,12 @@ class BobaRun:
         """
         # TODO: pass in a list of uids instead of filenames
 
-        # stop previous run
-        self.stop()
+        # do not allow simultaneous runs
+        if self.is_running():
+            return
+
+        # initialize process pool
+        self.pool = mp.Pool(self.jobs)
 
         # by default, run all universes
         if not len(universes):
@@ -57,23 +63,19 @@ class BobaRun:
         self.run_commands_in_folder('pre_exe.sh')
 
         # initialize the log folder and log file
-        p_log = os.path.join(self.folder, DIR_LOG)
-        if os.path.exists(p_log):
-            shutil.rmtree(p_log)
-        os.makedirs(p_log)
+        if os.path.exists(self.dir_log):
+            shutil.rmtree(self.dir_log)
+        os.makedirs(self.dir_log)
 
-        with open(os.path.join(p_log, 'logs.csv'), 'w') as log:
+        with open(self.file_log, 'w') as log:
             log.write('uid,exit_code\n')
 
         # callback that is run for each retrieved result.
         def check_result(r):
             # write the results to our logs
-            with open(os.path.join(p_log, 'logs.csv'), 'a') as f_log:
+            with open(self.file_log, 'a') as f_log:
                 for res in r:
                     f_log.write(f'{res[0]},{res[1]}\n')
-
-        # initialize process pool
-        self.pool = mp.Pool(self.jobs)
 
         # run each batch of universes as a separate task
         while universes:
@@ -91,15 +93,21 @@ class BobaRun:
 
         # after execute
         self.run_commands_in_folder('post_exe.sh')
+        self.pool = None
 
 
     def stop(self):
         """ Stop all outstanding work in the pool """
         if self.pool is not None:
             print('Terminating')
+            # stop all workers
+            # note that everything after pool.join() will still run
             self.pool.terminate()
-            self.pool.join()
-            self.pool = None
+
+
+    def is_running(self):
+        """ Whether the multiverse is currently running """
+        return self.pool is not None
 
 
     def run_from_cli(self, run_all=True, num=1, thru=-1):
