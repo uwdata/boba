@@ -15,6 +15,7 @@ class BobaRun:
         self.dir_log = os.path.join(folder, DIR_LOG)
         self.file_log = os.path.join(self.dir_log, 'logs.csv')
         self.pool = None
+        self.exit_code = []
 
         # read summary
         data = pd.read_csv(self.folder + '/summary.csv')
@@ -42,11 +43,9 @@ class BobaRun:
         Run the multiverse.
         
         Parameters:
-         - universes: a list of universe filenames to run
+         - universes: a list of universe ids to run
          - batch size: the number of universes a processor will run in a row
         """
-        # TODO: pass in a list of uids instead of filenames
-
         # do not allow simultaneous runs
         if self.is_running():
             return
@@ -56,13 +55,13 @@ class BobaRun:
 
         # by default, run all universes
         if not len(universes):
-            universes = [get_universe_script(i + 1, self.lang.get_ext()) \
-                for i in range(self.size)]
+            universes = list(range(1, self.size + 1))
 
         # before execute
         self.run_commands_in_folder('pre_exe.sh')
 
         # initialize the log folder and log file
+        self.exit_code = []
         if os.path.exists(self.dir_log):
             shutil.rmtree(self.dir_log)
         os.makedirs(self.dir_log)
@@ -71,17 +70,20 @@ class BobaRun:
             log.write('uid,exit_code\n')
 
         # callback that is run for each retrieved result.
+        # FIXME: if stopped, the last batch will not invoke the callback
         def check_result(r):
+            self.exit_code += [[res[0], res[1]] for res in r]
             # write the results to our logs
             with open(self.file_log, 'a') as f_log:
                 for res in r:
                     f_log.write(f'{res[0]},{res[1]}\n')
 
         # run each batch of universes as a separate task
-        while universes:
+        while len(universes):
             batch = []
-            while universes and len(batch) < self.batch_size:
-                batch.append(universes.pop(0))
+            while len(universes) and len(batch) < self.batch_size:
+                u = get_universe_script(universes.pop(0), self.lang.get_ext())
+                batch.append(u)
 
             self.pool.apply_async(run_batch_of_universes,
                 args=(self.folder, batch, self.lang.supported_langs),
@@ -112,18 +114,11 @@ class BobaRun:
 
     def run_from_cli(self, run_all=True, num=1, thru=-1):
         """ Entry point of boba run CLI """
-        # get the names of all the universes we want to run
-        universes = []
-        extension = self.lang.get_ext()
-        if run_all:
-            universes = [get_universe_script(i + 1, extension) \
-                for i in range(self.size)]
-        else:
-            if thru == -1:
-                thru = num
-            for i in range(num, thru + 1):
-                universe = get_universe_script(i, extension)
-                universes.append(universe)
+        # get the id of all the universes we want to run
+        thru = num if thru == -1 else thru
+        start = 1 if run_all else num
+        end = self.size if run_all else thru
+        universes = list(range(start, end + 1))
 
         # run
         self.run_multiverse(universes)
@@ -138,6 +133,9 @@ class BobaRun:
                 os.system(line)
         os.chdir(cwd)
 
+
+    def run_after_execute(self):
+        self.run_commands_in_folder('post_exe.sh')
 
 
 # these two functions can't be in the class because multiprocess
