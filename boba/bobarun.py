@@ -38,13 +38,14 @@ class BobaRun:
             self.lang = Lang(fn)
 
 
-    def run_multiverse(self, universes=[]):
+    def run_multiverse(self, universes=[], resume=False):
         """
         Run the multiverse.
         
         Parameters:
          - universes: a list of universe ids to run
-         - batch size: the number of universes a processor will run in a row
+         - resume: skip log initialization and pre-exe hook, but the caller must
+           make sure that these steps are done properly before calling
         """
         # do not allow simultaneous runs
         if self.is_running():
@@ -57,17 +58,18 @@ class BobaRun:
         if not len(universes):
             universes = list(range(1, self.size + 1))
 
-        # before execute
-        self.run_commands_in_folder('pre_exe.sh')
+        if not resume:
+            # before execute
+            self.run_commands_in_folder('pre_exe.sh')
 
-        # initialize the log folder and log file
-        self.exit_code = []
-        if os.path.exists(self.dir_log):
-            shutil.rmtree(self.dir_log)
-        os.makedirs(self.dir_log)
+            # initialize the log folder and log file
+            self.exit_code = []
+            if os.path.exists(self.dir_log):
+                shutil.rmtree(self.dir_log)
+            os.makedirs(self.dir_log)
 
-        with open(self.file_log, 'w') as log:
-            log.write('uid,exit_code\n')
+            with open(self.file_log, 'w') as log:
+                log.write('uid,exit_code\n')
 
         # callback that is run for each retrieved result.
         # FIXME: if stopped, the last batch will not invoke the callback
@@ -96,6 +98,29 @@ class BobaRun:
         # after execute
         self.run_commands_in_folder('post_exe.sh')
         self.pool = None
+
+
+    def resume_multiverse(self, universes=[]):
+        """
+        Resume the multiverse, by skipping scripts that are already run in the
+        universe list.
+        """
+        # if the log file is missing, run everything
+        if not os.path.exists(self.file_log):
+            return self.run_multiverse(universes)
+
+        # default argument
+        if not len(universes):
+            universes = list(range(1, self.size + 1))
+
+        # recover previous progress from log file
+        df = pd.read_csv(self.file_log)
+        self.exit_code = df.values.tolist()
+
+        # skip scripts that are already run
+        lookup = set(df['uid'].tolist())
+        universes = [u for u in universes if u not in lookup]
+        self.run_multiverse(universes, resume=True)
 
 
     def stop(self):
