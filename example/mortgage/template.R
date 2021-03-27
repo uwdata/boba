@@ -12,13 +12,14 @@
     {"var": "denied_PMI", "options": ["+ denied_PMI", ""]}
   ],
   "before_execute": "cp ../mortgage.csv ./ && rm -rf results && mkdir results",
+  "after_execute": "cd .. && sh after_execute.sh",
   "visualizer": "visualizer_config.json"
 }
 # --- (END)
 
-library(readr)
-library(tidyverse)
-library(broom.mixed)
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(broom.mixed))
 source('../../../hurricane/boba_util.R') #fixme
 
 # read data

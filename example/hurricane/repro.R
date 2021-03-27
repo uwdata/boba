@@ -37,17 +37,17 @@
     {"link": ["Model", "back_transform"]}
   ],
   "before_execute": "cp ../data.csv ./ && rm -rf results && mkdir results",
-  "after_execute": "cd .. && cp ../stacking_weights.R ./",
+  "after_execute": "cp ../stacking_weights.R ./",
   "visualizer": "visualizer_config.json"
 }
 # --- (END)
 
-library(readr)
-library(MASS)
-library(modelr)
-library(tidyverse)
-library(broom.mixed)
-library(tidybayes)
+suppressPackageStartupMessages(library(readr))
+suppressPackageStartupMessages(library(MASS))
+suppressPackageStartupMessages(library(modelr))
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(broom.mixed))
+suppressPackageStartupMessages(library(tidybayes))
 source('../../boba_util.R') #fixme
 
 # a function for post-processing predicted means and standard deviations into expected number of deaths
