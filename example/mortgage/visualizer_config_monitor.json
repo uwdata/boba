@@ -1,0 +1,21 @@
+{
+  "files": [
+    {"id": "est", "path": "estimate.csv"},
+    {"id": "unc", "path": "uncertainty.csv"},
+    {"id": "fit", "path": "results/disagg_fit_{}.csv", "multi": true}
+  ],
+  "schema": {
+    "point_estimate": {"file": "est", "field": "estimate"},
+    "p_value": {"file": "est", "field": "p.value"},
+    "fit": {"file": "est", "field": "R2_flipped"},
+    "uncertainty": {"file": "unc", "field": "estimate"},
+    "prediction": {"file": "fit"}
+  },
+  "labels": {
+    "dataset": "mortgage",
+    "x_axis": "Coefficient on female",
+    "x_axis_fit": "Approved",
+    "x_range": [-3, 8],
+    "fit_range": [0, 1]
+  }
+}

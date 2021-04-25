@@ -37,6 +37,10 @@ model <- lm(accept_scaled ~ female {{black}} {{housing_expense_ratio}}
     {{self_employed}} {{married}} {{bad_history}} {{PI_ratio}}
     {{loan_to_value}} {{denied_PMI}}, data = df)
 
+# print summary to console
+smr = summary(model)
+smr
+
 # cross validation
 fit <- cross_validation(df, model, 'accept_scaled')
 # normalize using max - min, because IQR is zero
@@ -45,7 +49,10 @@ nrmse = fit / (max(df$accept_scaled) - min(df$accept_scaled))
 # wrangle results
 result <- tidy(model, conf.int = TRUE) %>%
     filter(term == 'female') %>%
-    add_column(NRMSE = nrmse)
+    add_column(
+        NRMSE = nrmse,
+        R2_flipped = 1 - pmax(pmin(smr$adj.r.squared, 1), 0)
+    )
 
 # get predictions
 disagg_fit <- pointwise_predict(model, df) %>%

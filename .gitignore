@@ -11,6 +11,9 @@ venv/
 env/
 prototype/
 
+# example
+example/sampling
+
 # packaging
 *.egg-info/
 build/
