@@ -9,8 +9,7 @@ with open("README.rst", "r") as fh:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = ['Click>=6.0', 'dataclasses>=0.6', 'pandas>=1.0.1',
-                'boba-visualizer>=1.0.2']
+requirements = ['Click>=6.0', 'dataclasses>=0.6', 'pandas>=1.0.1']
 
 setup_requirements = []
 
@@ -45,6 +44,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/uwdata/boba',
-    version='1.1.0',
+    version='1.1.1',
     zip_safe=False,
 )

@@ -30,6 +30,7 @@ You might download and install the latest version of this software from the
 Python package index (PyPI)::
 
   pip install --upgrade boba
+  pip install --upgrade boba-visualizer
 
 Usage
 =====

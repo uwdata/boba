@@ -2,6 +2,16 @@
 History
 =======
 
+1.1.2 (2021-04-25)
+==================
+
+* Remove the dependency on boba-visualizer
+
+1.1.1 (2021-04-25)
+==================
+
+* Support the Boba monitor
+
 1.1.0 (2020-10-07)
 ==================
 
